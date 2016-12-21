@@ -35,7 +35,7 @@ class PyiTestCase(unittest.TestCase):
         )
         self.assertEqual(proc.returncode, 0, proc.stdout.decode('utf8'))
         self.assertEqual(proc.stdout, b'', proc.stdout.decode('utf8'))
-        
+
 
 if __name__ == '__main__':
     unittest.main()
