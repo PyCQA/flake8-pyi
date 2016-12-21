@@ -4,8 +4,10 @@ import logging
 import attr
 from flake8 import checker
 from flake8.plugins.pyflakes import FlakesChecker
+from pyflakes.checker import PY2, ClassDefinition
+from pyflakes.checker import ModuleScope, ClassScope, FunctionScope
 
-__version__ = '16.12.0'
+__version__ = '16.12.1'
 
 LOG = logging.getLogger('flake8.pyi')
 
@@ -14,6 +16,21 @@ class PyiAwareFlakesChecker(FlakesChecker):
     def deferHandleNode(self, node, parent):
         self.deferFunction(lambda: self.handleNode(node, parent))
 
+    def ASSIGN(self, node):
+        """This is a custom implementation of ASSIGN derived from
+        handleChildren() in pyflakes 1.3.0.
+
+        The point here is that on module level, there's type aliases that we
+        want to bind eagerly, but defer computation of the values of the
+        assignments (the type aliases might have forward references).
+        """
+        if not isinstance(self.scope, ModuleScope):
+            return super().ASSIGN(node)
+
+        for target in node.targets:
+            self.handleNode(target, node)
+
+        self.deferHandleNode(node.value, node)
     def LAMBDA(self, node):
         """This is likely very brittle, currently works for pyflakes 1.3.0.
 
@@ -24,6 +41,33 @@ class PyiAwareFlakesChecker(FlakesChecker):
         self.handleNode, self.deferHandleNode = self.deferHandleNode, self.handleNode
         super().LAMBDA(node)
         self.handleNode, self.deferHandleNode = self.deferHandleNode, self.handleNode
+
+    def CLASSDEF(self, node):
+        if not isinstance(self.scope, ModuleScope):
+            # This shouldn't be necessary because .pyi files don't nest
+            # scopes much, but better safe than sorry.
+            return super().CLASSDEF(node)
+
+        # What follows is copied from pyflakes 1.3.0. The only changes are the
+        # deferHandleNode calls.
+        for deco in node.decorator_list:
+            self.handleNode(deco, node)
+        for baseNode in node.bases:
+            self.deferHandleNode(baseNode, node)
+        if not PY2:
+            for keywordNode in node.keywords:
+                self.deferHandleNode(keywordNode, node)
+        self.pushScope(ClassScope)
+        # doctest does not process doctest within a doctest
+        # classes within classes are processed.
+        if (self.withDoctest and
+                not self._in_doctest() and
+                not isinstance(self.scope, FunctionScope)):
+            self.deferFunction(lambda: self.handleDoctests(node))
+        for stmt in node.body:
+            self.handleNode(stmt, node)
+        self.popScope()
+        self.addBinding(node, ClassDefinition(node.name, node))
 
 
 class PyiAwareFileChecker(checker.FileChecker):

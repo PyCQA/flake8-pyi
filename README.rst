@@ -48,6 +48,13 @@ Just run::
 Change Log
 ----------
 
+16.12.1
+~~~~~~~
+
+* handle forward references during subclassing on module level
+
+* handle forward references during type aliasing assignments on module level
+
 16.12.0
 ~~~~~~~
 

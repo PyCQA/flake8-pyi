@@ -17,12 +17,15 @@ class PyiTestCase(unittest.TestCase):
         stdout_text = proc.stdout.decode('utf8')
         self.assertEqual(proc.returncode, 1, stdout_text)
         actual = '\n'.join(
-            line.split('/')[-1] for line in stdout_text.split('\n')
+            line.split('/')[-1] for line in stdout_text.split('\n') if line
         )
-        expected = (
-            "forward_refs.pyi:1:25: F821 undefined name 'C'\n" +
-            "forward_refs.pyi:9:35: F821 undefined name 'C'\n"
-        )
+        expected = "\n".join((
+            "forward_refs.pyi:4:22: F821 undefined name 'CStr'",
+            "forward_refs.pyi:5:14: F821 undefined name 'C'",
+            "forward_refs.pyi:8:25: F821 undefined name 'C'",
+            "forward_refs.pyi:12:9: F821 undefined name 'C'",
+            "forward_refs.pyi:21:35: F821 undefined name 'C'",
+        ))
         self.assertMultiLineEqual(expected, actual)
 
     def test_patched_flake8_clean(self):
