@@ -42,11 +42,18 @@ Tests
 
 Just run::
 
-    python setup.py test
+    python3.6 setup.py test
+
+Note: tests require 3.6+ due to testing variable annotations.
 
 
 Change Log
 ----------
+
+16.12.2
+~~~~~~~
+
+* handle annotated assignments in 3.6+ with forward reference support
 
 16.12.1
 ~~~~~~~

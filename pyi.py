@@ -7,7 +7,7 @@ from flake8.plugins.pyflakes import FlakesChecker
 from pyflakes.checker import PY2, ClassDefinition
 from pyflakes.checker import ModuleScope, ClassScope, FunctionScope
 
-__version__ = '16.12.1'
+__version__ = '16.12.2'
 
 LOG = logging.getLogger('flake8.pyi')
 
@@ -31,6 +31,30 @@ class PyiAwareFlakesChecker(FlakesChecker):
             self.handleNode(target, node)
 
         self.deferHandleNode(node.value, node)
+
+    def ANNASSIGN(self, node):
+        """
+        Annotated assignments don't have annotations evaluated on function
+        scope, hence the custom implementation. Compared to the pyflakes
+        version, we defer evaluation of the annotations (and values on
+        module level).
+        """
+        if node.value:
+            # Only bind the *target* if the assignment has value.
+            # Otherwise it's not really ast.Store and shouldn't silence
+            # UndefinedLocal warnings.
+            self.handleNode(node.target, node)
+        if not isinstance(self.scope, FunctionScope):
+            self.deferHandleNode(node.annotation, node)
+        if node.value:
+            # If the assignment has value, handle the *value*...
+            if isinstance(self.scope, ModuleScope):
+                # ...later (if module scope).
+                self.deferHandleNode(node.value, node)
+            else:
+                # ...now.
+                self.handleNode(node.value, node)
+
     def LAMBDA(self, node):
         """This is likely very brittle, currently works for pyflakes 1.3.0.
 
