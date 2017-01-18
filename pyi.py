@@ -93,6 +93,13 @@ class PyiAwareFlakesChecker(FlakesChecker):
         self.popScope()
         self.addBinding(node, ClassDefinition(node.name, node))
 
+    def handleNodeDelete(self, node):
+        """Null implementation.
+
+        Lets users use `del` in stubs to denote private names.
+        """
+        return
+
 
 class PyiAwareFileChecker(checker.FileChecker):
     def run_check(self, plugin, **kwargs):

@@ -53,6 +53,24 @@ class PyiTestCase(unittest.TestCase):
         self.assertEqual(stdout, '')
         self.assertEqual(stderr, '')
 
+    def test_vanilla_flake8_not_clean_del(self) -> None:
+        returncode, stdout, stderr = self.checkFile('del.pyi', pyi_aware=False)
+        self.assertEqual(returncode, 1, stdout)
+        actual = '\n'.join(
+            line.split('/')[-1] for line in stdout.split('\n') if line
+        )
+        expected = "\n".join((
+            "del.pyi:4:16: F821 undefined name 'EitherStr'",
+        ))
+        self.assertMultiLineEqual(expected, actual)
+        self.assertEqual(stderr, '')
+
+    def test_patched_flake8_clean_del(self) -> None:
+        returncode, stdout, stderr = self.checkFile('del.pyi', pyi_aware=True)
+        self.assertEqual(returncode, 0, stdout)
+        self.assertEqual(stdout, '')
+        self.assertEqual(stderr, '')
+
 
 if __name__ == '__main__':
     unittest.main()
