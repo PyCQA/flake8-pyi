@@ -50,6 +50,11 @@ Note: tests require 3.6+ due to testing variable annotations.
 Change Log
 ----------
 
+17.1.0
+~~~~~~
+
+* handle ``del`` statements in stub files
+
 16.12.2
 ~~~~~~~
 

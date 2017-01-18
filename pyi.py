@@ -7,7 +7,7 @@ from flake8.plugins.pyflakes import FlakesChecker
 from pyflakes.checker import PY2, ClassDefinition
 from pyflakes.checker import ModuleScope, ClassScope, FunctionScope
 
-__version__ = '16.12.2'
+__version__ = '17.1.0'
 
 LOG = logging.getLogger('flake8.pyi')
 
