@@ -78,4 +78,5 @@ Change Log
 Authors
 -------
 
-Glued together by `Łukasz Langa <mailto:lukasz@langa.pl>`_.
+Glued together by `Łukasz Langa <mailto:lukasz@langa.pl>`_ and
+`Jelle Zijlstra <mailto:jelle.zijlstra@gmail.com>`_.
