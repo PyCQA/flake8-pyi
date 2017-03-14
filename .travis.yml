@@ -1,0 +1,12 @@
+sudo: false
+language: python
+before_script:
+- pip install tox
+# test script
+script:  tox
+notifications:
+  on_success: change
+  on_failure: always
+matrix:
+  include:
+    - python: 3.6
