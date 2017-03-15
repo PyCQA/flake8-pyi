@@ -69,8 +69,8 @@ class PyiTestCase(unittest.TestCase):
 
     def test_typevar(self) -> None:
         stdout_lines = (
-            '3:1: Y0001 TypeVar must be assigned to a name',
-            '5:1: Y0002 Name of private TypeVar must start with _',
+            '3:1: Y001 TypeVar must be assigned to a name',
+            '5:1: Y002 Name of private TypeVar must start with _',
         )
         self.checkFileOutput('typevar.pyi', stdout_lines=stdout_lines)
 
