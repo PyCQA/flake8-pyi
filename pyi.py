@@ -137,12 +137,10 @@ class PyiVisitor(ast.NodeVisitor):
         if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Name) and \
                 node.value.func.id == 'TypeVar':
             for target in node.targets:
-                if not isinstance(target, ast.Name):
-                    self.error(target, Y001)
-                elif not target.id.startswith('_'):
+                if isinstance(target, ast.Name) and not target.id.startswith('_'):
                     # avoid catching AnyStr in typing (the only library TypeVar so far)
                     if not self.filename.endswith('/typing.pyi'):
-                        self.error(target, Y002)
+                        self.error(target, Y001)
 
     def error(self, node: ast.AST, message: str) -> None:
         self.errors.append(Error(
@@ -193,5 +191,4 @@ class PyiTreeChecker:
             checker.FileChecker = PyiAwareFileChecker
 
 
-Y001 = 'Y001 TypeVar must be assigned to a name'
-Y002 = 'Y002 Name of private TypeVar must start with _'
+Y001 = 'Y001 Name of private TypeVar must start with _'
