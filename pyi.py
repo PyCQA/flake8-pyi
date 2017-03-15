@@ -1,15 +1,25 @@
 #!/usr/bin/env python3
 import logging
 
+import ast
 import attr
 from flake8 import checker
 from flake8.plugins.pyflakes import FlakesChecker
 from pyflakes.checker import PY2, ClassDefinition
 from pyflakes.checker import ModuleScope, ClassScope, FunctionScope
+from typing import Any, Iterable, NamedTuple, Type
 
 __version__ = '17.1.0'
 
 LOG = logging.getLogger('flake8.pyi')
+
+
+Error = NamedTuple('Error', [
+    ('lineno', int),
+    ('col', int),
+    ('message', str),
+    ('type', Type[Any]),
+])
 
 
 class PyiAwareFlakesChecker(FlakesChecker):
@@ -115,6 +125,40 @@ class PyiAwareFileChecker(checker.FileChecker):
 
 
 @attr.s
+class PyiVisitor(ast.NodeVisitor):
+    filename = attr.ib(default='(none)')
+    errors = attr.ib(default=attr.Factory(list))
+
+    def visit_Assign(self, node: ast.Assign) -> None:
+        """Attempt to find assignments to type helpers (typevars and aliases), which should be
+        private.
+        """
+        self.generic_visit(node)
+        if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Name) and \
+                node.value.func.id == 'TypeVar':
+            for target in node.targets:
+                if not isinstance(target, ast.Name):
+                    self.error(target, Y0001)
+                elif not target.id.startswith('_'):
+                    # avoid catching AnyStr in typing (the only library TypeVar so far)
+                    if not self.filename.endswith('/typing.pyi'):
+                        self.error(target, Y0002)
+
+    def error(self, node: ast.AST, message: str) -> None:
+        self.errors.append(Error(
+            node.lineno,
+            node.col_offset,
+            message,
+            PyiTreeChecker
+        ))
+
+    def run(self, tree: ast.AST) -> Iterable[Error]:
+        self.errors.clear()
+        self.visit(tree)
+        yield from self.errors
+
+
+@attr.s
 class PyiTreeChecker:
     name = 'flake8-pyi'
     version = __version__
@@ -123,7 +167,8 @@ class PyiTreeChecker:
     filename = attr.ib(default='(none)')
 
     def run(self):
-        return ()
+        visitor = PyiVisitor(filename=self.filename)
+        yield from visitor.run(self.tree)
 
     @classmethod
     def add_options(cls, parser):
@@ -146,3 +191,7 @@ class PyiTreeChecker:
         """This is also brittle, only checked with flake8 3.2.1 and master."""
         if not options.no_pyi_aware_file_checker:
             checker.FileChecker = PyiAwareFileChecker
+
+
+Y0001 = 'Y0001 TypeVar must be assigned to a name'
+Y0002 = 'Y0002 Name of private TypeVar must start with _'
