@@ -1,0 +1,16 @@
+import sys
+
+if sys.platform > 3:  # Y007
+    ...
+
+if sys.platform == 10.12:  # Y007
+    ...
+
+if sys.platform == 'linus':  # Y008
+    ...
+
+if sys.platform != 'linux':  # fine
+    ...
+
+if sys.platform == 'win32':  # fine
+    ...

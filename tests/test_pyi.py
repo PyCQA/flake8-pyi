@@ -73,6 +73,44 @@ class PyiTestCase(unittest.TestCase):
         )
         self.checkFileOutput('typevar.pyi', stdout_lines=stdout_lines)
 
+    def test_sys_platform(self) -> None:
+        stdout_lines = (
+            '3:4: Y007 Unrecognized sys.platform check',
+            '3:4: Y007 Unrecognized sys.platform check',
+            '6:4: Y007 Unrecognized sys.platform check',
+            '9:4: Y008 Unrecognized platform "linus"',
+        )
+        self.checkFileOutput('sysplatform.pyi', stdout_lines=stdout_lines)
+
+    def test_sys_versioninfo(self) -> None:
+        stdout_lines = (
+            '6:4: Y003 Unrecognized sys.version_info check',
+            '9:4: Y003 Unrecognized sys.version_info check',
+            '12:4: Y003 Unrecognized sys.version_info check',
+            '15:4: Y003 Unrecognized sys.version_info check',
+            '18:4: Y003 Unrecognized sys.version_info check',
+            '24:4: Y005 Version comparison must be against a length-1 tuple',
+            '30:4: Y005 Version comparison must be against a length-2 tuple',
+            '33:4: Y003 Unrecognized sys.version_info check',
+            '36:4: Y003 Unrecognized sys.version_info check',
+            '39:4: Y003 Unrecognized sys.version_info check',
+            '42:4: Y004 Version comparison must use only major and minor version',
+            '45:4: Y006 Use only < and >= for version comparisons',
+            '48:4: Y006 Use only < and >= for version comparisons',
+            '51:4: Y006 Use only < and >= for version comparisons',
+            '60:4: Y002 If test must be a simple comparison against sys.platform or sys.version_info',
+        )
+        self.checkFileOutput('sysversioninfo.pyi', stdout_lines=stdout_lines)
+
+    def test_comparisons(self) -> None:
+        stdout_lines = (
+            '3:4: Y002 If test must be a simple comparison against sys.platform or sys.version_info',
+            '6:4: Y002 If test must be a simple comparison against sys.platform or sys.version_info',
+            '9:4: Y002 If test must be a simple comparison against sys.platform or sys.version_info',
+            '12:4: Y002 If test must be a simple comparison against sys.platform or sys.version_info',
+        )
+        self.checkFileOutput('comparisons.pyi', stdout_lines=stdout_lines)
+
 
 if __name__ == '__main__':
     unittest.main()
