@@ -1,0 +1,13 @@
+import sys
+
+if sys.version == 'Python 2.7.10':  # Y002
+    ...
+
+if 'linux' == sys.platform:  # Y002
+    ...
+
+if hasattr(sys, 'maxint'):  # Y002
+    ...
+
+if sys.maxsize == 42:  # Y002
+    ...
