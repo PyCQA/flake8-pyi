@@ -111,6 +111,15 @@ class PyiTestCase(unittest.TestCase):
         )
         self.checkFileOutput('comparisons.pyi', stdout_lines=stdout_lines)
 
+    def test_function_def(self) -> None:
+        stdout_lines = (
+            '5:5: Y009 Empty body should contain "...", not "pass"',
+            '16:9: Y010 Function body must contain only "..."',
+            '19:5: Y010 Function body must contain only "..."',
+            '23:5: Y010 Function body must contain only "..."',
+        )
+        self.checkFileOutput('emptyfunctions.pyi', stdout_lines=stdout_lines)
+
 
 if __name__ == '__main__':
     unittest.main()
