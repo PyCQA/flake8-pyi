@@ -253,8 +253,6 @@ class PyiVisitor(ast.NodeVisitor):
             if i == 0:
                 # normally, should just be "..."
                 if isinstance(statement, ast.Pass):
-                    # should disable this if https://github.com/python/typeshed/pull/1009 isn't
-                    # accepted
                     self.error(statement, Y009)
                     continue
                 elif isinstance(statement, ast.Expr) and isinstance(statement.value, ast.Ellipsis):
@@ -264,10 +262,8 @@ class PyiVisitor(ast.NodeVisitor):
                 continue
             # allow assignments in constructor for now
             # (though these should probably be changed)
-            if node.name == '__init__' and isinstance(statement, ast.Assign) and \
-                    isinstance(statement.targets[0], ast.Attribute) and \
-                    isinstance(statement.targets[0].value, ast.Name) and \
-                    statement.targets[0].value.id == 'self':
+            if node.name == '__init__':
+                self.error(statement, Y090)
                 continue
             self.error(statement, Y010)
 
@@ -292,12 +288,15 @@ class PyiTreeChecker:
 
     tree = attr.ib(default=None)
     filename = attr.ib(default='(none)')
+    options = attr.ib(default=None)
 
     def run(self):
         path = Path(self.filename)
         if path.suffix == '.pyi':
             visitor = PyiVisitor(filename=path)
-            yield from visitor.run(self.tree)
+            for error in visitor.run(self.tree):
+                if self.should_warn(error.message[:4]):
+                    yield error
 
     @classmethod
     def add_options(cls, parser):
@@ -314,12 +313,35 @@ class PyiTreeChecker:
             parse_from_config=True,
             help="don't patch flake8 with .pyi-aware file checker",
         )
+        parser.extend_default_ignore(DISABLED_BY_DEFAULT)
 
     @classmethod
     def parse_options(cls, optmanager, options, extra_args):
         """This is also brittle, only checked with flake8 3.2.1 and master."""
         if not options.no_pyi_aware_file_checker:
             checker.FileChecker = PyiAwareFileChecker
+
+    # Functionality to ignore some warnings. Adapted from flake8-bugbear.
+    def should_warn(self, code):
+        """Returns `True` if flake8-pyi should emit a particular warning.
+        flake8 overrides default ignores when the user specifies
+        `ignore = ` in configuration.  This is problematic because it means
+        specifying anything in `ignore = ` implicitly enables all optional
+        warnings.  This function is a workaround for this behavior.
+        Users should explicitly enable these warnings.
+        """
+        if code[:3] != 'Y09':
+            # Normal warnings are safe for emission.
+            return True
+
+        if self.options is None:
+            return True
+
+        for i in range(2, len(code) + 1):
+            if code[:i] in self.options.select:
+                return True
+
+        return False
 
 
 Y001 = 'Y001 Name of private TypeVar must start with _'
@@ -332,3 +354,6 @@ Y007 = 'Y007 Unrecognized sys.platform check'
 Y008 = 'Y008 Unrecognized platform "{platform}"'
 Y009 = 'Y009 Empty body should contain "...", not "pass"'
 Y010 = 'Y010 Function body must contain only "..."'
+Y090 = 'Y090 Use explicit attributes instead of assignments in __init__'
+
+DISABLED_BY_DEFAULT = [Y090]

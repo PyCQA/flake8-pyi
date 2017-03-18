@@ -9,9 +9,10 @@ import unittest
 class PyiTestCase(unittest.TestCase):
     maxDiff = None  # type: int
 
-    def checkFile(self, filename: str, pyi_aware: bool) -> Tuple[int, str, str]:
+    def checkFile(self, filename: str, pyi_aware: bool,
+                  extra_options: Sequence[str] = ()) -> Tuple[int, str, str]:
         file_path = Path(__file__).absolute().parent / filename
-        cmdline = ['flake8', '-j0', str(file_path)]
+        cmdline = ['flake8', '-j0', *extra_options, str(file_path)]
         if not pyi_aware:
             cmdline.insert(-1, '--no-pyi-aware-file-checker')
         env = os.environ.copy()
@@ -28,12 +29,13 @@ class PyiTestCase(unittest.TestCase):
         return proc.returncode, stdout_text, stderr_text
 
     def checkFileOutput(self, filename: str, *, pyi_aware: bool = True,
-                        stdout_lines: Sequence[str] = (), stderr_lines: Sequence[str] = ()) -> None:
-        returncode, stdout, stderr = self.checkFile(filename, pyi_aware=pyi_aware)
+                        stdout_lines: Sequence[str] = (), stderr_lines: Sequence[str] = (),
+                        extra_options: Sequence[str] = ()) -> None:
+        returncode, stdout, stderr = self.checkFile(filename, pyi_aware=pyi_aware,
+                                                    extra_options=extra_options)
         expected_returncode = 1 if stdout else 0
-        self.assertEqual(returncode, expected_returncode, stdout)
 
-        for (actual, expected_lines) in [(stdout, stdout_lines), (stderr, stderr_lines)]:
+        for (actual, expected_lines) in [(stderr, stderr_lines), (stdout, stdout_lines)]:
             actual = '\n'.join(
                 line.split('/')[-1] for line in actual.split('\n') if line
             )
@@ -42,6 +44,8 @@ class PyiTestCase(unittest.TestCase):
                 for line in expected_lines
             )
             self.assertMultiLineEqual(expected, actual)
+
+        self.assertEqual(returncode, expected_returncode, stdout)
 
     def test_vanilla_flake8_not_clean_forward_refs(self) -> None:
         stdout_lines = (
@@ -114,11 +118,19 @@ class PyiTestCase(unittest.TestCase):
     def test_function_def(self) -> None:
         stdout_lines = (
             '5:5: Y009 Empty body should contain "...", not "pass"',
-            '16:9: Y010 Function body must contain only "..."',
             '19:5: Y010 Function body must contain only "..."',
             '23:5: Y010 Function body must contain only "..."',
         )
         self.checkFileOutput('emptyfunctions.pyi', stdout_lines=stdout_lines)
+
+    def test_empty_init(self) -> None:
+        # should have no output if it's not explicitly selected
+        self.checkFileOutput('emptyinit.pyi', stdout_lines=())
+        stdout_lines = (
+            '3:9: Y090 Use explicit attributes instead of assignments in __init__',
+        )
+        self.checkFileOutput('emptyinit.pyi', stdout_lines=stdout_lines,
+                             extra_options=('--select=Y090',))
 
 
 if __name__ == '__main__':
