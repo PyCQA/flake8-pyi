@@ -246,6 +246,31 @@ class PyiVisitor(ast.NodeVisitor):
         else:
             self.error(node, Y007)
 
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        self.generic_visit(node)
+
+        for i, statement in enumerate(node.body):
+            if i == 0:
+                # normally, should just be "..."
+                if isinstance(statement, ast.Pass):
+                    # should disable this if https://github.com/python/typeshed/pull/1009 isn't
+                    # accepted
+                    self.error(statement, Y009)
+                    continue
+                elif isinstance(statement, ast.Expr) and isinstance(statement.value, ast.Ellipsis):
+                    continue
+            # allow "raise", a number of stubs have this
+            if isinstance(statement, ast.Raise):
+                continue
+            # allow assignments in constructor for now
+            # (though these should probably be changed)
+            if node.name == '__init__' and isinstance(statement, ast.Assign) and \
+                    isinstance(statement.targets[0], ast.Attribute) and \
+                    isinstance(statement.targets[0].value, ast.Name) and \
+                    statement.targets[0].value.id == 'self':
+                continue
+            self.error(statement, Y010)
+
     def error(self, node: ast.AST, message: str) -> None:
         self.errors.append(Error(
             node.lineno,
@@ -305,3 +330,5 @@ Y005 = 'Y005 Version comparison must be against a length-{n} tuple'
 Y006 = 'Y006 Use only < and >= for version comparisons'
 Y007 = 'Y007 Unrecognized sys.platform check'
 Y008 = 'Y008 Unrecognized platform "{platform}"'
+Y009 = 'Y009 Empty body should contain "...", not "pass"'
+Y010 = 'Y010 Function body must contain only "..."'
