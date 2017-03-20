@@ -13,7 +13,7 @@ class GoodClass:
 
 class BadClass:
     def __init__(self, b: GoodClass, x: int) -> None:
-        b.x = x  # Y010
+        b.x = x
 
 def returning(x: int) -> float:
     return x / 2  # Y010
