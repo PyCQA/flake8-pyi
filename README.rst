@@ -27,7 +27,8 @@ currently pretty brittle (might break with future versions of ``pyflakes``,
 List of warnings
 ----------------
 
-The following warnings are currently emitted:
+This plugin reserves codes starting with **Y0**. The following warnings are
+currently emitted:
 
 * Y001: Names of TypeVars in stubs should start with `_`. This makes sure you 
   don't accidentally expose names internal to the stub.
@@ -72,8 +73,6 @@ The following warnings are disabled by default:
      class Thing:
          x: str
          def __init__(self, x: str) -> None: ...
-
-This plugin reserves codes starting with **Y0**.
 
 
 License
