@@ -30,10 +30,10 @@ List of warnings
 This plugin reserves codes starting with **Y0**. The following warnings are
 currently emitted:
 
-* Y001: Names of TypeVars in stubs should start with `_`. This makes sure you 
+* Y001: Names of TypeVars in stubs should start with `_`. This makes sure you
   don't accidentally expose names internal to the stub.
-* Y002: If test must be a simple comparison against `sys.platform` or 
-  `sys.version_info`. Stub files support simple conditionals to indicate 
+* Y002: If test must be a simple comparison against `sys.platform` or
+  `sys.version_info`. Stub files support simple conditionals to indicate
   differences between Python versions or platforms, but type checkers only
   understand a limited subset of Python syntax, and this warning triggers on
   conditionals that type checkers will probably not understand.
@@ -51,7 +51,7 @@ currently emitted:
 * Y007: Unrecognized `sys.platform` check. Platform checks should be simple
   string comparisons.
 * Y008: Unrecognized platform. To prevent you from typos, we warn if you use a
-  platform name outside a small set of known platforms (e.g. "linux" and 
+  platform name outside a small set of known platforms (e.g. "linux" and
   "win32").
 * Y009: Empty body should contain "...", not "pass". This is just a stylistic
   choice, but it's the one typeshed made.
@@ -63,13 +63,13 @@ The following warnings are disabled by default:
 
 * Y090: Use explicit attributes instead of assignments in `__init__`. This
   is a stricter version of Y010. Instead of::
-    
+
     class Thing:
         def __init__(self, x: str) -> None:
             self.x = x
-  
+
   you should write::
-  
+
      class Thing:
          x: str
          def __init__(self, x: str) -> None: ...
@@ -93,6 +93,12 @@ Note: tests require 3.6+ due to testing variable annotations.
 
 Change Log
 ----------
+
+17.3.0
+~~~~~~
+
+* introduce Y001 - Y010
+* introduce optional Y090
 
 17.1.0
 ~~~~~~
