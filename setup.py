@@ -7,7 +7,7 @@ from setuptools import setup
 import sys
 
 
-assert sys.version_info >= (3, 5, 0), "flake8-pyi requires Python 3.5+"
+assert sys.version_info >= (3, 6, 0), "flake8-pyi requires Python 3.6+"
 
 
 current_dir = os.path.abspath(os.path.dirname(__file__))
@@ -45,7 +45,6 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: Software Development :: Quality Assurance',
