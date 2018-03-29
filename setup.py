@@ -35,6 +35,7 @@ setup(
     license='MIT',
     py_modules=['pyi'],
     zip_safe=False,
+    python_requires=">=3.6",
     install_requires=['flake8 >= 3.2.1', 'attrs'],
     test_suite='tests.test_pyi',
     classifiers=[
