@@ -5,6 +5,7 @@ import ast
 import attr
 from flake8 import checker
 from flake8.plugins.pyflakes import FlakesChecker
+from itertools import chain
 from pathlib import Path
 from pyflakes.checker import PY2, ClassDefinition
 from pyflakes.checker import ModuleScope, ClassScope, FunctionScope
@@ -267,6 +268,17 @@ class PyiVisitor(ast.NodeVisitor):
                 continue
             self.error(statement, Y010)
 
+    def visit_arguments(self, node: ast.arguments) -> None:
+        self.generic_visit(node)
+        args = node.args[-len(node.defaults):]
+        for arg, default in chain(zip(args, node.defaults), zip(node.kwonlyargs, node.kw_defaults)):
+            if default is None:
+                continue  # keyword-only arg without a default
+            if arg.annotation is None:
+                continue  # we don't care if the argument is untyped
+            if not isinstance(default, ast.Ellipsis):
+                self.error(default, Y011)
+
     def error(self, node: ast.AST, message: str) -> None:
         self.errors.append(Error(
             node.lineno,
@@ -354,6 +366,7 @@ Y007 = 'Y007 Unrecognized sys.platform check'
 Y008 = 'Y008 Unrecognized platform "{platform}"'
 Y009 = 'Y009 Empty body should contain "...", not "pass"'
 Y010 = 'Y010 Function body must contain only "..."'
+Y011 = 'Y011 Default values for typed arguments must be "..."'
 Y090 = 'Y090 Use explicit attributes instead of assignments in __init__'
 
 DISABLED_BY_DEFAULT = [Y090]

@@ -132,6 +132,14 @@ class PyiTestCase(unittest.TestCase):
         self.checkFileOutput('emptyinit.pyi', stdout_lines=stdout_lines,
                              extra_options=('--select=Y090',))
 
+    def test_defaults(self) -> None:
+        stdout_lines = (
+            '3:17: Y011 Default values for typed arguments must be "..."',
+            '7:20: Y011 Default values for typed arguments must be "..."',
+            '13:20: Y011 Default values for typed arguments must be "..."',
+        )
+        self.checkFileOutput('defaults.pyi', stdout_lines=stdout_lines)
+
 
 if __name__ == '__main__':
     unittest.main()
