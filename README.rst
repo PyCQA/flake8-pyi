@@ -58,6 +58,9 @@ currently emitted:
 * Y010: Function body must contain only "...". Stub files should not contain
   code, so function bodies should be empty. Currently, we make exceptions for
   raise statements and for assignments in `__init__` methods.
+* Y011: All default values for typed function arguments must be "...". Type
+  checkers ignore the default value, so the default value is not useful
+  information in a stub file.
 
 The following warnings are disabled by default:
 
@@ -88,11 +91,20 @@ Just run::
 
     python3.6 setup.py test
 
+Or if you prefer::
+
+    tox
+
 Note: tests require 3.6+ due to testing variable annotations.
 
 
 Change Log
 ----------
+
+18.3.0
+~~~~~~
+
+* introduce Y011
 
 17.3.0
 ~~~~~~
