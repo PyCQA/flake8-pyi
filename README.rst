@@ -101,10 +101,15 @@ Note: tests require 3.6+ due to testing variable annotations.
 Change Log
 ----------
 
-18.3.0
+18.3.1
 ~~~~~~
 
 * introduce Y011
+
+18.3.0
+~~~~~~
+
+* (release herp derp, don't use)
 
 17.3.0
 ~~~~~~
