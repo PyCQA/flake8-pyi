@@ -115,6 +115,16 @@ class PyiTestCase(unittest.TestCase):
         )
         self.checkFileOutput('comparisons.pyi', stdout_lines=stdout_lines)
 
+    def test_class_def(self) -> None:
+        stdout_lines = (
+            '5:5: Y009 Empty body should contain "...", not "pass"',
+            '9:5: Y012 Class body must not contain "pass"',
+            '12:5: Y012 Class body must not contain "pass"',
+            '17:5: Y013 Non-empty class body must not contain "..."',
+            '20:5: Y013 Non-empty class body must not contain "..."',
+        )
+        self.checkFileOutput('emptyclasses.pyi', stdout_lines=stdout_lines)
+
     def test_function_def(self) -> None:
         stdout_lines = (
             '5:5: Y009 Empty body should contain "...", not "pass"',

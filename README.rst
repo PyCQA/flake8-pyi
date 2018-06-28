@@ -61,6 +61,8 @@ currently emitted:
 * Y011: All default values for typed function arguments must be "...". Type
   checkers ignore the default value, so the default value is not useful
   information in a stub file.
+* Y012: Class body must not contain "pass".
+* Y013: Non-empty class body must not contain "...".
 
 The following warnings are disabled by default:
 
