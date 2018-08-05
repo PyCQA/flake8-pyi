@@ -1,2 +1,3 @@
 include *.rst
+include .flake8
 recursive-include tests *.pyi *.py
