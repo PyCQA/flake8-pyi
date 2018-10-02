@@ -115,11 +115,16 @@ class PyiAwareFlakesChecker(FlakesChecker):
 
 class PyiAwareFileChecker(checker.FileChecker):
     def run_check(self, plugin, **kwargs):
-        if self.filename.endswith('.pyi') and plugin['plugin'] == FlakesChecker:
+        if self.filename == '-':
+            filename = self.options.stdin_display_name
+        else:
+            filename = self.filename
+
+        if filename.endswith('.pyi') and plugin['plugin'] == FlakesChecker:
             LOG.info(
                 'Replacing FlakesChecker with PyiAwareFlakesChecker while '
                 'checking %r',
-                self.filename,
+                filename,
             )
             plugin = dict(plugin)
             plugin['plugin'] = PyiAwareFlakesChecker
