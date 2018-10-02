@@ -28,24 +28,51 @@ class PyiTestCase(unittest.TestCase):
         stderr_text = proc.stderr.decode('utf8')
         return proc.returncode, stdout_text, stderr_text
 
+    def checkStdin(self, filename: str, pyi_aware: bool,
+                   extra_options: Sequence[str] = ()) -> Tuple[int, str, str]:
+        file_path = Path(__file__).absolute().parent / filename
+        cmdline = ['flake8', '-j0', '--stdin-display-name=' + filename, *extra_options, '-']
+        if not pyi_aware:
+            cmdline.insert(-1, '--no-pyi-aware-file-checker')
+        env = os.environ.copy()
+        env['PYTHONWARNINGS'] = 'ignore'
+        proc = subprocess.run(
+            cmdline,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=60,
+            env=env,
+            input=file_path.read_bytes(),
+        )
+        stdout_text = proc.stdout.decode('utf8')
+        stderr_text = proc.stderr.decode('utf8')
+        return proc.returncode, stdout_text, stderr_text
+
     def checkFileOutput(self, filename: str, *, pyi_aware: bool = True,
                         stdout_lines: Sequence[str] = (), stderr_lines: Sequence[str] = (),
                         extra_options: Sequence[str] = ()) -> None:
-        returncode, stdout, stderr = self.checkFile(filename, pyi_aware=pyi_aware,
-                                                    extra_options=extra_options)
-        expected_returncode = 1 if stdout else 0
+        def check_output(returncode: int, stdout: str, stderr: str):
+            expected_returncode = 1 if stdout else 0
 
-        for (actual, expected_lines) in [(stderr, stderr_lines), (stdout, stdout_lines)]:
-            actual = '\n'.join(
-                line.split('/')[-1] for line in actual.split('\n') if line
-            )
-            expected = '\n'.join(
-                '{filename}:{line}'.format(filename=filename, line=line)
-                for line in expected_lines
-            )
-            self.assertMultiLineEqual(expected, actual)
+            for (actual, expected_lines) in [(stderr, stderr_lines), (stdout, stdout_lines)]:
+                actual = '\n'.join(
+                    line.split('/')[-1] for line in actual.split('\n') if line
+                )
+                expected = '\n'.join(
+                    '{filename}:{line}'.format(filename=filename, line=line)
+                    for line in expected_lines
+                )
+                self.assertMultiLineEqual(expected, actual)
 
-        self.assertEqual(returncode, expected_returncode, stdout)
+            self.assertEqual(returncode, expected_returncode, stdout)
+
+        with self.subTest(stdin=False):
+            check_output(*self.checkFile(filename, pyi_aware=pyi_aware,
+                                         extra_options=extra_options))
+
+        with self.subTest(stdin=True):
+            check_output(*self.checkStdin(filename, pyi_aware=pyi_aware,
+                                          extra_options=extra_options))
 
     def test_vanilla_flake8_not_clean_forward_refs(self) -> None:
         stdout_lines = (
