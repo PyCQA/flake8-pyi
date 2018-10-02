@@ -252,6 +252,26 @@ class PyiVisitor(ast.NodeVisitor):
         else:
             self.error(node, Y007)
 
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        self.generic_visit(node)
+
+        # empty class body should contain "..." not "pass"
+        if len(node.body) == 1:
+            statement = node.body[0]
+            if isinstance(statement, ast.Expr) and isinstance(statement.value, ast.Ellipsis):
+                return
+            elif isinstance(statement, ast.Pass):
+                self.error(statement, Y009)
+                return
+
+        for i, statement in enumerate(node.body):
+            # "pass" should not used in class body
+            if isinstance(statement, ast.Pass):
+                self.error(statement, Y012)
+            # "..." should not be used in non-empty class body
+            elif isinstance(statement, ast.Expr) and isinstance(statement.value, ast.Ellipsis):
+                self.error(statement, Y013)
+
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         self.generic_visit(node)
 
@@ -372,6 +392,8 @@ Y008 = 'Y008 Unrecognized platform "{platform}"'
 Y009 = 'Y009 Empty body should contain "...", not "pass"'
 Y010 = 'Y010 Function body must contain only "..."'
 Y011 = 'Y011 Default values for typed arguments must be "..."'
+Y012 = 'Y012 Class body must not contain "pass"'
+Y013 = 'Y013 Non-empty class body must not contain "..."'
 Y090 = 'Y090 Use explicit attributes instead of assignments in __init__'
 
 DISABLED_BY_DEFAULT = [Y090]
