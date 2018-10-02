@@ -101,6 +101,11 @@ Note: tests require 3.6+ due to testing variable annotations.
 Change Log
 ----------
 
+18.10.0
+~~~~~~~
+
+* use --stdin-display-name as the filename when reading from stdin
+
 18.3.1
 ~~~~~~
 
