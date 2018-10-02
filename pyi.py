@@ -124,7 +124,7 @@ class PyiAwareFileChecker(checker.FileChecker):
             LOG.info(
                 'Replacing FlakesChecker with PyiAwareFlakesChecker while '
                 'checking %r',
-                filename
+                filename,
             )
             plugin = dict(plugin)
             plugin['plugin'] = PyiAwareFlakesChecker
