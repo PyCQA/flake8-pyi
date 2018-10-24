@@ -96,9 +96,9 @@ class PyiAwareFlakesChecker(FlakesChecker):
         self.pushScope(ClassScope)
         # doctest does not process doctest within a doctest
         # classes within classes are processed.
-        if (self.withDoctest and
-                not self._in_doctest() and
-                not isinstance(self.scope, FunctionScope)):
+        if (self.withDoctest
+                and not self._in_doctest()
+                and not isinstance(self.scope, FunctionScope)):
             self.deferFunction(lambda: self.handleDoctests(node))
         for stmt in node.body:
             self.handleNode(stmt, node)
