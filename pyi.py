@@ -299,10 +299,11 @@ class PyiVisitor(ast.NodeVisitor):
         for arg, default in chain(zip(args, node.defaults), zip(node.kwonlyargs, node.kw_defaults)):
             if default is None:
                 continue  # keyword-only arg without a default
-            if arg.annotation is None:
-                continue  # we don't care if the argument is untyped
             if not isinstance(default, ast.Ellipsis):
-                self.error(default, Y011)
+                if arg.annotation is None:
+                    self.error(default, Y014)
+                else:
+                    self.error(default, Y011)
 
     def error(self, node: ast.AST, message: str) -> None:
         self.errors.append(Error(
@@ -394,6 +395,7 @@ Y010 = 'Y010 Function body must contain only "..."'
 Y011 = 'Y011 Default values for typed arguments must be "..."'
 Y012 = 'Y012 Class body must not contain "pass"'
 Y013 = 'Y013 Non-empty class body must not contain "..."'
+Y014 = 'Y014 Default values for arguments must be "..."'
 Y090 = 'Y090 Use explicit attributes instead of assignments in __init__'
 
 DISABLED_BY_DEFAULT = [Y090]
