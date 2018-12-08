@@ -173,6 +173,7 @@ class PyiTestCase(unittest.TestCase):
         stdout_lines = (
             '3:17: Y011 Default values for typed arguments must be "..."',
             '7:20: Y011 Default values for typed arguments must be "..."',
+            '9:10: Y014 Default values for arguments must be "..."',
             '13:20: Y011 Default values for typed arguments must be "..."',
         )
         self.checkFileOutput('defaults.pyi', stdout_lines=stdout_lines)

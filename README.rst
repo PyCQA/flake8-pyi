@@ -63,6 +63,8 @@ currently emitted:
   information in a stub file.
 * Y012: Class body must not contain "pass".
 * Y013: Non-empty class body must not contain "...".
+* Y014: All default values for arguments must be "...". A stronger version
+  of Y011 that includes arguments without type annotations.
 
 The following warnings are disabled by default:
 
