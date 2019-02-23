@@ -6,12 +6,13 @@ import attr
 from flake8 import checker
 from flake8.plugins.pyflakes import FlakesChecker
 from itertools import chain
+import optparse
 from pathlib import Path
 from pyflakes.checker import PY2, ClassDefinition
 from pyflakes.checker import ModuleScope, ClassScope, FunctionScope
 from typing import Any, Iterable, NamedTuple, Optional, Type
 
-__version__ = '18.3.1'
+__version__ = '19.2.0'
 
 LOG = logging.getLogger('flake8.pyi')
 
@@ -346,11 +347,15 @@ class PyiTreeChecker:
                 option.to_optparse().default = option.default
                 parser.parser.defaults[option.dest] = option.default
 
-        parser.add_option(
-            '--no-pyi-aware-file-checker', default=False, action='store_true',
-            parse_from_config=True,
-            help="don't patch flake8 with .pyi-aware file checker",
-        )
+        try:
+            parser.add_option(
+                '--no-pyi-aware-file-checker', default=False, action='store_true',
+                parse_from_config=True,
+                help="don't patch flake8 with .pyi-aware file checker",
+            )
+        except optparse.OptionConflictError:
+            # In tests, sometimes this option gets called twice for some reason.
+            pass
         parser.extend_default_ignore(DISABLED_BY_DEFAULT)
 
     @classmethod

@@ -105,9 +105,12 @@ Note: tests require 3.6+ due to testing variable annotations.
 Change Log
 ----------
 
-18.10.0
+19.2.0
 ~~~~~~~
 
+* support Python 3.7
+* add a check for non-ellipsis, non-typed arguments
+* add checks for checking empty classes
 * use --stdin-display-name as the filename when reading from stdin
 
 18.3.1
