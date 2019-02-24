@@ -12,17 +12,14 @@ from pyflakes.checker import PY2, ClassDefinition
 from pyflakes.checker import ModuleScope, ClassScope, FunctionScope
 from typing import Any, Iterable, NamedTuple, Optional, Type
 
-__version__ = '19.2.0'
+__version__ = "19.2.0"
 
-LOG = logging.getLogger('flake8.pyi')
+LOG = logging.getLogger("flake8.pyi")
 
 
-Error = NamedTuple('Error', [
-    ('lineno', int),
-    ('col', int),
-    ('message', str),
-    ('type', Type[Any]),
-])
+Error = NamedTuple(
+    "Error", [("lineno", int), ("col", int), ("message", str), ("type", Type[Any])]
+)
 
 
 class PyiAwareFlakesChecker(FlakesChecker):
@@ -97,9 +94,11 @@ class PyiAwareFlakesChecker(FlakesChecker):
         self.pushScope(ClassScope)
         # doctest does not process doctest within a doctest
         # classes within classes are processed.
-        if (self.withDoctest
-                and not self._in_doctest()
-                and not isinstance(self.scope, FunctionScope)):
+        if (
+            self.withDoctest
+            and not self._in_doctest()
+            and not isinstance(self.scope, FunctionScope)
+        ):
             self.deferFunction(lambda: self.handleDoctests(node))
         for stmt in node.body:
             self.handleNode(stmt, node)
@@ -116,25 +115,25 @@ class PyiAwareFlakesChecker(FlakesChecker):
 
 class PyiAwareFileChecker(checker.FileChecker):
     def run_check(self, plugin, **kwargs):
-        if self.filename == '-':
+        if self.filename == "-":
             filename = self.options.stdin_display_name
         else:
             filename = self.filename
 
-        if filename.endswith('.pyi') and plugin['plugin'] == FlakesChecker:
+        if filename.endswith(".pyi") and plugin["plugin"] == FlakesChecker:
             LOG.info(
-                'Replacing FlakesChecker with PyiAwareFlakesChecker while '
-                'checking %r',
+                "Replacing FlakesChecker with PyiAwareFlakesChecker while "
+                "checking %r",
                 filename,
             )
             plugin = dict(plugin)
-            plugin['plugin'] = PyiAwareFlakesChecker
+            plugin["plugin"] = PyiAwareFlakesChecker
         return super().run_check(plugin, **kwargs)
 
 
 @attr.s
 class PyiVisitor(ast.NodeVisitor):
-    filename = attr.ib(default=Path('(none)'))
+    filename = attr.ib(default=Path("(none)"))
     errors = attr.ib(default=attr.Factory(list))
 
     def visit_Assign(self, node: ast.Assign) -> None:
@@ -142,12 +141,15 @@ class PyiVisitor(ast.NodeVisitor):
         private.
         """
         self.generic_visit(node)
-        if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Name) and \
-                node.value.func.id == 'TypeVar':
+        if (
+            isinstance(node.value, ast.Call)
+            and isinstance(node.value.func, ast.Name)
+            and node.value.func.id == "TypeVar"
+        ):
             for target in node.targets:
-                if isinstance(target, ast.Name) and not target.id.startswith('_'):
+                if isinstance(target, ast.Name) and not target.id.startswith("_"):
                     # avoid catching AnyStr in typing (the only library TypeVar so far)
-                    if not self.filename.name == 'typing.pyi':
+                    if not self.filename.name == "typing.pyi":
                         self.error(target, Y001)
 
     def visit_If(self, node: ast.If) -> None:
@@ -170,10 +172,10 @@ class PyiVisitor(ast.NodeVisitor):
         if isinstance(node.left, ast.Subscript):
             self._check_subscript_version_check(node)
         elif isinstance(node.left, ast.Attribute):
-            if isinstance(node.left.value, ast.Name) and node.left.value.id == 'sys':
-                if node.left.attr == 'platform':
+            if isinstance(node.left.value, ast.Name) and node.left.value.id == "sys":
+                if node.left.attr == "platform":
                     self._check_platform_check(node)
-                elif node.left.attr == 'version_info':
+                elif node.left.attr == "version_info":
                     self._check_version_check(node)
                 else:
                     self.error(node, Y002)
@@ -208,12 +210,19 @@ class PyiVisitor(ast.NodeVisitor):
             else:
                 # extended slicing
                 self.error(node, Y003)
-        self._check_version_check(node, must_be_single=must_be_single,
-                                  can_have_strict_equals=can_have_strict_equals)
+        self._check_version_check(
+            node,
+            must_be_single=must_be_single,
+            can_have_strict_equals=can_have_strict_equals,
+        )
 
-    def _check_version_check(self, node: ast.Compare, *,
-                             must_be_single: bool = False,
-                             can_have_strict_equals: Optional[int] = None) -> None:
+    def _check_version_check(
+        self,
+        node: ast.Compare,
+        *,
+        must_be_single: bool = False,
+        can_have_strict_equals: Optional[int] = None
+    ) -> None:
         comparator = node.comparators[0]
         if must_be_single:
             if not isinstance(comparator, ast.Num) or not isinstance(comparator.n, int):
@@ -248,7 +257,7 @@ class PyiVisitor(ast.NodeVisitor):
         if isinstance(comparator, ast.Str):
             # other values are possible but we don't need them right now
             # this protects against typos
-            if comparator.s not in ('linux', 'win32', 'cygwin', 'darwin'):
+            if comparator.s not in ("linux", "win32", "cygwin", "darwin"):
                 self.error(node, Y008.format(platform=comparator.s))
         else:
             self.error(node, Y007)
@@ -259,7 +268,9 @@ class PyiVisitor(ast.NodeVisitor):
         # empty class body should contain "..." not "pass"
         if len(node.body) == 1:
             statement = node.body[0]
-            if isinstance(statement, ast.Expr) and isinstance(statement.value, ast.Ellipsis):
+            if isinstance(statement, ast.Expr) and isinstance(
+                statement.value, ast.Ellipsis
+            ):
                 return
             elif isinstance(statement, ast.Pass):
                 self.error(statement, Y009)
@@ -270,7 +281,9 @@ class PyiVisitor(ast.NodeVisitor):
             if isinstance(statement, ast.Pass):
                 self.error(statement, Y012)
             # "..." should not be used in non-empty class body
-            elif isinstance(statement, ast.Expr) and isinstance(statement.value, ast.Ellipsis):
+            elif isinstance(statement, ast.Expr) and isinstance(
+                statement.value, ast.Ellipsis
+            ):
                 self.error(statement, Y013)
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
@@ -282,22 +295,26 @@ class PyiVisitor(ast.NodeVisitor):
                 if isinstance(statement, ast.Pass):
                     self.error(statement, Y009)
                     continue
-                elif isinstance(statement, ast.Expr) and isinstance(statement.value, ast.Ellipsis):
+                elif isinstance(statement, ast.Expr) and isinstance(
+                    statement.value, ast.Ellipsis
+                ):
                     continue
             # allow "raise", a number of stubs have this
             if isinstance(statement, ast.Raise):
                 continue
             # allow assignments in constructor for now
             # (though these should probably be changed)
-            if node.name == '__init__':
+            if node.name == "__init__":
                 self.error(statement, Y090)
                 continue
             self.error(statement, Y010)
 
     def visit_arguments(self, node: ast.arguments) -> None:
         self.generic_visit(node)
-        args = node.args[-len(node.defaults):]
-        for arg, default in chain(zip(args, node.defaults), zip(node.kwonlyargs, node.kw_defaults)):
+        args = node.args[-len(node.defaults) :]
+        for arg, default in chain(
+            zip(args, node.defaults), zip(node.kwonlyargs, node.kw_defaults)
+        ):
             if default is None:
                 continue  # keyword-only arg without a default
             if not isinstance(default, ast.Ellipsis):
@@ -307,12 +324,7 @@ class PyiVisitor(ast.NodeVisitor):
                     self.error(default, Y011)
 
     def error(self, node: ast.AST, message: str) -> None:
-        self.errors.append(Error(
-            node.lineno,
-            node.col_offset,
-            message,
-            PyiTreeChecker
-        ))
+        self.errors.append(Error(node.lineno, node.col_offset, message, PyiTreeChecker))
 
     def run(self, tree: ast.AST) -> Iterable[Error]:
         self.errors.clear()
@@ -322,16 +334,16 @@ class PyiVisitor(ast.NodeVisitor):
 
 @attr.s
 class PyiTreeChecker:
-    name = 'flake8-pyi'
+    name = "flake8-pyi"
     version = __version__
 
     tree = attr.ib(default=None)
-    filename = attr.ib(default='(none)')
+    filename = attr.ib(default="(none)")
     options = attr.ib(default=None)
 
     def run(self):
         path = Path(self.filename)
-        if path.suffix == '.pyi':
+        if path.suffix == ".pyi":
             visitor = PyiVisitor(filename=path)
             for error in visitor.run(self.tree):
                 if self.should_warn(error.message[:4]):
@@ -341,15 +353,17 @@ class PyiTreeChecker:
     def add_options(cls, parser):
         """This is brittle, there's multiple levels of caching of defaults."""
         for option in parser.options:
-            if option.long_option_name == '--filename':
-                option.default = '*.py,*.pyi'
-                option.option_kwargs['default'] = option.default
+            if option.long_option_name == "--filename":
+                option.default = "*.py,*.pyi"
+                option.option_kwargs["default"] = option.default
                 option.to_optparse().default = option.default
                 parser.parser.defaults[option.dest] = option.default
 
         try:
             parser.add_option(
-                '--no-pyi-aware-file-checker', default=False, action='store_true',
+                "--no-pyi-aware-file-checker",
+                default=False,
+                action="store_true",
                 parse_from_config=True,
                 help="don't patch flake8 with .pyi-aware file checker",
             )
@@ -373,7 +387,7 @@ class PyiTreeChecker:
         warnings.  This function is a workaround for this behavior.
         Users should explicitly enable these warnings.
         """
-        if code[:3] != 'Y09':
+        if code[:3] != "Y09":
             # Normal warnings are safe for emission.
             return True
 
@@ -387,13 +401,15 @@ class PyiTreeChecker:
         return False
 
 
-Y001 = 'Y001 Name of private TypeVar must start with _'
-Y002 = 'Y002 If test must be a simple comparison against sys.platform or sys.version_info'
-Y003 = 'Y003 Unrecognized sys.version_info check'
-Y004 = 'Y004 Version comparison must use only major and minor version'
-Y005 = 'Y005 Version comparison must be against a length-{n} tuple'
-Y006 = 'Y006 Use only < and >= for version comparisons'
-Y007 = 'Y007 Unrecognized sys.platform check'
+Y001 = "Y001 Name of private TypeVar must start with _"
+Y002 = (
+    "Y002 If test must be a simple comparison against sys.platform or sys.version_info"
+)
+Y003 = "Y003 Unrecognized sys.version_info check"
+Y004 = "Y004 Version comparison must use only major and minor version"
+Y005 = "Y005 Version comparison must be against a length-{n} tuple"
+Y006 = "Y006 Use only < and >= for version comparisons"
+Y007 = "Y007 Unrecognized sys.platform check"
 Y008 = 'Y008 Unrecognized platform "{platform}"'
 Y009 = 'Y009 Empty body should contain "...", not "pass"'
 Y010 = 'Y010 Function body must contain only "..."'
@@ -401,6 +417,6 @@ Y011 = 'Y011 Default values for typed arguments must be "..."'
 Y012 = 'Y012 Class body must not contain "pass"'
 Y013 = 'Y013 Non-empty class body must not contain "..."'
 Y014 = 'Y014 Default values for arguments must be "..."'
-Y090 = 'Y090 Use explicit attributes instead of assignments in __init__'
+Y090 = "Y090 Use explicit attributes instead of assignments in __init__"
 
 DISABLED_BY_DEFAULT = [Y090]
