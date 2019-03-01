@@ -105,6 +105,11 @@ Note: tests require 3.6+ due to testing variable annotations.
 Change Log
 ----------
 
+19.3.0
+~~~~~~
+
+* update pyflakes dependency
+
 19.2.0
 ~~~~~~~
 
