@@ -301,6 +301,7 @@ class PyiVisitor(ast.NodeVisitor):
                     continue
             # allow "raise", a number of stubs have this
             if isinstance(statement, ast.Raise):
+                self.error(statement, Y091)
                 continue
             # allow assignments in constructor for now
             # (though these should probably be changed)
@@ -418,5 +419,6 @@ Y012 = 'Y012 Class body must not contain "pass"'
 Y013 = 'Y013 Non-empty class body must not contain "..."'
 Y014 = 'Y014 Default values for arguments must be "..."'
 Y090 = "Y090 Use explicit attributes instead of assignments in __init__"
+Y091 = 'Y091 Function body must not contain "raise"'
 
-DISABLED_BY_DEFAULT = [Y090]
+DISABLED_BY_DEFAULT = [Y090, Y091]

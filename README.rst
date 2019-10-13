@@ -81,6 +81,7 @@ The following warnings are disabled by default:
          x: str
          def __init__(self, x: str) -> None: ...
 
+* Y091: Function body must not contain "raise".
 
 License
 -------
