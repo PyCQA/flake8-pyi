@@ -191,6 +191,16 @@ class PyiTestCase(unittest.TestCase):
             "emptyinit.pyi", stdout_lines=stdout_lines, extra_options=("--select=Y090",)
         )
 
+    def test_raise_in_function_body(self) -> None:
+        self.checkFileOutput("raise.pyi", stdout_lines=())
+        stdout_lines = (
+            '3:9: Y091 Function body must not contain "raise"',
+            '6:9: Y091 Function body must not contain "raise"',
+        )
+        self.checkFileOutput(
+            "raise.pyi", stdout_lines=stdout_lines, extra_options=("--select=Y091",)
+        )
+
     def test_defaults(self) -> None:
         stdout_lines = (
             '3:17: Y011 Default values for typed arguments must be "..."',
