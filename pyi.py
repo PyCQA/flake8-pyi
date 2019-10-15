@@ -299,7 +299,7 @@ class PyiVisitor(ast.NodeVisitor):
                     statement.value, ast.Ellipsis
                 ):
                     continue
-            # allow "raise", a number of stubs have this
+            # special-case raise for backwards compatibility
             if isinstance(statement, ast.Raise):
                 self.error(statement, Y091)
                 continue
