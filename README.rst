@@ -65,6 +65,7 @@ currently emitted:
 * Y013: Non-empty class body must not contain "...".
 * Y014: All default values for arguments must be "...". A stronger version
   of Y011 that includes arguments without type annotations.
+* Y015: Top-level attribute must not have a default value.
 
 The following warnings are disabled by default:
 

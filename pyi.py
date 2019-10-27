@@ -10,7 +10,7 @@ import optparse
 from pathlib import Path
 from pyflakes.checker import PY2, ClassDefinition
 from pyflakes.checker import ModuleScope, ClassScope, FunctionScope
-from typing import Any, Iterable, NamedTuple, Optional, Type
+from typing import Any, Iterable, NamedTuple, Optional, Type, Union
 
 __version__ = "19.2.0"
 
@@ -135,12 +135,12 @@ class PyiAwareFileChecker(checker.FileChecker):
 class PyiVisitor(ast.NodeVisitor):
     filename = attr.ib(default=Path("(none)"))
     errors = attr.ib(default=attr.Factory(list))
+    _in_class = attr.ib(default=0)
 
     def visit_Assign(self, node: ast.Assign) -> None:
-        """Attempt to find assignments to type helpers (typevars and aliases), which should be
-        private.
-        """
         self.generic_visit(node)
+        # Attempt to find assignments to type helpers (typevars and aliases), which should be
+        # private.
         if (
             isinstance(node.value, ast.Call)
             and isinstance(node.value.func, ast.Name)
@@ -151,6 +151,18 @@ class PyiVisitor(ast.NodeVisitor):
                     # avoid catching AnyStr in typing (the only library TypeVar so far)
                     if not self.filename.name == "typing.pyi":
                         self.error(target, Y001)
+        if (
+            self._in_class == 0
+            and len(node.targets) == 1
+            and isinstance(node.targets[0], ast.Name)
+        ):
+            if isinstance(node.value, (ast.Num, ast.Str)):
+                self.error(node.value, Y015)
+
+    def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
+        if self._in_class == 0 and isinstance(node.target, ast.Name):
+            if node.value:
+                self.error(node.value, Y015)
 
     def visit_If(self, node: ast.If) -> None:
         self.generic_visit(node)
@@ -263,7 +275,9 @@ class PyiVisitor(ast.NodeVisitor):
             self.error(node, Y007)
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        self._in_class += 1
         self.generic_visit(node)
+        self._in_class -= 1
 
         # empty class body should contain "..." not "pass"
         if len(node.body) == 1:
@@ -418,6 +432,7 @@ Y011 = 'Y011 Default values for typed arguments must be "..."'
 Y012 = 'Y012 Class body must not contain "pass"'
 Y013 = 'Y013 Non-empty class body must not contain "..."'
 Y014 = 'Y014 Default values for arguments must be "..."'
+Y015 = "Y015 Top-level attribute must not have a default value"
 Y090 = "Y090 Use explicit attributes instead of assignments in __init__"
 Y091 = 'Y091 Function body must not contain "raise"'
 

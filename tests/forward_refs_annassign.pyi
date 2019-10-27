@@ -4,7 +4,7 @@ from typing import Optional, Union
 MaybeCStr = Optional[CStr]
 CStr = Union[C, str]
 __version__: str
-__author__: str = ...
+__author__: str
 
 
 def make_default_c() -> C:
