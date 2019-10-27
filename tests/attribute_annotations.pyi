@@ -9,6 +9,14 @@ field5 = 0  # type: int
 field6 = 0
 field7 = ""
 
-# Allow defaults in classes
 class Foo:
-    field: int = ...
+    # ok
+    field1: int
+    field2: int = ...
+    field3 = ...  # type: int
+
+    # not ok
+    field4: int = 0
+    field5 = 0  # type: int
+    field6 = 0
+    field7 = ""

@@ -151,18 +151,22 @@ class PyiVisitor(ast.NodeVisitor):
                     # avoid catching AnyStr in typing (the only library TypeVar so far)
                     if not self.filename.name == "typing.pyi":
                         self.error(target, Y001)
-        if (
-            self._in_class == 0
-            and len(node.targets) == 1
-            and isinstance(node.targets[0], ast.Name)
-        ):
-            if isinstance(node.value, (ast.Num, ast.Str)):
-                self.error(node.value, Y015)
+        if len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
+            if self._in_class:
+                if isinstance(node.value, (ast.Num, ast.Str)):
+                    self.error(node.value, Y016)
+            else:
+                if isinstance(node.value, (ast.Num, ast.Str)):
+                    self.error(node.value, Y015)
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
-        if self._in_class == 0 and isinstance(node.target, ast.Name):
-            if node.value:
-                self.error(node.value, Y015)
+        if isinstance(node.target, ast.Name):
+            if self._in_class:
+                if node.value and not isinstance(node.value, ast.Ellipsis):
+                    self.error(node.value, Y016)
+            else:
+                if node.value:
+                    self.error(node.value, Y015)
 
     def visit_If(self, node: ast.If) -> None:
         self.generic_visit(node)
@@ -433,6 +437,7 @@ Y012 = 'Y012 Class body must not contain "pass"'
 Y013 = 'Y013 Non-empty class body must not contain "..."'
 Y014 = 'Y014 Default values for arguments must be "..."'
 Y015 = "Y015 Top-level attribute must not have a default value"
+Y016 = 'Y016 Instance attribute must not have a default value other than "..."'
 Y090 = "Y090 Use explicit attributes instead of assignments in __init__"
 Y091 = 'Y091 Function body must not contain "raise"'
 

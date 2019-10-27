@@ -66,6 +66,7 @@ currently emitted:
 * Y014: All default values for arguments must be "...". A stronger version
   of Y011 that includes arguments without type annotations.
 * Y015: Top-level attribute must not have a default value.
+* Y016: Instance attribute must not have a default value other than "...".
 
 The following warnings are disabled by default:
 

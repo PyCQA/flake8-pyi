@@ -210,13 +210,17 @@ class PyiTestCase(unittest.TestCase):
         )
         self.checkFileOutput("defaults.pyi", stdout_lines=stdout_lines)
 
-    def test_top_level_attributes(self) -> None:
+    def test_attribute_values(self) -> None:
         stdout_lines = (
             "6:15: Y015 Top-level attribute must not have a default value",
             "7:15: Y015 Top-level attribute must not have a default value",
             "8:10: Y015 Top-level attribute must not have a default value",
             "9:10: Y015 Top-level attribute must not have a default value",
             "10:10: Y015 Top-level attribute must not have a default value",
+            '19:19: Y016 Instance attribute must not have a default value other than "..."',
+            '20:14: Y016 Instance attribute must not have a default value other than "..."',
+            '21:14: Y016 Instance attribute must not have a default value other than "..."',
+            '22:14: Y016 Instance attribute must not have a default value other than "..."',
         )
         self.checkFileOutput("attribute_annotations.pyi", stdout_lines=stdout_lines)
 

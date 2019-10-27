@@ -19,7 +19,7 @@ class D(C):
 
 
 class C:
-    other: C = None
+    other: C = ...
 
     def __init__(self) -> None:
         ...
