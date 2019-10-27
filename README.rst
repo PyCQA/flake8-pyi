@@ -65,8 +65,7 @@ currently emitted:
 * Y013: Non-empty class body must not contain "...".
 * Y014: All default values for arguments must be "...". A stronger version
   of Y011 that includes arguments without type annotations.
-* Y015: Top-level attribute must not have a default value.
-* Y016: Instance attribute must not have a default value other than "...".
+* Y015: Attribute must not have a default value other than "...".
 
 The following warnings are disabled by default:
 
@@ -84,6 +83,7 @@ The following warnings are disabled by default:
          def __init__(self, x: str) -> None: ...
 
 * Y091: Function body must not contain "raise".
+* Y092: Top-level attribute must not have a default value.
 
 License
 -------
