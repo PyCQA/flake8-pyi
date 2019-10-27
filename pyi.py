@@ -10,7 +10,7 @@ import optparse
 from pathlib import Path
 from pyflakes.checker import PY2, ClassDefinition
 from pyflakes.checker import ModuleScope, ClassScope, FunctionScope
-from typing import Any, Iterable, NamedTuple, Optional, Type, Union
+from typing import Any, Iterable, NamedTuple, Optional, Type
 
 __version__ = "19.2.0"
 
