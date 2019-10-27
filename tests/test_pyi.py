@@ -224,10 +224,12 @@ class PyiTestCase(unittest.TestCase):
         self.checkFileOutput("attribute_annotations.pyi", stdout_lines=stdout_lines)
 
     def test_attribute_values_strict(self) -> None:
-        stdout_lines = (
-            "3:15: Y092 Top-level attribute must not have a default value",
+        stdout_lines = ("3:15: Y092 Top-level attribute must not have a default value",)
+        self.checkFileOutput(
+            "attribute_annotations.pyi",
+            stdout_lines=stdout_lines,
+            extra_options=("--select=Y092",),
         )
-        self.checkFileOutput("attribute_annotations.pyi", stdout_lines=stdout_lines, extra_options=("--select=Y092",))
 
 
 if __name__ == "__main__":
