@@ -210,6 +210,27 @@ class PyiTestCase(unittest.TestCase):
         )
         self.checkFileOutput("defaults.pyi", stdout_lines=stdout_lines)
 
+    def test_attribute_values(self) -> None:
+        stdout_lines = (
+            '7:15: Y015 Attribute must not have a default value other than "..."',
+            '8:10: Y015 Attribute must not have a default value other than "..."',
+            '9:10: Y015 Attribute must not have a default value other than "..."',
+            '10:10: Y015 Attribute must not have a default value other than "..."',
+            '19:19: Y015 Attribute must not have a default value other than "..."',
+            '20:14: Y015 Attribute must not have a default value other than "..."',
+            '21:14: Y015 Attribute must not have a default value other than "..."',
+            '22:14: Y015 Attribute must not have a default value other than "..."',
+        )
+        self.checkFileOutput("attribute_annotations.pyi", stdout_lines=stdout_lines)
+
+    def test_attribute_values_strict(self) -> None:
+        stdout_lines = ("3:15: Y092 Top-level attribute must not have a default value",)
+        self.checkFileOutput(
+            "attribute_annotations.pyi",
+            stdout_lines=stdout_lines,
+            extra_options=("--select=Y092",),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
