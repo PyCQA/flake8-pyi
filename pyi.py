@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import logging
 
+import argparse
 import ast
 import attr
 from flake8 import checker
@@ -365,12 +366,15 @@ class PyiTreeChecker:
     @classmethod
     def add_options(cls, parser):
         """This is brittle, there's multiple levels of caching of defaults."""
-        for option in parser.options:
-            if option.long_option_name == "--filename":
-                option.default = "*.py,*.pyi"
-                option.option_kwargs["default"] = option.default
-                option.to_optparse().default = option.default
-                parser.parser.defaults[option.dest] = option.default
+        if isinstance(parser.parser, argparse.ArgumentParser):
+            parser.parser.set_defaults(filename="*.py,*.pyi")
+        else:
+            for option in parser.options:
+                if option.long_option_name == "--filename":
+                    option.default = "*.py,*.pyi"
+                    option.option_kwargs["default"] = option.default
+                    option.to_optparse().default = option.default
+                    parser.parser.defaults[option.dest] = option.default
 
         try:
             parser.add_option(
