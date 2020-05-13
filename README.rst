@@ -108,6 +108,14 @@ Note: tests require 3.6+ due to testing variable annotations.
 Change Log
 ----------
 
+20.5.0
+~~~~~~
+
+* support flake8 3.8.0
+* introduce Y091 (function body must not contain "raise")
+* introduce Y015 (attribute must not have a default value other than "...")
+* introduce Y092 (top-level attribute must not have a default value)
+
 19.3.0
 ~~~~~~
 
