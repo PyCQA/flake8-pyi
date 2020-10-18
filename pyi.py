@@ -13,7 +13,7 @@ from pyflakes.checker import PY2, ClassDefinition
 from pyflakes.checker import ModuleScope, ClassScope, FunctionScope
 from typing import Any, Iterable, NamedTuple, Optional, Type
 
-__version__ = "20.5.0"
+__version__ = "20.10.0"
 
 LOG = logging.getLogger("flake8.pyi")
 

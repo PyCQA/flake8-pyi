@@ -108,6 +108,11 @@ Note: tests require 3.6+ due to testing variable annotations.
 Change Log
 ----------
 
+20.10.0
+~~~~~~~
+
+* support Python 3.9
+
 20.5.0
 ~~~~~~
 
