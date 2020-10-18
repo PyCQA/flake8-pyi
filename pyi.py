@@ -203,10 +203,12 @@ class PyiVisitor(ast.NodeVisitor):
         version_info = node.left
         if isinstance(version_info, ast.Subscript):
             slc = version_info.slice
-            if isinstance(slc, ast.Index):
+            if isinstance(slc, (ast.Index, ast.Num)):
+                # Python 3.9 flattens the AST and removes Index, so simulate that here
+                slice_num = slc if isinstance(slc, ast.Num) else slc.value
                 # anything other than the integer 0 doesn't make much sense
                 # (things that are in 2.7 and 3.7 but not 3.6?)
-                if isinstance(slc.value, ast.Num) and slc.value.n == 0:
+                if isinstance(slice_num, ast.Num) and slice_num.n == 0:
                     must_be_single = True
                 else:
                     self.error(node, Y003)
