@@ -66,6 +66,7 @@ currently emitted:
 * Y014: All default values for arguments must be "...". A stronger version
   of Y011 that includes arguments without type annotations.
 * Y015: Attribute must not have a default value other than "...".
+* Y016: Unions shouldn't contain duplicates, e.g. `str | str` is not allowed.
 
 The following warnings are disabled by default:
 
@@ -107,6 +108,11 @@ Note: tests require 3.6+ due to testing variable annotations.
 
 Change Log
 ----------
+
+unreleased
+~~~~~~~~~~
+
+* introduce Y016 (duplicate union member)
 
 20.10.0
 ~~~~~~~

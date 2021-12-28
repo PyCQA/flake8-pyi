@@ -210,6 +210,19 @@ class PyiTestCase(unittest.TestCase):
         )
         self.checkFileOutput("defaults.pyi", stdout_lines=stdout_lines)
 
+    def test_union_duplicates(self) -> None:
+        stdout_lines = (
+            '5:16: Y016 Duplicate union member',
+            '7:16: Y016 Duplicate union member',
+            '9:16: Y016 Duplicate union member',
+            '11:16: Y016 Duplicate union member',
+            '16:17: Y016 Duplicate union member',
+            '18:17: Y016 Duplicate union member',
+            '20:17: Y016 Duplicate union member',
+            '22:17: Y016 Duplicate union member',
+        )
+        self.checkFileOutput("union_duplicates.pyi", stdout_lines=stdout_lines)
+
     def test_attribute_values(self) -> None:
         stdout_lines = (
             '7:15: Y015 Attribute must not have a default value other than "..."',
