@@ -212,14 +212,14 @@ class PyiTestCase(unittest.TestCase):
 
     def test_union_duplicates(self) -> None:
         stdout_lines = (
-            '5:16: Y016 Duplicate union member',
-            '7:16: Y016 Duplicate union member',
-            '9:16: Y016 Duplicate union member',
-            '11:16: Y016 Duplicate union member',
-            '16:17: Y016 Duplicate union member',
-            '18:17: Y016 Duplicate union member',
-            '20:17: Y016 Duplicate union member',
-            '22:17: Y016 Duplicate union member',
+            "5:22: Y016 Duplicate union member 'int'",
+            "7:29: Y016 Duplicate union member 'int'",
+            "9:29: Y016 Duplicate union member 'int'",
+            "11:22: Y016 Duplicate union member 'int'",
+            "16:28: Y016 Duplicate union member 'int'",
+            "18:34: Y016 Duplicate union member 'int'",
+            "20:34: Y016 Duplicate union member 'int'",
+            "22:28: Y016 Duplicate union member 'int'",
         )
         self.checkFileOutput("union_duplicates.pyi", stdout_lines=stdout_lines)
 
