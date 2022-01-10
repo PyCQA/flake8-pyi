@@ -11,7 +11,7 @@ import optparse
 from pathlib import Path
 from pyflakes.checker import PY2, ClassDefinition
 from pyflakes.checker import ModuleScope, ClassScope, FunctionScope
-from typing import Any, Iterable, NamedTuple, Optional, Type
+from typing import Any, Iterable, NamedTuple, Optional, Sequence, Type
 
 __version__ = "20.10.0"
 
@@ -162,6 +162,46 @@ class PyiVisitor(ast.NodeVisitor):
                 self.error(node.value, Y015)
             elif node.value and not self._in_class:
                 self.error(node.value, Y092)
+
+    def _check_union_members(self, members: Sequence[ast.AST]) -> None:
+        members_by_unparsed = {}
+        for member in members:
+            members_by_unparsed.setdefault(ast.unparse(member), []).append(member)
+
+        for unparsed, members in members_by_unparsed.items():
+            if len(members) >= 2:
+                self.error(members[1], Y016.format(member=unparsed))
+
+    def visit_BinOp(self, node: ast.BinOp) -> None:
+        if not isinstance(node.op, ast.BitOr):
+            self.generic_visit(node)
+            return
+
+        # str|int|None parses as BinOp(BinOp(str, |, int), |, None)
+        current = node
+        members = []
+        while isinstance(current, ast.BinOp) and isinstance(current.op, ast.BitOr):
+            members.append(current.right)
+            current = current.left
+
+        members.append(current)
+        members.reverse()
+
+        # Do not call generic_visit(node), that would call this method again unnecessarily
+        for member in members:
+            self.generic_visit(member)
+
+        self._check_union_members(members)
+
+    def visit_Subscript(self, node: ast.Subscript) -> None:
+        self.generic_visit(node)
+        # Union[str, int] parses as Subscript(value=Name('Union'), slice=Tuple(elts=[str, int]))
+        if (
+            isinstance(node.value, ast.Name)
+            and node.value.id == "Union"
+            and isinstance(node.slice, ast.Tuple)
+        ):
+            self._check_union_members(node.slice.elts)
 
     def visit_If(self, node: ast.If) -> None:
         self.generic_visit(node)
@@ -437,6 +477,7 @@ Y012 = 'Y012 Class body must not contain "pass"'
 Y013 = 'Y013 Non-empty class body must not contain "..."'
 Y014 = 'Y014 Default values for arguments must be "..."'
 Y015 = 'Y015 Attribute must not have a default value other than "..."'
+Y016 = 'Y016 Duplicate union member "{member}"'
 Y090 = "Y090 Use explicit attributes instead of assignments in __init__"
 Y091 = 'Y091 Function body must not contain "raise"'
 Y092 = "Y092 Top-level attribute must not have a default value"
