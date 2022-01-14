@@ -8,7 +8,6 @@ __pycache__/
 
 # Distribution / packaging
 .Python
-env/
 build/
 develop-eggs/
 dist/
@@ -60,3 +59,7 @@ target/
 
 #Ipython Notebook
 .ipynb_checkpoints
+
+# virtualenvs
+/env*/
+/.venv*/
