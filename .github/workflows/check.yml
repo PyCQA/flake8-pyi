@@ -56,4 +56,4 @@ jobs:
         python-version: "3.10"
     - run: pip install -e .
     - run: |
-        (cd typeshed && flake8)
+        cd typeshed && flake8
