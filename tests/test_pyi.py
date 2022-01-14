@@ -69,7 +69,7 @@ class PyiTestCase(unittest.TestCase):
                 (stdout, stdout_lines),
             ]:
                 actual = "\n".join(
-                    line.split("/")[-1] for line in actual.splitlines() if line
+                    line.split(os.sep)[-1] for line in actual.splitlines() if line
                 )
                 expected = "\n".join(
                     "{filename}:{line}".format(filename=filename, line=line)
