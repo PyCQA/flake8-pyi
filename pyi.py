@@ -169,7 +169,7 @@ class PyiVisitor(ast.NodeVisitor):
         for member in members:
             members_by_dump.setdefault(ast.dump(member), []).append(member)
 
-        for unparsed, members in members_by_dump.items():
+        for members in members_by_dump.values():
             if len(members) >= 2:
                 if sys.version_info >= (3, 9):  # ast.unparse() exists
                     self.error(members[1], f'{Y016} "{ast.unparse(members[1])}"')
