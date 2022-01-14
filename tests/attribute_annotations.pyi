@@ -1,22 +1,16 @@
-# ok
 field1: int
-field2: int = ...  # Y092
+field2: int = ...
 field3 = ...  # type: int
-
-# not ok
-field4: int = 0
-field5 = 0  # type: int
-field6 = 0
-field7 = ""
+field4: int = 0  # Y015 Attribute must not have a default value other than "..."
+field5 = 0  # type: int  # Y015 Attribute must not have a default value other than "..."
+field6 = 0  # Y015 Attribute must not have a default value other than "..."
+field7 = ""  # Y015 Attribute must not have a default value other than "..."
 
 class Foo:
-    # ok
     field1: int
     field2: int = ...
     field3 = ...  # type: int
-
-    # not ok
-    field4: int = 0
-    field5 = 0  # type: int
-    field6 = 0
-    field7 = ""
+    field4: int = 0  # Y015 Attribute must not have a default value other than "..."
+    field5 = 0  # type: int  # Y015 Attribute must not have a default value other than "..."
+    field6 = 0  # Y015 Attribute must not have a default value other than "..."
+    field7 = ""  # Y015 Attribute must not have a default value other than "..."

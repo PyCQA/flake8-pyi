@@ -2,7 +2,7 @@ def empty(x: int) -> float:
     ...
 
 def passing(x: int) -> float:
-    pass  # Y009
+    pass  # Y009 Empty body should contain "...", not "pass"
 
 def raising(x: int) -> float:
     raise TypeError
@@ -16,8 +16,8 @@ class BadClass:
         b.x = x
 
 def returning(x: int) -> float:
-    return x / 2  # Y010
+    return x / 2  # Y010 Function body must contain only "..."
 
 def multiple_ellipses(x: int) -> float:
     ...
-    ...  # Y010
+    ...  # Y010 Function body must contain only "..."

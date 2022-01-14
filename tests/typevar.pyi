@@ -1,5 +1,4 @@
 from typing import TypeVar
 
-T = TypeVar('T')  # Y001
-
-_T = TypeVar('_T')  # no error
+T = TypeVar('T')  # Y001 Name of private TypeVar must start with _
+_T = TypeVar('_T')

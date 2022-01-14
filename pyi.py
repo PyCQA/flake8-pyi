@@ -316,6 +316,8 @@ class PyiVisitor(ast.NodeVisitor):
         # "in" might also make sense but we don't currently have one
         if not isinstance(cmpop, (ast.Eq, ast.NotEq)):
             self.error(node, Y007)
+            return
+
         comparator = node.comparators[0]
         if isinstance(comparator, ast.Str):
             # other values are possible but we don't need them right now
