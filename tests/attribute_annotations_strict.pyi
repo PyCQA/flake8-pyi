@@ -1,4 +1,5 @@
 # flags: --select=Y092
+
 field1: int
 field2: int = ...  # Y092 Top-level attribute must not have a default value
 field3 = ...  # type: int
