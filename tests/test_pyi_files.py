@@ -2,6 +2,7 @@ import glob
 import os
 import re
 import subprocess
+import sys
 
 import pytest
 
@@ -42,4 +43,13 @@ def test_pyi_file(path):
     for run_result in run_results:
         output = run_result.stdout.decode("utf-8")
         output = re.sub(":[0-9]+: ", ": ", output)  # ignore column numbers
+
+        # TODO: is a python version dependent error message really a good idea?
+        if sys.version_info >= (3, 9):
+            output = re.sub(
+                r'Y016 Duplicate union member ".*"',
+                "Y016 Duplicate union member",
+                output,
+            )
+
         assert output == expected_output
