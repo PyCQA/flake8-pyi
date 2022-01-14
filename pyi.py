@@ -293,6 +293,7 @@ class PyiVisitor(ast.NodeVisitor):
         else:
             if not isinstance(comparator, ast.Tuple):
                 self.error(node, Y003)
+                return
             elif not all(isinstance(elt, ast.Num) for elt in comparator.elts):
                 self.error(node, Y003)
             elif len(comparator.elts) > 2:
