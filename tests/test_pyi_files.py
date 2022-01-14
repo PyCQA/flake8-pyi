@@ -30,7 +30,6 @@ def test_pyi_file(path):
             env={**os.environ, "PYTHONPATH": "."},
             stdout=subprocess.PIPE,
         ),
-
         # Passing "-" as the file, and reading from stdin instead
         subprocess.run(
             ["flake8", "-j0", "--stdin-display-name", path, *flags, "-"],
