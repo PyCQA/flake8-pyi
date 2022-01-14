@@ -263,10 +263,14 @@ class PyiVisitor(ast.NodeVisitor):
                 else:
                     self.error(node, Y003)
             elif isinstance(slc, ast.Slice):
-                # allow only [:1] and [:2]
                 if slc.lower is not None or slc.step is not None:
                     self.error(node, Y003)
-                elif isinstance(slc.upper, ast.Num) and slc.upper.n in (1, 2):
+                elif (
+                    # allow only [:1] and [:2]
+                    isinstance(slc.upper, ast.Num)
+                    and isinstance(slc.upper.n, int)
+                    and slc.upper.n in (1, 2)
+                ):
                     can_have_strict_equals = slc.upper.n
                 else:
                     self.error(node, Y003)
