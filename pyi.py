@@ -199,13 +199,17 @@ class PyiVisitor(ast.NodeVisitor):
 
     def visit_Subscript(self, node: ast.Subscript) -> None:
         self.generic_visit(node)
-        # Union[str, int] parses as Subscript(value=Name('Union'), slice=Tuple(elts=[str, int]))
-        if (
-            isinstance(node.value, ast.Name)
-            and node.value.id == "Union"
-            and isinstance(node.slice, ast.Tuple)
-        ):
-            self._check_union_members(node.slice.elts)
+
+        # Union[str, int] parses differently depending on python versions:
+        # Before 3.9:     Subscript(value=Name(id='Union'), slice=Index(value=Tuple(...)))
+        # 3.9 and newer:  Subscript(value=Name(id='Union'), slice=Tuple(...))
+        if isinstance(node.value, ast.Name) and node.value.id == "Union":
+            if sys.version_info >= (3, 9):
+                if isinstance(node.slice, ast.Tuple):
+                    self._check_union_members(node.slice.elts)
+            else:
+                if isinstance(node.slice, ast.Index) and isinstance(node.slice.value, ast.Tuple):
+                    self._check_union_members(node.slice.value.elts)
 
     def visit_If(self, node: ast.If) -> None:
         self.generic_visit(node)
