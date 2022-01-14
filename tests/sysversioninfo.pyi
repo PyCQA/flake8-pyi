@@ -36,6 +36,9 @@ if sys.version_info[:2] == "lol":  # Y003 Unrecognized sys.version_info check
 if sys.version_info[:2.0] >= (3, 9):  # Y003 Unrecognized sys.version_info check
     ...
 
+if sys.version_info[:2j] >= (3, 9):  # Y003 Unrecognized sys.version_info check
+    ...
+
 if sys.version_info[:, :] >= (2, 7):  # Y003 Unrecognized sys.version_info check
     ...
 
