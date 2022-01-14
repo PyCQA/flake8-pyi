@@ -16,6 +16,16 @@ jobs:
     - run: pip install -r requirements-dev.txt
     - run: |
         black --check $(git ls-files | grep 'py$')
+  mypy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: "3.10"
+    - run: pip install -r requirements-dev.txt
+    - run: mypy pyi.py
   flake8:
     runs-on: ubuntu-latest
     timeout-minutes: 5
