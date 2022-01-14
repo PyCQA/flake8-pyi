@@ -10,8 +10,9 @@ from flake8.plugins.pyflakes import FlakesChecker  # type: ignore
 from itertools import chain
 import optparse
 from pathlib import Path
-from pyflakes.checker import PY2, ClassDefinition  # type: ignore
-from pyflakes.checker import ModuleScope, ClassScope, FunctionScope  # type: ignore
+from pyflakes.checker import (  # type: ignore[import]
+    PY2, ClassDefinition, ModuleScope, ClassScope, FunctionScope
+)
 from typing import Any, Iterable, List, NamedTuple, Optional, Sequence, Type
 
 __version__ = "20.10.0"
