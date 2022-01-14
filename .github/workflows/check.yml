@@ -41,7 +41,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - run: pip install -e .
-    - run: python3 setup.py test
+    - run: python3 -m pytest
   check-typeshed:
     timeout-minutes: 5
     runs-on: ubuntu-latest
