@@ -4,6 +4,7 @@ import logging
 import argparse
 import ast
 import attr
+import sys
 from flake8 import checker
 from flake8.plugins.pyflakes import FlakesChecker
 from itertools import chain
@@ -164,13 +165,16 @@ class PyiVisitor(ast.NodeVisitor):
                 self.error(node.value, Y092)
 
     def _check_union_members(self, members: Sequence[ast.AST]) -> None:
-        members_by_unparsed = {}
+        members_by_dump = {}
         for member in members:
-            members_by_unparsed.setdefault(ast.unparse(member), []).append(member)
+            members_by_dump.setdefault(ast.dump(member), []).append(member)
 
-        for unparsed, members in members_by_unparsed.items():
+        for members in members_by_dump.values():
             if len(members) >= 2:
-                self.error(members[1], Y016.format(member=unparsed))
+                if sys.version_info >= (3, 9):  # ast.unparse() exists
+                    self.error(members[1], f'{Y016} "{ast.unparse(members[1])}"')
+                else:
+                    self.error(members[1], Y016)
 
     def visit_BinOp(self, node: ast.BinOp) -> None:
         if not isinstance(node.op, ast.BitOr):
@@ -195,13 +199,19 @@ class PyiVisitor(ast.NodeVisitor):
 
     def visit_Subscript(self, node: ast.Subscript) -> None:
         self.generic_visit(node)
-        # Union[str, int] parses as Subscript(value=Name('Union'), slice=Tuple(elts=[str, int]))
-        if (
-            isinstance(node.value, ast.Name)
-            and node.value.id == "Union"
-            and isinstance(node.slice, ast.Tuple)
-        ):
-            self._check_union_members(node.slice.elts)
+
+        # Union[str, int] parses differently depending on python versions:
+        # Before 3.9:     Subscript(value=Name(id='Union'), slice=Index(value=Tuple(...)))
+        # 3.9 and newer:  Subscript(value=Name(id='Union'), slice=Tuple(...))
+        if isinstance(node.value, ast.Name) and node.value.id == "Union":
+            if sys.version_info >= (3, 9):
+                if isinstance(node.slice, ast.Tuple):
+                    self._check_union_members(node.slice.elts)
+            else:
+                if isinstance(node.slice, ast.Index) and isinstance(
+                    node.slice.value, ast.Tuple
+                ):
+                    self._check_union_members(node.slice.value.elts)
 
     def visit_If(self, node: ast.If) -> None:
         self.generic_visit(node)
@@ -274,7 +284,7 @@ class PyiVisitor(ast.NodeVisitor):
         node: ast.Compare,
         *,
         must_be_single: bool = False,
-        can_have_strict_equals: Optional[int] = None
+        can_have_strict_equals: Optional[int] = None,
     ) -> None:
         comparator = node.comparators[0]
         if must_be_single:
@@ -477,7 +487,7 @@ Y012 = 'Y012 Class body must not contain "pass"'
 Y013 = 'Y013 Non-empty class body must not contain "..."'
 Y014 = 'Y014 Default values for arguments must be "..."'
 Y015 = 'Y015 Attribute must not have a default value other than "..."'
-Y016 = 'Y016 Duplicate union member "{member}"'
+Y016 = "Y016 Duplicate union member"
 Y090 = "Y090 Use explicit attributes instead of assignments in __init__"
 Y091 = 'Y091 Function body must not contain "raise"'
 Y092 = "Y092 Top-level attribute must not have a default value"
