@@ -208,7 +208,9 @@ class PyiVisitor(ast.NodeVisitor):
                 if isinstance(node.slice, ast.Tuple):
                     self._check_union_members(node.slice.elts)
             else:
-                if isinstance(node.slice, ast.Index) and isinstance(node.slice.value, ast.Tuple):
+                if isinstance(node.slice, ast.Index) and isinstance(
+                    node.slice.value, ast.Tuple
+                ):
                     self._check_union_members(node.slice.value.elts)
 
     def visit_If(self, node: ast.If) -> None:
@@ -282,7 +284,7 @@ class PyiVisitor(ast.NodeVisitor):
         node: ast.Compare,
         *,
         must_be_single: bool = False,
-        can_have_strict_equals: Optional[int] = None
+        can_have_strict_equals: Optional[int] = None,
     ) -> None:
         comparator = node.comparators[0]
         if must_be_single:
@@ -485,7 +487,7 @@ Y012 = 'Y012 Class body must not contain "pass"'
 Y013 = 'Y013 Non-empty class body must not contain "..."'
 Y014 = 'Y014 Default values for arguments must be "..."'
 Y015 = 'Y015 Attribute must not have a default value other than "..."'
-Y016 = 'Y016 Duplicate union member'
+Y016 = "Y016 Duplicate union member"
 Y090 = "Y090 Use explicit attributes instead of assignments in __init__"
 Y091 = 'Y091 Function body must not contain "raise"'
 Y092 = "Y092 Top-level attribute must not have a default value"
