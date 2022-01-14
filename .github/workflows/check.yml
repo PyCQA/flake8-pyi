@@ -1,0 +1,60 @@
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  black:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: "3.10"
+    - run: pip install -r requirements-dev.txt
+    - run: |
+        black --check $(git ls-files | grep 'py$')
+  flake8:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: "3.10"
+    # flake8 not in requirements-dev.txt, because versions specified in setup.py are complicated
+    - run: pip install -e .
+    - run: |
+        flake8 $(git ls-files | grep 'py$')
+  tests:
+    timeout-minutes: 5
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        # TODO: add windows-latest
+        os: ['ubuntu-latest', 'macos-latest']
+        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10']
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - run: pip install -e .
+    - run: python3 setup.py test
+  check-typeshed:
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/checkout@v2
+      with:
+        repository: python/typeshed
+        path: typeshed
+    - uses: actions/setup-python@v2
+      with:
+        python-version: "3.10"
+    - run: pip install -e .
+    - run: |
+        cd typeshed && flake8
