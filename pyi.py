@@ -11,7 +11,11 @@ from itertools import chain
 import optparse
 from pathlib import Path
 from pyflakes.checker import (  # type: ignore[import]
-    PY2, ClassDefinition, ModuleScope, ClassScope, FunctionScope
+    PY2,
+    ClassDefinition,
+    ModuleScope,
+    ClassScope,
+    FunctionScope,
 )
 from typing import Any, Iterable, List, NamedTuple, Optional, Sequence, Type
 
