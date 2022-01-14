@@ -4,6 +4,7 @@ import logging
 import argparse
 import ast
 import attr
+import sys
 from flake8 import checker
 from flake8.plugins.pyflakes import FlakesChecker
 from itertools import chain
@@ -163,45 +164,46 @@ class PyiVisitor(ast.NodeVisitor):
             elif node.value and not self._in_class:
                 self.error(node.value, Y092)
 
-    def _check_union_members(self, members: Sequence[ast.AST]) -> None:
-        members_by_unparsed = {}
-        for member in members:
-            members_by_unparsed.setdefault(ast.unparse(member), []).append(member)
+    if sys.version_info >= (3, 9):  # ast.unparse exists
+        def _check_union_members(self, members: Sequence[ast.AST]) -> None:
+            members_by_unparsed = {}
+            for member in members:
+                members_by_unparsed.setdefault(ast.unparse(member), []).append(member)
 
-        for unparsed, members in members_by_unparsed.items():
-            if len(members) >= 2:
-                self.error(members[1], Y016.format(member=unparsed))
+            for unparsed, members in members_by_unparsed.items():
+                if len(members) >= 2:
+                    self.error(members[1], Y016.format(member=unparsed))
 
-    def visit_BinOp(self, node: ast.BinOp) -> None:
-        if not isinstance(node.op, ast.BitOr):
+        def visit_BinOp(self, node: ast.BinOp) -> None:
+            if not isinstance(node.op, ast.BitOr):
+                self.generic_visit(node)
+                return
+
+            # str|int|None parses as BinOp(BinOp(str, |, int), |, None)
+            current = node
+            members = []
+            while isinstance(current, ast.BinOp) and isinstance(current.op, ast.BitOr):
+                members.append(current.right)
+                current = current.left
+
+            members.append(current)
+            members.reverse()
+
+            # Do not call generic_visit(node), that would call this method again unnecessarily
+            for member in members:
+                self.generic_visit(member)
+
+            self._check_union_members(members)
+
+        def visit_Subscript(self, node: ast.Subscript) -> None:
             self.generic_visit(node)
-            return
-
-        # str|int|None parses as BinOp(BinOp(str, |, int), |, None)
-        current = node
-        members = []
-        while isinstance(current, ast.BinOp) and isinstance(current.op, ast.BitOr):
-            members.append(current.right)
-            current = current.left
-
-        members.append(current)
-        members.reverse()
-
-        # Do not call generic_visit(node), that would call this method again unnecessarily
-        for member in members:
-            self.generic_visit(member)
-
-        self._check_union_members(members)
-
-    def visit_Subscript(self, node: ast.Subscript) -> None:
-        self.generic_visit(node)
-        # Union[str, int] parses as Subscript(value=Name('Union'), slice=Tuple(elts=[str, int]))
-        if (
-            isinstance(node.value, ast.Name)
-            and node.value.id == "Union"
-            and isinstance(node.slice, ast.Tuple)
-        ):
-            self._check_union_members(node.slice.elts)
+            # Union[str, int] parses as Subscript(value=Name('Union'), slice=Tuple(elts=[str, int]))
+            if (
+                isinstance(node.value, ast.Name)
+                and node.value.id == "Union"
+                and isinstance(node.slice, ast.Tuple)
+            ):
+                self._check_union_members(node.slice.elts)
 
     def visit_If(self, node: ast.If) -> None:
         self.generic_visit(node)
