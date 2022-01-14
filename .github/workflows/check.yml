@@ -42,7 +42,6 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - run: pip install -e .
-    - run: pip install -r requirements-dev.txt
     - run: python3 setup.py test
   check-typeshed:
     timeout-minutes: 5
