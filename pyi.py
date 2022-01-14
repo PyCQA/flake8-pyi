@@ -165,6 +165,7 @@ class PyiVisitor(ast.NodeVisitor):
                 self.error(node.value, Y092)
 
     if sys.version_info >= (3, 9):  # ast.unparse exists
+
         def _check_union_members(self, members: Sequence[ast.AST]) -> None:
             members_by_unparsed = {}
             for member in members:
