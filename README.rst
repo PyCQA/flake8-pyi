@@ -107,7 +107,7 @@ If you want, you can also run locally the commands that GitHub Actions runs.
 Look in ``.github/workflows/`` to find the commands.
 For example, to run tests::
 
-    $ python3 setup.py test
+    $ python3 -m pytest
 
 
 Change Log
