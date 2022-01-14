@@ -284,7 +284,7 @@ class PyiVisitor(ast.NodeVisitor):
         node: ast.Compare,
         *,
         must_be_single: bool = False,
-        can_have_strict_equals: Optional[int] = None
+        can_have_strict_equals: Optional[int] = None,
     ) -> None:
         comparator = node.comparators[0]
         if must_be_single:
