@@ -19,8 +19,9 @@ def test_pyi_file(path):
             flags.extend(line.split()[2:])
             continue
 
-        for error_comment in re.findall("# [A-Z][0-9][0-9][0-9][^#]*", line):
-            expected_output += f"{path}:{lineno}: {error_comment[1:].strip()}\n"
+        match = re.search("# ([A-Z][0-9][0-9][0-9].*)", line)
+        if match:
+            expected_output += f"{path}:{lineno}: {match.group(1)}\n"
 
     run_results = [
         # Passing a file on command line

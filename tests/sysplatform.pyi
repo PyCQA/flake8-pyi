@@ -1,6 +1,6 @@
 import sys
 
-if sys.platform > 3:  # Y007 Unrecognized sys.platform check  # Y007 Unrecognized sys.platform check
+if sys.platform > 3:  # Y007 Unrecognized sys.platform check
     ...
 
 if sys.platform == 10.12:  # Y007 Unrecognized sys.platform check
