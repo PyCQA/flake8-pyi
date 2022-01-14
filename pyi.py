@@ -5,14 +5,19 @@ import argparse
 import ast
 import attr
 import sys
-from flake8 import checker
-from flake8.plugins.pyflakes import FlakesChecker
+from flake8 import checker  # type: ignore
+from flake8.plugins.pyflakes import FlakesChecker  # type: ignore
 from itertools import chain
 import optparse
 from pathlib import Path
-from pyflakes.checker import PY2, ClassDefinition
-from pyflakes.checker import ModuleScope, ClassScope, FunctionScope
-from typing import Any, Iterable, NamedTuple, Optional, Sequence, Type
+from pyflakes.checker import (  # type: ignore[import]
+    PY2,
+    ClassDefinition,
+    ModuleScope,
+    ClassScope,
+    FunctionScope,
+)
+from typing import Any, Iterable, List, NamedTuple, Optional, Sequence, Type
 
 __version__ = "20.10.0"
 
@@ -136,7 +141,7 @@ class PyiAwareFileChecker(checker.FileChecker):
 @attr.s
 class PyiVisitor(ast.NodeVisitor):
     filename = attr.ib(default=Path("(none)"))
-    errors = attr.ib(default=attr.Factory(list))
+    errors = attr.ib(type=List[Error], default=attr.Factory(list))
     _in_class = attr.ib(default=0)
 
     def visit_Assign(self, node: ast.Assign) -> None:
@@ -164,8 +169,8 @@ class PyiVisitor(ast.NodeVisitor):
             elif node.value and not self._in_class:
                 self.error(node.value, Y092)
 
-    def _check_union_members(self, members: Sequence[ast.AST]) -> None:
-        members_by_dump = {}
+    def _check_union_members(self, members: Sequence[ast.expr]) -> None:
+        members_by_dump: dict[str, list[ast.expr]] = {}
         for member in members:
             members_by_dump.setdefault(ast.dump(member), []).append(member)
 
@@ -182,7 +187,7 @@ class PyiVisitor(ast.NodeVisitor):
             return
 
         # str|int|None parses as BinOp(BinOp(str, |, int), |, None)
-        current = node
+        current: ast.expr = node
         members = []
         while isinstance(current, ast.BinOp) and isinstance(current.op, ast.BitOr):
             members.append(current.right)
