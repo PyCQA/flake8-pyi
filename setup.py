@@ -36,12 +36,7 @@ setup(
     py_modules=["pyi"],
     zip_safe=False,
     python_requires=">=3.6",
-    install_requires=[
-        "flake8 >= 3.2.1, <3.8.0; python_version < '3.8'",
-        "flake8 >= 3.8.0; python_version >= '3.8'",
-        "pyflakes >= 2.1.1",
-        "attrs",
-    ],
+    install_requires=["flake8 >= 3.2.1", "pyflakes >= 2.1.1", "attrs"],
     test_suite="tests.test_pyi",
     classifiers=[
         "Development Status :: 3 - Alpha",
@@ -53,9 +48,6 @@ setup(
         "Programming Language :: Python",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Topic :: Software Development :: Quality Assurance",
     ],

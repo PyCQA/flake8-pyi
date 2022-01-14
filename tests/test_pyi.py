@@ -69,7 +69,7 @@ class PyiTestCase(unittest.TestCase):
                 (stdout, stdout_lines),
             ]:
                 actual = "\n".join(
-                    line.split(os.sep)[-1] for line in actual.splitlines() if line
+                    line.split("/")[-1] for line in actual.split("\n") if line
                 )
                 expected = "\n".join(
                     "{filename}:{line}".format(filename=filename, line=line)
@@ -211,28 +211,16 @@ class PyiTestCase(unittest.TestCase):
         self.checkFileOutput("defaults.pyi", stdout_lines=stdout_lines)
 
     def test_union_duplicates(self) -> None:
-        if sys.version_info >= (3, 9):
-            stdout_lines = (
-                '5:22: Y016 Duplicate union member "int"',
-                '7:29: Y016 Duplicate union member "int"',
-                '9:29: Y016 Duplicate union member "int"',
-                '11:22: Y016 Duplicate union member "int"',
-                '16:28: Y016 Duplicate union member "int"',
-                '18:34: Y016 Duplicate union member "int"',
-                '20:34: Y016 Duplicate union member "int"',
-                '22:28: Y016 Duplicate union member "int"',
-            )
-        else:
-            stdout_lines = (
-                "5:22: Y016 Duplicate union member",
-                "7:29: Y016 Duplicate union member",
-                "9:29: Y016 Duplicate union member",
-                "11:22: Y016 Duplicate union member",
-                "16:28: Y016 Duplicate union member",
-                "18:34: Y016 Duplicate union member",
-                "20:34: Y016 Duplicate union member",
-                "22:28: Y016 Duplicate union member",
-            )
+        stdout_lines = (
+            '5:22: Y016 Duplicate union member "int"',
+            '7:29: Y016 Duplicate union member "int"',
+            '9:29: Y016 Duplicate union member "int"',
+            '11:22: Y016 Duplicate union member "int"',
+            '16:28: Y016 Duplicate union member "int"',
+            '18:34: Y016 Duplicate union member "int"',
+            '20:34: Y016 Duplicate union member "int"',
+            '22:28: Y016 Duplicate union member "int"',
+        )
         self.checkFileOutput("union_duplicates.pyi", stdout_lines=stdout_lines)
 
     def test_attribute_values(self) -> None:
