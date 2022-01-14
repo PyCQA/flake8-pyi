@@ -97,7 +97,7 @@ Tests
 
 Just run::
 
-    python3.6 setup.py test
+    python3 -m pytest
 
 Or if you prefer::
 
