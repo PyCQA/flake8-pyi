@@ -103,8 +103,8 @@ To format with ``black``, run::
     $ pip install -r requirements-dev.txt
     $ black pyi.py
 
-If you want, you can also run the commands that GitHub Actions runs locally.
-Look in ``.github/workflows/`` to find the correct commands to use.
+If you want, you can also run locally the commands that GitHub Actions runs.
+Look in ``.github/workflows/`` to find the commands.
 For example, to run tests::
 
     $ python3 setup.py test
