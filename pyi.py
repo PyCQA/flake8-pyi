@@ -164,47 +164,48 @@ class PyiVisitor(ast.NodeVisitor):
             elif node.value and not self._in_class:
                 self.error(node.value, Y092)
 
-    if sys.version_info >= (3, 9):  # ast.unparse exists
+    def _check_union_members(self, members: Sequence[ast.AST]) -> None:
+        members_by_dump = {}
+        for member in members:
+            members_by_dump.setdefault(ast.dump(member), []).append(member)
 
-        def _check_union_members(self, members: Sequence[ast.AST]) -> None:
-            members_by_unparsed = {}
-            for member in members:
-                members_by_unparsed.setdefault(ast.unparse(member), []).append(member)
+        for unparsed, members in members_by_dump.items():
+            if len(members) >= 2:
+                if sys.version_info >= (3, 9):  # ast.unparse() exists
+                    self.error(members[1], f'{Y016} "{ast.unparse(members[1])}"')
+                else:
+                    self.error(members[1], Y016)
 
-            for unparsed, members in members_by_unparsed.items():
-                if len(members) >= 2:
-                    self.error(members[1], Y016.format(member=unparsed))
-
-        def visit_BinOp(self, node: ast.BinOp) -> None:
-            if not isinstance(node.op, ast.BitOr):
-                self.generic_visit(node)
-                return
-
-            # str|int|None parses as BinOp(BinOp(str, |, int), |, None)
-            current = node
-            members = []
-            while isinstance(current, ast.BinOp) and isinstance(current.op, ast.BitOr):
-                members.append(current.right)
-                current = current.left
-
-            members.append(current)
-            members.reverse()
-
-            # Do not call generic_visit(node), that would call this method again unnecessarily
-            for member in members:
-                self.generic_visit(member)
-
-            self._check_union_members(members)
-
-        def visit_Subscript(self, node: ast.Subscript) -> None:
+    def visit_BinOp(self, node: ast.BinOp) -> None:
+        if not isinstance(node.op, ast.BitOr):
             self.generic_visit(node)
-            # Union[str, int] parses as Subscript(value=Name('Union'), slice=Tuple(elts=[str, int]))
-            if (
-                isinstance(node.value, ast.Name)
-                and node.value.id == "Union"
-                and isinstance(node.slice, ast.Tuple)
-            ):
-                self._check_union_members(node.slice.elts)
+            return
+
+        # str|int|None parses as BinOp(BinOp(str, |, int), |, None)
+        current = node
+        members = []
+        while isinstance(current, ast.BinOp) and isinstance(current.op, ast.BitOr):
+            members.append(current.right)
+            current = current.left
+
+        members.append(current)
+        members.reverse()
+
+        # Do not call generic_visit(node), that would call this method again unnecessarily
+        for member in members:
+            self.generic_visit(member)
+
+        self._check_union_members(members)
+
+    def visit_Subscript(self, node: ast.Subscript) -> None:
+        self.generic_visit(node)
+        # Union[str, int] parses as Subscript(value=Name('Union'), slice=Tuple(elts=[str, int]))
+        if (
+            isinstance(node.value, ast.Name)
+            and node.value.id == "Union"
+            and isinstance(node.slice, ast.Tuple)
+        ):
+            self._check_union_members(node.slice.elts)
 
     def visit_If(self, node: ast.If) -> None:
         self.generic_visit(node)
@@ -480,7 +481,7 @@ Y012 = 'Y012 Class body must not contain "pass"'
 Y013 = 'Y013 Non-empty class body must not contain "..."'
 Y014 = 'Y014 Default values for arguments must be "..."'
 Y015 = 'Y015 Attribute must not have a default value other than "..."'
-Y016 = 'Y016 Duplicate union member "{member}"'
+Y016 = 'Y016 Duplicate union member'
 Y090 = "Y090 Use explicit attributes instead of assignments in __init__"
 Y091 = 'Y091 Function body must not contain "raise"'
 Y092 = "Y092 Top-level attribute must not have a default value"

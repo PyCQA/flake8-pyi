@@ -223,7 +223,16 @@ class PyiTestCase(unittest.TestCase):
                 '22:28: Y016 Duplicate union member "int"',
             )
         else:
-            stdout_lines = ()
+            stdout_lines = (
+                '5:22: Y016 Duplicate union member',
+                '7:29: Y016 Duplicate union member',
+                '9:29: Y016 Duplicate union member',
+                '11:22: Y016 Duplicate union member',
+                '16:28: Y016 Duplicate union member',
+                '18:34: Y016 Duplicate union member',
+                '20:34: Y016 Duplicate union member',
+                '22:28: Y016 Duplicate union member',
+            )
         self.checkFileOutput("union_duplicates.pyi", stdout_lines=stdout_lines)
 
     def test_attribute_values(self) -> None:
