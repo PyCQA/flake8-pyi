@@ -2,20 +2,20 @@ class EmptyClass:
     ...
 
 class PassingEmptyClass:
-    pass  # Y009
+    pass  # Y009 Empty body should contain "...", not "pass"
 
 class PassingNonEmptyClass:
     x: int
-    pass  # Y011
+    pass  # Y012 Class body must not contain "pass"
 
 class PassingNonEmptyClass2:
-    pass  # Y011
+    pass  # Y012 Class body must not contain "pass"
     x: int
 
 class EllipsisNonEmptyClass:
     x: int
-    ...  # Y012
+    ...  # Y013 Non-empty class body must not contain "..."
 
 class EllipsisNonEmptyClass2:
-    ...  # Y012
+    ...  # Y013 Non-empty class body must not contain "..."
     x: int

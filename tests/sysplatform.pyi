@@ -1,16 +1,16 @@
 import sys
 
-if sys.platform > 3:  # Y007
+if sys.platform > 3:  # Y007 Unrecognized sys.platform check  # Y007 Unrecognized sys.platform check
     ...
 
-if sys.platform == 10.12:  # Y007
+if sys.platform == 10.12:  # Y007 Unrecognized sys.platform check
     ...
 
-if sys.platform == 'linus':  # Y008
+if sys.platform == 'linus':  # Y008 Unrecognized platform "linus"
     ...
 
-if sys.platform != 'linux':  # fine
+if sys.platform != 'linux':
     ...
 
-if sys.platform == 'win32':  # fine
+if sys.platform == 'win32':
     ...
