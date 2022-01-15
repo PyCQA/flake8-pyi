@@ -142,7 +142,12 @@ class PyiAwareFileChecker(checker.FileChecker):
 class PyiVisitor(ast.NodeVisitor):
     filename = attr.ib(default=Path("(none)"))
     errors = attr.ib(type=List[Error], default=attr.Factory(list))
-    _in_class = attr.ib(default=0)
+    _class_nesting = attr.ib(default=0)
+
+    @property
+    def in_class(self) -> bool:
+        """Determine whether we are inside a `class` statement"""
+        return bool(self._class_nesting)
 
     def visit_Assign(self, node: ast.Assign) -> None:
         self.generic_visit(node)
@@ -166,7 +171,7 @@ class PyiVisitor(ast.NodeVisitor):
         if isinstance(node.target, ast.Name):
             if node.value and not isinstance(node.value, ast.Ellipsis):
                 self.error(node.value, Y015)
-            elif node.value and not self._in_class:
+            elif node.value and not self.in_class:
                 self.error(node.value, Y092)
 
     def _check_union_members(self, members: Sequence[ast.expr]) -> None:
@@ -339,9 +344,9 @@ class PyiVisitor(ast.NodeVisitor):
             self.error(node, Y007)
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
-        self._in_class += 1
+        self._class_nesting += 1
         self.generic_visit(node)
-        self._in_class -= 1
+        self._class_nesting -= 1
 
         # empty class body should contain "..." not "pass"
         if len(node.body) == 1:
