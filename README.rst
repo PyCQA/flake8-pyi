@@ -19,9 +19,8 @@ Functionality
    expressions after the entire file has been read.  This enables support for
    first-class forward references that stub files use.
 
-The latter should ideally be merged into ``flake8`` as the integration is
-currently pretty brittle (might break with future versions of ``pyflakes``,
-``flake8``, or due to interactions with other overly clever plugins).
+3. Provides a number of ``.pyi``-specific warnings that enforce typeshed's
+   style guide.
 
 
 List of warnings
@@ -30,14 +29,14 @@ List of warnings
 This plugin reserves codes starting with **Y0**. The following warnings are
 currently emitted:
 
-* Y001: Names of TypeVars in stubs should start with `_`. This makes sure you
+* Y001: Names of TypeVars in stubs should start with ``_``. This makes sure you
   don't accidentally expose names internal to the stub.
-* Y002: If test must be a simple comparison against `sys.platform` or
-  `sys.version_info`. Stub files support simple conditionals to indicate
+* Y002: If test must be a simple comparison against ``sys.platform`` or
+  ``sys.version_info``. Stub files support simple conditionals to indicate
   differences between Python versions or platforms, but type checkers only
   understand a limited subset of Python syntax, and this warning triggers on
   conditionals that type checkers will probably not understand.
-* Y003: Unrecognized `sys.version_info` check. Similar, but triggers on some
+* Y003: Unrecognized ``sys.version_info`` check. Similar, but triggers on some
   comparisons involving version checks.
 * Y004: Version comparison must use only major and minor version. Type checkers
   like mypy don't know about patch versions of Python (e.g. 3.4.3 versus 3.4.4),
@@ -48,7 +47,7 @@ currently emitted:
 * Y006: Use only < and >= for version comparisons. Comparisons involving > and
   <= may produce unintuitive results when tools do use the full sys.version_info
   tuple.
-* Y007: Unrecognized `sys.platform` check. Platform checks should be simple
+* Y007: Unrecognized ``sys.platform`` check. Platform checks should be simple
   string comparisons.
 * Y008: Unrecognized platform. To prevent you from typos, we warn if you use a
   platform name outside a small set of known platforms (e.g. "linux" and
@@ -57,7 +56,7 @@ currently emitted:
   choice, but it's the one typeshed made.
 * Y010: Function body must contain only "...". Stub files should not contain
   code, so function bodies should be empty. Currently, we make exceptions for
-  raise statements and for assignments in `__init__` methods.
+  raise statements and for assignments in ``__init__`` methods.
 * Y011: All default values for typed function arguments must be "...". Type
   checkers ignore the default value, so the default value is not useful
   information in a stub file.
@@ -66,11 +65,11 @@ currently emitted:
 * Y014: All default values for arguments must be "...". A stronger version
   of Y011 that includes arguments without type annotations.
 * Y015: Attribute must not have a default value other than "...".
-* Y016: Unions shouldn't contain duplicates, e.g. `str | str` is not allowed.
+* Y016: Unions shouldn't contain duplicates, e.g. ``str | str`` is not allowed.
 
 The following warnings are disabled by default:
 
-* Y090: Use explicit attributes instead of assignments in `__init__`. This
+* Y090: Use explicit attributes instead of assignments in ``__init__``. This
   is a stricter version of Y010. Instead of::
 
     class Thing:
@@ -97,3 +96,9 @@ Authors
 
 Glued together by `Łukasz Langa <mailto:lukasz@langa.pl>`_ and
 `Jelle Zijlstra <mailto:jelle.zijlstra@gmail.com>`_.
+
+See also
+--------
+
+* `Changelog <./CHANGELOG.rst>`_
+* `Information for contributors <./CONTRIBUTING.rst>`_
