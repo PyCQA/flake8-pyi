@@ -24,9 +24,11 @@ __version__ = "20.10.0"
 LOG = logging.getLogger("flake8.pyi")
 
 
-Error = NamedTuple(
-    "Error", [("lineno", int), ("col", int), ("message", str), ("type", Type[Any])]
-)
+class Error(NamedTuple):
+    lineno: int
+    col: int
+    message: str
+    type: Type[Any]
 
 
 class PyiAwareFlakesChecker(FlakesChecker):
