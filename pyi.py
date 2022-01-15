@@ -361,7 +361,7 @@ class PyiVisitor(ast.NodeVisitor):
                 self.error(statement, Y009)
                 return
 
-        for i, statement in enumerate(node.body):
+        for statement in node.body:
             # "pass" should not used in class body
             if isinstance(statement, ast.Pass):
                 self.error(statement, Y012)
