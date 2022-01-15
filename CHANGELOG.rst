@@ -5,6 +5,7 @@ unreleased
 ~~~~~~~~~~
 
 * introduce Y016 (duplicate union member)
+* support Python 3.10
 
 20.10.0
 ~~~~~~~
