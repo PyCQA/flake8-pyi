@@ -184,9 +184,10 @@ class PyiVisitor(ast.NodeVisitor):
         for members in members_by_dump.values():
             if len(members) >= 2:
                 if sys.version_info >= (3, 9):  # ast.unparse() exists
-                    self.error(members[1], f'{Y016} "{ast.unparse(members[1])}"')
+                    error_string = f'{Y016} "{ast.unparse(members[1])}"'
                 else:
-                    self.error(members[1], Y016)
+                    error_string = Y016
+                self.error(members[1], error_string)
 
     def visit_BinOp(self, node: ast.BinOp) -> None:
         if not isinstance(node.op, ast.BitOr):
@@ -212,18 +213,20 @@ class PyiVisitor(ast.NodeVisitor):
     def visit_Subscript(self, node: ast.Subscript) -> None:
         self.generic_visit(node)
 
+        if not (isinstance(node.value, ast.Name) and node.value.id == "Union"):
+            return
+
         # Union[str, int] parses differently depending on python versions:
         # Before 3.9:     Subscript(value=Name(id='Union'), slice=Index(value=Tuple(...)))
         # 3.9 and newer:  Subscript(value=Name(id='Union'), slice=Tuple(...))
-        if isinstance(node.value, ast.Name) and node.value.id == "Union":
-            if sys.version_info >= (3, 9):
-                if isinstance(node.slice, ast.Tuple):
-                    self._check_union_members(node.slice.elts)
-            else:
-                if isinstance(node.slice, ast.Index) and isinstance(
-                    node.slice.value, ast.Tuple
-                ):
-                    self._check_union_members(node.slice.value.elts)
+        if sys.version_info >= (3, 9):
+            if isinstance(node.slice, ast.Tuple):
+                self._check_union_members(node.slice.elts)
+        else:
+            if isinstance(node.slice, ast.Index) and isinstance(
+                node.slice.value, ast.Tuple
+            ):
+                self._check_union_members(node.slice.value.elts)
 
     def visit_If(self, node: ast.If) -> None:
         self.generic_visit(node)
@@ -306,11 +309,9 @@ class PyiVisitor(ast.NodeVisitor):
         if must_be_single:
             if not isinstance(comparator, ast.Num) or not isinstance(comparator.n, int):
                 self.error(node, Y003)
+        elif not isinstance(comparator, ast.Tuple):
+            self.error(node, Y003)
         else:
-            if not isinstance(comparator, ast.Tuple):
-                self.error(node, Y003)
-                return
-
             if not all(isinstance(elt, ast.Num) for elt in comparator.elts):
                 self.error(node, Y003)
             elif len(comparator.elts) > 2:
@@ -404,10 +405,7 @@ class PyiVisitor(ast.NodeVisitor):
             if default is None:
                 continue  # keyword-only arg without a default
             if not isinstance(default, ast.Ellipsis):
-                if arg.annotation is None:
-                    self.error(default, Y014)
-                else:
-                    self.error(default, Y011)
+                self.error(default, (Y014 if arg.annotation is None else Y011))
 
     def error(self, node: ast.AST, message: str) -> None:
         self.errors.append(Error(node.lineno, node.col_offset, message, PyiTreeChecker))
