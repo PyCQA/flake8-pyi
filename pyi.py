@@ -145,6 +145,12 @@ class PyiVisitor(ast.NodeVisitor):
     filename = attr.ib(default=Path("(none)"))
     errors = attr.ib(type=List[Error], default=attr.Factory(list))
     _class_nesting = attr.ib(default=0)
+    _function_nesting = attr.ib(default=0)
+
+    @property
+    def in_function(self) -> bool:
+        """Determine whether we are inside a `def` statement"""
+        return bool(self._function_nesting)
 
     @property
     def in_class(self) -> bool:
@@ -153,23 +159,37 @@ class PyiVisitor(ast.NodeVisitor):
 
     def visit_Assign(self, node: ast.Assign) -> None:
         self.generic_visit(node)
+        if self.in_function:
+            # We error for unexpected things within functions separately.
+            return
+        if len(node.targets) != 1:
+            self.error(node, Y017)
+            return
+        target = node.targets[0]
+        if not isinstance(target, ast.Name):
+            self.error(node, Y017)
+            return
         # Attempt to find assignments to type helpers (typevars and aliases), which should be
         # private.
-        if (
-            isinstance(node.value, ast.Call)
-            and isinstance(node.value.func, ast.Name)
-            and node.value.func.id == "TypeVar"
-        ):
-            for target in node.targets:
-                if isinstance(target, ast.Name) and not target.id.startswith("_"):
+        if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Name):
+            if node.value.func.id in ("TypeVar", "ParamSpec", "TypeVarTuple"):
+                if not target.id.startswith("_"):
                     # avoid catching AnyStr in typing (the only library TypeVar so far)
-                    if not self.filename.name == "typing.pyi":
-                        self.error(target, Y001)
-        if len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
-            if isinstance(node.value, (ast.Num, ast.Str)):
-                self.error(node.value, Y015)
+                    if self.filename.name != "typing.pyi":
+                        self.error(target, Y001.format(node.value.func.id))
+                return
+            # We allow assignment-based TypedDict creation for dicts that have
+            # keys that aren't valid as identifiers.
+            elif node.value.func.id == "TypedDict":
+                return
+        if isinstance(node.value, (ast.Num, ast.Str)):
+            self.error(node.value, Y015)
+        else:
+            self.error(node, Y093)
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
+        if isinstance(node.annotation, ast.Name) and node.annotation.id == "TypeAlias":
+            return
         if isinstance(node.target, ast.Name):
             if node.value and not isinstance(node.value, ast.Ellipsis):
                 self.error(node.value, Y015)
@@ -372,7 +392,9 @@ class PyiVisitor(ast.NodeVisitor):
                 self.error(statement, Y013)
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        self._function_nesting += 1
         self.generic_visit(node)
+        self._function_nesting -= 1
 
         for i, statement in enumerate(node.body):
             if i == 0:
@@ -490,7 +512,7 @@ class PyiTreeChecker:
         return False
 
 
-Y001 = "Y001 Name of private TypeVar must start with _"
+Y001 = "Y001 Name of private {} must start with _"
 Y002 = (
     "Y002 If test must be a simple comparison against sys.platform or sys.version_info"
 )
@@ -508,8 +530,10 @@ Y013 = 'Y013 Non-empty class body must not contain "..."'
 Y014 = 'Y014 Default values for arguments must be "..."'
 Y015 = 'Y015 Attribute must not have a default value other than "..."'
 Y016 = "Y016 Duplicate union member"
+Y017 = "Y017 Only simple assignments allowed"
 Y090 = "Y090 Use explicit attributes instead of assignments in __init__"
 Y091 = 'Y091 Function body must not contain "raise"'
 Y092 = "Y092 Top-level attribute must not have a default value"
+Y093 = "Y093 Use typing_extensions.TypeAlias for type aliases"
 
 DISABLED_BY_DEFAULT = [Y090, Y091, Y092]
