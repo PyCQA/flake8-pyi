@@ -92,24 +92,6 @@ License
 MIT
 
 
-Tests and black
----------------
-
-When you make a pull request, GitHub Actions runs tests and checks ``black`` formatting automatically.
-To format with ``black``, run::
-
-    $ python3 -m venv env
-    $ source env/bin/activate
-    $ pip install -r requirements-dev.txt
-    $ black pyi.py
-
-If you want, you can also run locally the commands that GitHub Actions runs.
-Look in ``.github/workflows/`` to find the commands.
-For example, to run tests::
-
-    $ python3 -m pytest
-
-
 Change Log
 ----------
 
