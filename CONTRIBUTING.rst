@@ -10,7 +10,7 @@ end will be warmly received.
 Guide to the codebase
 ---------------------
 
-The plugin consists of a single file: `pyi.py`. Tests are run using pytest, and can be
+The plugin consists of a single file: ``pyi.py``. Tests are run using ``pytest``, and can be
 found in the `tests` folder.
 
 
@@ -18,7 +18,7 @@ Tests and formatting
 --------------------
 
 When you make a pull request, GitHub Actions runs the full test suite. ``black``
-formatting is also checked automatically (but only for `pyi.py`).
+formatting is also checked automatically (but only for ``pyi.py``).
 
 We advise setting up a virtual environment before formatting your PR or (optionally)
 running the tests::
@@ -27,7 +27,7 @@ running the tests::
     $ source env/bin/activate
     $ pip install -r requirements-dev.txt
 
- To format your code with ``black``, run::
+To format your code with ``black``, run::
 
     $ black pyi.py
 
