@@ -93,8 +93,8 @@ class PyiAwareFlakesChecker(FlakesChecker):
 
         # What follows is copied from pyflakes 1.3.0. The only changes are the
         # deferHandleNode calls.
-        for deco in node.decorator_list:
-            self.handleNode(deco, node)
+        for decorator in node.decorator_list:
+            self.handleNode(decorator, node)
         for baseNode in node.bases:
             self.deferHandleNode(baseNode, node)
         if not PY2:
@@ -229,12 +229,12 @@ class PyiVisitor(ast.NodeVisitor):
         self.generic_visit(node)
         test = node.test
         if isinstance(test, ast.BoolOp):
-            for expr in test.values:
-                self._check_if_expr(expr)
+            for expression in test.values:
+                self._check_if_expression(expression)
         else:
-            self._check_if_expr(test)
+            self._check_if_expression(test)
 
-    def _check_if_expr(self, node: ast.expr) -> None:
+    def _check_if_expression(self, node: ast.expr) -> None:
         if not isinstance(node, ast.Compare):
             self.error(node, Y002)
             return
