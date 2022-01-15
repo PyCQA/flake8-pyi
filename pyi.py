@@ -220,6 +220,7 @@ class PyiVisitor(ast.NodeVisitor):
                 node.slice.value, ast.Tuple
             ):
                 self._check_union_members(node.slice.value.elts)
+
     def visit_If(self, node: ast.If) -> None:
         self.generic_visit(node)
         test = node.test
