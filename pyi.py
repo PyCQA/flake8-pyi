@@ -4,9 +4,11 @@ import logging
 
 import argparse
 import ast
+import re
 import sys
 from collections import Counter
 from collections.abc import Iterable, Sequence
+from copy import deepcopy
 from dataclasses import dataclass, field
 from flake8 import checker  # type: ignore
 from flake8.plugins.pyflakes import FlakesChecker  # type: ignore
@@ -21,10 +23,6 @@ from pyflakes.checker import (  # type: ignore[import]
     FunctionScope,
 )
 from typing import ClassVar, NamedTuple
-
-if sys.version_info >= (3, 9):
-    import re
-    from copy import deepcopy
 
 __version__ = "20.10.0"
 
@@ -500,8 +498,6 @@ class PyiVisitor(ast.NodeVisitor):
                     continue
             self.error(statement, Y010)
 
-        # Rest of this method is devoted to finding TypeVars that should be _typeshed.Self, but aren't
-
         if self.in_class:
             self.check_self_typevars(node)
 
@@ -527,18 +523,22 @@ class PyiVisitor(ast.NodeVisitor):
             )
             return
 
-        for decorator in node.decorator_list:
-            if isinstance(decorator, ast.Name):
-                decorator_name = decorator.id
-                if decorator_name == "classmethod":
-                    self._check_class_method_for_bad_typevars(
-                        method=node,
-                        first_arg_annotation=first_arg_annotation,
-                        return_annotation=return_annotation,
-                    )
-                    return
-                elif decorator_name == "staticmethod":
-                    return
+        decorator_names = [
+            decorator.id
+            if isinstance(decorator, ast.Name)
+            for decorator in node.decorator_list
+        ]
+
+        for decorator_name in decorator_names:
+            if decorator_name == "classmethod":
+                self._check_class_method_for_bad_typevars(
+                    method=node,
+                    first_arg_annotation=first_arg_annotation,
+                    return_annotation=return_annotation,
+                )
+                return
+            elif decorator_name == "staticmethod":
+                return
 
         self._check_instance_method_for_bad_typevars(
             method=node,
