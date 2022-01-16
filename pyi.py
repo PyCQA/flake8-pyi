@@ -314,13 +314,19 @@ class PyiVisitor(ast.NodeVisitor):
                 # Python 3.9 flattens the AST and removes Index, so simulate that here
                 slice_num = slc if isinstance(slc, ast.Num) else slc.value
                 # anything other than the integer 0 doesn't make much sense
-                if isinstance(slice_num, ast.Num) and slice_num.n == 0:
+                if (
+                    isinstance(slice_num, ast.Num)
+                    and isinstance(slice_num.n, int)
+                    and slice_num.n == 0
+                ):
                     must_be_single = True
                 else:
                     self.error(node, Y003)
+                    return
             elif isinstance(slc, ast.Slice):
                 if slc.lower is not None or slc.step is not None:
                     self.error(node, Y003)
+                    return
                 elif (
                     # allow only [:1] and [:2]
                     isinstance(slc.upper, ast.Num)
@@ -330,9 +336,11 @@ class PyiVisitor(ast.NodeVisitor):
                     can_have_strict_equals = slc.upper.n
                 else:
                     self.error(node, Y003)
+                    return
             else:
                 # extended slicing
                 self.error(node, Y003)
+                return
         self._check_version_check(
             node,
             must_be_single=must_be_single,
