@@ -217,12 +217,11 @@ class PyiVisitor(ast.NodeVisitor):
                     target_info = TypeVarInfo(cls_name=cls_name, name=target_name)
                     self.typevarlike_defs[target_info] = node
                 else:
-                    self.error(node, Y001.format(cls_name))
-                return
-            # We allow assignment-based TypedDict creation for dicts that have
-            # keys that aren't valid as identifiers.
-            elif cls_name == "TypedDict":
-                return
+                    self.error(target, Y001.format(cls_name))
+            # We avoid triggering Y093 in this case because there are various
+            # unusual cases where assignment to the result of a call is legitimate
+            # in stubs.
+            return
         if isinstance(node.value, (ast.Num, ast.Str, ast.Bytes)):
             self.error(node.value, Y015)
         else:
@@ -613,6 +612,7 @@ class PyiTreeChecker:
         return False
 
 
+# Please keep error code lists in README and CHANGELOG up to date
 Y001 = "Y001 Name of private {} must start with _"
 Y002 = (
     "Y002 If test must be a simple comparison against sys.platform or sys.version_info"
