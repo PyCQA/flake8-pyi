@@ -525,8 +525,8 @@ class PyiVisitor(ast.NodeVisitor):
 
         decorator_names = [
             decorator.id
-            if isinstance(decorator, ast.Name)
             for decorator in node.decorator_list
+            if isinstance(decorator, ast.Name)
         ]
 
         for decorator_name in decorator_names:
