@@ -30,8 +30,9 @@ List of warnings
 This plugin reserves codes starting with **Y0**. The following warnings are
 currently emitted:
 
-* Y001: Names of TypeVars in stubs should start with `_`. This makes sure you
-  don't accidentally expose names internal to the stub.
+* Y001: Names of TypeVars, ParamSpecs and TypeVarTuples in stubs should usually
+  start with `_`. This makes sure you don't accidentally expose names internal
+  to the stub.
 * Y002: If test must be a simple comparison against `sys.platform` or
   `sys.version_info`. Stub files support simple conditionals to indicate
   differences between Python versions or platforms, but type checkers only
@@ -67,6 +68,10 @@ currently emitted:
   of Y011 that includes arguments without type annotations.
 * Y015: Attribute must not have a default value other than "...".
 * Y016: Unions shouldn't contain duplicates, e.g. `str | str` is not allowed.
+* Y017: Stubs should not contain assignments with multiple targets or non-name
+  targets.
+* Y018: A private TypeVar should be used at least once in the file in which it
+  is defined.
 
 The following warnings are disabled by default:
 
@@ -85,6 +90,7 @@ The following warnings are disabled by default:
 
 * Y091: Function body must not contain "raise".
 * Y092: Top-level attribute must not have a default value.
+* Y093: Type aliases should be explicitly demarcated with ``typing.TypeAlias``.
 
 License
 -------
