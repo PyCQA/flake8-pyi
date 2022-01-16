@@ -440,15 +440,6 @@ class PyiVisitor(ast.NodeVisitor):
                     statement.value, ast.Ellipsis
                 ):
                     continue
-            # special-case raise for backwards compatibility
-            if isinstance(statement, ast.Raise):
-                self.error(statement, Y091)
-                continue
-            # allow assignments in constructor for now
-            # (though these should probably be changed)
-            if node.name == "__init__":
-                self.error(statement, Y090)
-                continue
             self.error(statement, Y010)
 
     def visit_arguments(self, node: ast.arguments) -> None:
@@ -569,9 +560,7 @@ Y015 = 'Y015 Attribute must not have a default value other than "..."'
 Y016 = "Y016 Duplicate union member"
 Y017 = "Y017 Only simple assignments allowed"
 Y018 = 'Y018 {typevarlike_cls} "{typevar_name}" is not used'
-Y090 = "Y090 Use explicit attributes instead of assignments in __init__"
-Y091 = 'Y091 Function body must not contain "raise"'
 Y092 = "Y092 Top-level attribute must not have a default value"
 Y093 = "Y093 Use typing_extensions.TypeAlias for type aliases"
 
-DISABLED_BY_DEFAULT = [Y090, Y091, Y092, Y093]
+DISABLED_BY_DEFAULT = [Y092, Y093]
