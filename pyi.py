@@ -4,11 +4,9 @@ import logging
 
 import argparse
 import ast
-import re
 import sys
 from collections import Counter
 from collections.abc import Iterable, Sequence
-from copy import deepcopy
 from dataclasses import dataclass, field
 from flake8 import checker  # type: ignore
 from flake8.plugins.pyflakes import FlakesChecker  # type: ignore
@@ -23,6 +21,10 @@ from pyflakes.checker import (  # type: ignore[import]
     FunctionScope,
 )
 from typing import ClassVar, NamedTuple
+
+if sys.version_info >= (3, 9):
+    import re
+    from copy import deepcopy
 
 __version__ = "20.10.0"
 
@@ -430,12 +432,16 @@ class PyiVisitor(ast.NodeVisitor):
     def _Y019_error(
         self, node: ast.FunctionDef | ast.AsyncFunctionDef, typevar_name: str
     ) -> None:
-        cleaned_method = deepcopy(node)
-        cleaned_method.decorator_list.clear()
-        new_syntax = re.sub(
-            fr"(\W){typevar_name}(\W)", r"\1Self\2", ast.unparse(cleaned_method)
-        ).replace("\n   ", "")
-        error_message = Y019.format(typevar_name=typevar_name, new_syntax=new_syntax)
+        error_message = Y019.format(typevar_name=typevar_name)
+
+        if sys.version_info >= (3, 9):
+            cleaned_method = deepcopy(node)
+            cleaned_method.decorator_list.clear()
+            new_syntax = re.sub(
+                fr"(\W){typevar_name}(\W)", r"\1Self\2", ast.unparse(cleaned_method)
+            ).replace("\n   ", "")
+            error_message += f", e.g. `{new_syntax}`"
+
         self.error(node, error_message)
 
     def _check_instance_method_for_bad_typevars(
@@ -656,7 +662,7 @@ Y015 = 'Y015 Attribute must not have a default value other than "..."'
 Y016 = "Y016 Duplicate union member"
 Y017 = "Y017 Only simple assignments allowed"
 Y018 = 'Y018 {typevarlike_cls} "{typevar_name}" is not used'
-Y019 = "Y019 Use `_typeshed.Self` instead of `{typevar_name}`, e.g. `{new_syntax}`"
+Y019 = "Y019 Use `_typeshed.Self` instead of `{typevar_name}`"
 Y092 = "Y092 Top-level attribute must not have a default value"
 Y093 = "Y093 Use typing_extensions.TypeAlias for type aliases"
 

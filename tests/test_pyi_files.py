@@ -24,12 +24,17 @@ def test_pyi_file(path):
         if match:
             expected_output += f"{path}:{lineno}: {match.group(1)}\n"
 
-    # TODO: is a python version dependent error message really a good idea?
+    # TODO: are python-version-dependent error messages really a good idea?
     if sys.version_info < (3, 9):
         expected_output = re.sub(
             r'Y016 Duplicate union member ".*"',
             "Y016 Duplicate union member",
             expected_output,
+        )
+        expected_output = re.sub(
+            r'Y019 Use `_typeshed.Self instead of (_\W+).*',
+            r'Y019 Use `_typeshed.Self instead of \1',
+            expected_output
         )
 
     run_results = [
