@@ -304,6 +304,7 @@ class PyiVisitor(ast.NodeVisitor):
             elif isinstance(slc, ast.Slice):
                 if slc.lower is not None or slc.step is not None:
                     self.error(node, Y003)
+                    return
                 elif (
                     # allow only [:1] and [:2]
                     isinstance(slc.upper, ast.Num)
