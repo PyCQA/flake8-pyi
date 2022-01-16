@@ -523,28 +523,26 @@ class PyiVisitor(ast.NodeVisitor):
             )
             return
 
-        decorator_names = [
+        decorator_names = {
             decorator.id
             for decorator in node.decorator_list
             if isinstance(decorator, ast.Name)
-        ]
+        }
 
-        for decorator_name in decorator_names:
-            if decorator_name == "classmethod":
-                self._check_class_method_for_bad_typevars(
-                    method=node,
-                    first_arg_annotation=first_arg_annotation,
-                    return_annotation=return_annotation,
-                )
-                return
-            elif decorator_name == "staticmethod":
-                return
-
-        self._check_instance_method_for_bad_typevars(
-            method=node,
-            first_arg_annotation=first_arg_annotation,
-            return_annotation=return_annotation,
-        )
+        if "classmethod" in decorator_names:
+            self._check_class_method_for_bad_typevars(
+                method=node,
+                first_arg_annotation=first_arg_annotation,
+                return_annotation=return_annotation,
+            )
+        elif "staticmethod" in decorator_names:
+            return
+        else:
+            self._check_instance_method_for_bad_typevars(
+                method=node,
+                first_arg_annotation=first_arg_annotation,
+                return_annotation=return_annotation,
+            )
 
     def visit_arguments(self, node: ast.arguments) -> None:
         self.generic_visit(node)
