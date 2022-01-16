@@ -441,7 +441,10 @@ class PyiVisitor(ast.NodeVisitor):
             new_syntax = re.sub(r"\s+", " ", new_syntax)
             error_message += f', e.g. "{new_syntax}"'
 
-        self.error(node, error_message)
+        # pass the node for the first argument to `self.error`,
+        # rather than the function node,
+        # as linenos differ in Python <3.9 for decorated functions
+        self.error(node.args.args[0], error_message)
 
     def _check_instance_method_for_bad_typevars(
         self,
@@ -473,6 +476,7 @@ class PyiVisitor(ast.NodeVisitor):
 
         cls_typevar: str
 
+        # see comment in visit_Subscript
         if sys.version_info >= (3, 9):
             if isinstance(first_arg_annotation.slice, ast.Name):
                 cls_typevar = first_arg_annotation.slice.id
