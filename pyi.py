@@ -399,6 +399,12 @@ class PyiVisitor(ast.NodeVisitor):
                 self.error(statement, Y013)
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        self._visit_function(node)
+
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+        self._visit_function(node)
+
+    def _visit_function(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         self._function_nesting += 1
         self.generic_visit(node)
         self._function_nesting -= 1
