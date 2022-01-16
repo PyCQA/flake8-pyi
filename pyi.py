@@ -19,7 +19,7 @@ from pyflakes.checker import (  # type: ignore[import]
     ClassScope,
     FunctionScope,
 )
-from typing import Any, ClassVar, NamedTuple
+from typing import ClassVar, NamedTuple
 
 __version__ = "20.10.0"
 
