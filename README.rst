@@ -76,6 +76,7 @@ currently emitted:
 * Y018: A private TypeVar should be used at least once in the file in which it
   is defined.
 * Y020: Quoted annotations should never be used in stubs.
+* Y021: Docstrings should not be included in stubs.
 
 The following warnings are disabled by default:
 

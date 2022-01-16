@@ -253,6 +253,12 @@ class PyiVisitor(ast.NodeVisitor):
         if not self.string_literals_allowed:
             self.error(node, Y020)
 
+    def visit_Expr(self, node: ast.Expr) -> None:
+        if isinstance(node.value, ast.Str):
+            self.error(node, Y021)
+        else:
+            self.generic_visit(node)
+
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         if isinstance(node.annotation, ast.Name) and node.annotation.id == "TypeAlias":
             return
@@ -509,8 +515,10 @@ class PyiVisitor(ast.NodeVisitor):
                 if isinstance(statement, ast.Pass):
                     self.error(statement, Y009)
                     continue
+                # Ellipsis is fine. Str (docstrings) is not but we produce
+                # tailored error message for it elsewhere.
                 elif isinstance(statement, ast.Expr) and isinstance(
-                    statement.value, ast.Ellipsis
+                    statement.value, (ast.Ellipsis, ast.Str)
                 ):
                     continue
             self.error(statement, Y010)
@@ -635,6 +643,7 @@ Y016 = "Y016 Duplicate union member"
 Y017 = "Y017 Only simple assignments allowed"
 Y018 = 'Y018 {typevarlike_cls} "{typevar_name}" is not used'
 Y020 = "Y020 Quoted annotations should never be used in stubs"
+Y021 = "Y021 Docstrings should not be included in stubs"
 Y092 = "Y092 Top-level attribute must not have a default value"
 Y093 = "Y093 Use typing_extensions.TypeAlias for type aliases"
 
