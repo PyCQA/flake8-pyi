@@ -536,4 +536,4 @@ Y091 = 'Y091 Function body must not contain "raise"'
 Y092 = "Y092 Top-level attribute must not have a default value"
 Y093 = "Y093 Use typing_extensions.TypeAlias for type aliases"
 
-DISABLED_BY_DEFAULT = [Y090, Y091, Y092]
+DISABLED_BY_DEFAULT = [Y090, Y091, Y092, Y093]
