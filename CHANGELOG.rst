@@ -4,6 +4,7 @@ Change Log
 unreleased
 ~~~~~~~~~~
 
+* detect usage of non-integer indices in sys.version_info checks
 * introduce Y093 (require using TypeAlias for type aliases)
 * introduce Y017 (disallows assignments with multiple targets or non-name targets)
 * extend Y001 to cover ParamSpec and TypeVarTuple in addition to TypeVar
