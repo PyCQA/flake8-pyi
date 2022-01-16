@@ -51,7 +51,7 @@ if sys.version_info[:, :] >= (2, 7):  # Y003 Unrecognized sys.version_info check
 if sys.version_info < [3, 0]:  # Y003 Unrecognized sys.version_info check
     ...
 
-if sys.version_info < (b'3', b'0'):  # Y003 Unrecognized sys.version_info check
+if sys.version_info < ('3', '0'):  # Y003 Unrecognized sys.version_info check
     ...
 
 if sys.version_info >= (3, 4, 3):  # Y004 Version comparison must use only major and minor version
