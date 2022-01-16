@@ -4,6 +4,7 @@ Change Log
 unreleased
 ~~~~~~~~~~
 
+* remove Y092 (top-level attribute must not have a default value)
 * extend Y010 to cover what was previously included in Y090 (disallow
   assignments in ``__init__`` methods) and Y091 (disallow ``raise``
   statements). The previous checks were disabled by default.

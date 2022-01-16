@@ -78,7 +78,6 @@ currently emitted:
 
 The following warnings are disabled by default:
 
-* Y092: Top-level attribute must not have a default value.
 * Y093: Type aliases should be explicitly demarcated with ``typing.TypeAlias``.
 
 License
