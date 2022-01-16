@@ -3,8 +3,8 @@ import logging
 
 import argparse
 import ast
-import attr
 import sys
+from dataclasses import dataclass, field
 from flake8 import checker  # type: ignore
 from flake8.plugins.pyflakes import FlakesChecker  # type: ignore
 from itertools import chain
@@ -17,7 +17,7 @@ from pyflakes.checker import (  # type: ignore[import]
     ClassScope,
     FunctionScope,
 )
-from typing import Any, Iterable, List, NamedTuple, Optional, Sequence, Type
+from typing import Any, ClassVar, Iterable, List, NamedTuple, Optional, Sequence, Type
 
 __version__ = "20.10.0"
 
@@ -140,12 +140,12 @@ class PyiAwareFileChecker(checker.FileChecker):
         return super().run_check(plugin, **kwargs)
 
 
-@attr.s
+@dataclass
 class PyiVisitor(ast.NodeVisitor):
-    filename = attr.ib(default=Path("(none)"))
-    errors = attr.ib(type=List[Error], default=attr.Factory(list))
-    _class_nesting = attr.ib(default=0)
-    _function_nesting = attr.ib(default=0)
+    filename: Path = Path("(none)")
+    errors: List[Error] = field(default_factory=list)
+    _class_nesting: int = 0
+    _function_nesting: int = 0
 
     @property
     def in_function(self) -> bool:
@@ -292,7 +292,6 @@ class PyiVisitor(ast.NodeVisitor):
                 # Python 3.9 flattens the AST and removes Index, so simulate that here
                 slice_num = slc if isinstance(slc, ast.Num) else slc.value
                 # anything other than the integer 0 doesn't make much sense
-                # (things that are in 2.7 and 3.7 but not 3.6?)
                 if isinstance(slice_num, ast.Num) and slice_num.n == 0:
                     must_be_single = True
                 else:
@@ -438,14 +437,14 @@ class PyiVisitor(ast.NodeVisitor):
         yield from self.errors
 
 
-@attr.s
+@dataclass
 class PyiTreeChecker:
-    name = "flake8-pyi"
-    version = __version__
+    name: ClassVar[str] = "flake8-pyi"
+    version: ClassVar[str] = __version__
 
-    tree = attr.ib(default=None)
-    filename = attr.ib(default="(none)")
-    options = attr.ib(default=None)
+    tree: Optional[ast.Module] = None
+    filename: str = "(none)"
+    options: Any = None
 
     def run(self):
         path = Path(self.filename)
