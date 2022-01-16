@@ -4,6 +4,9 @@ Change Log
 unreleased
 ~~~~~~~~~~
 
+* extend Y010 to cover what was previously included in Y090 (disallow
+  assignments in ``__init__`` methods) and Y091 (disallow ``raise``
+  statements)
 * extend Y010 to check async functions in addition to normal functions 
 * introduce Y093 (require using TypeAlias for type aliases)
 * introduce Y017 (disallows assignments with multiple targets or non-name targets)
