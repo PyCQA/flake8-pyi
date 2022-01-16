@@ -71,6 +71,10 @@ currently emitted:
   targets.
 * Y018: A private TypeVar should be used at least once in the file in which it
   is defined.
+* Y019: Certain kinds of methods should use ``_typeshed.Self`` instead of
+  defining custom TypeVars for their return annotation. This check currently
+  applies for instance methods that return ``self``, class methods that return
+  an instance of ``cls``, and ``__new__`` methods.
 
 The following warnings are disabled by default:
 
