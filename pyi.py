@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
+from __future__ import annotations
 import logging
 
 import argparse
 import ast
 import sys
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 from flake8 import checker  # type: ignore
 from flake8.plugins.pyflakes import FlakesChecker  # type: ignore
@@ -17,7 +19,7 @@ from pyflakes.checker import (  # type: ignore[import]
     ClassScope,
     FunctionScope,
 )
-from typing import Any, ClassVar, Iterable, List, NamedTuple, Optional, Sequence, Type
+from typing import ClassVar, NamedTuple
 
 __version__ = "20.10.0"
 
@@ -28,7 +30,7 @@ class Error(NamedTuple):
     lineno: int
     col: int
     message: str
-    type: Type[Any]
+    type: type
 
 
 class PyiAwareFlakesChecker(FlakesChecker):
@@ -143,7 +145,7 @@ class PyiAwareFileChecker(checker.FileChecker):
 @dataclass
 class PyiVisitor(ast.NodeVisitor):
     filename: Path = Path("(none)")
-    errors: List[Error] = field(default_factory=list)
+    errors: list[Error] = field(default_factory=list)
     _class_nesting: int = 0
     _function_nesting: int = 0
 
@@ -282,7 +284,7 @@ class PyiVisitor(ast.NodeVisitor):
         # unless this is on, comparisons against a single integer aren't allowed
         must_be_single = False
         # if strict equality is allowed, it must be against a tuple of this length
-        can_have_strict_equals: Optional[int] = None
+        can_have_strict_equals: int | None = None
         version_info = node.left
         if isinstance(version_info, ast.Subscript):
             slc = version_info.slice
@@ -320,7 +322,7 @@ class PyiVisitor(ast.NodeVisitor):
         node: ast.Compare,
         *,
         must_be_single: bool = False,
-        can_have_strict_equals: Optional[int] = None,
+        can_have_strict_equals: int | None = None,
     ) -> None:
         comparator = node.comparators[0]
         if must_be_single:
@@ -440,9 +442,9 @@ class PyiTreeChecker:
     name: ClassVar[str] = "flake8-pyi"
     version: ClassVar[str] = __version__
 
-    tree: Optional[ast.Module] = None
+    tree: ast.Module | None = None
     filename: str = "(none)"
-    options: Optional[argparse.Namespace] = None
+    options: argparse.Namespace | None = None
 
     def run(self):
         path = Path(self.filename)
