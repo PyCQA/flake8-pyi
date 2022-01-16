@@ -437,7 +437,8 @@ class PyiVisitor(ast.NodeVisitor):
             cleaned_method.decorator_list.clear()
             new_syntax = re.sub(
                 fr"(\W){typevar_name}(\W)", r"\1Self\2", ast.unparse(cleaned_method)
-            ).replace("\n   ", "")
+            )
+            new_syntax = re.sub(r"\s+", " ", new_syntax)
             error_message += f', e.g. "{new_syntax}"'
 
         self.error(node, error_message)
