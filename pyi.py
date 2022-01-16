@@ -469,14 +469,26 @@ class PyiVisitor(ast.NodeVisitor):
     ) -> None:
         if not isinstance(first_arg_annotation, ast.Subscript):
             return
-        if not isinstance(first_arg_annotation.slice, ast.Name):
-            return
+
+        cls_typevar: str
+
+        if sys.version_info >= (3, 9):
+            if isinstance(first_arg_annotation.slice, ast.Name):
+                cls_typevar = first_arg_annotation.slice.id
+            else:
+                return
+        else:
+            if isinstance(first_arg_annotation.slice, ast.Index) and isinstance(
+                first_arg_annotation.slice.value, ast.Name
+            ):
+                cls_typevar = first_arg_annotation.slice.value.id
+            else:
+                return
+
         if not isinstance(first_arg_annotation.value, ast.Name):
             return
         if first_arg_annotation.value.id != "type":
             return
-
-        cls_typevar = first_arg_annotation.slice.id
 
         if cls_typevar == return_annotation.id and cls_typevar.startswith("_"):
             self._Y019_error(method, cls_typevar)
