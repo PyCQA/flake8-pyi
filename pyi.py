@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 from __future__ import annotations
+from contextlib import contextmanager
 import logging
 
 import argparse
 import ast
 import sys
 from collections import Counter
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import dataclass, field
 from flake8 import checker  # type: ignore
 from flake8.plugins.pyflakes import FlakesChecker  # type: ignore
@@ -158,6 +159,21 @@ class PyiVisitor(ast.NodeVisitor):
     all_name_occurrences: Counter[str] = field(default_factory=Counter)
     _class_nesting: int = 0
     _function_nesting: int = 0
+    _allow_string_literals: int = 0
+
+    @contextmanager
+    def allow_string_literals(self) -> Iterator[None]:
+        """Context manager that indicates that string literals should be allowed."""
+        self._allow_string_literals += 1
+        try:
+            yield
+        finally:
+            self._allow_string_literals -= 1
+
+    @property
+    def string_literals_allowed(self) -> bool:
+        """Determine whether string literals should currently be allowed."""
+        return bool(self._allow_string_literals)
 
     @property
     def in_function(self) -> bool:
@@ -170,16 +186,26 @@ class PyiVisitor(ast.NodeVisitor):
         return bool(self._class_nesting)
 
     def visit_Assign(self, node: ast.Assign) -> None:
-        self.generic_visit(node)
         if self.in_function:
             # We error for unexpected things within functions separately.
+            self.generic_visit(node)
             return
-        if len(node.targets) != 1:
+        if len(node.targets) == 1:
+            target = node.targets[0]
+            if isinstance(target, ast.Name):
+                target_name = target.id
+            else:
+                self.error(node, Y017)
+                target_name = None
+        else:
             self.error(node, Y017)
-            return
-        target = node.targets[0]
-        if not isinstance(target, ast.Name):
-            self.error(node, Y017)
+            target_name = None
+        if target_name == "__all__":
+            with self.allow_string_literals():
+                self.generic_visit(node)
+        else:
+            self.generic_visit(node)
+        if target_name is None:
             return
         assignment = node.value
         # Attempt to find assignments to type helpers (typevars and aliases),
@@ -188,9 +214,8 @@ class PyiVisitor(ast.NodeVisitor):
         if isinstance(assignment, ast.Call) and isinstance(assignment.func, ast.Name):
             cls_name = assignment.func.id
             if cls_name in ("TypeVar", "ParamSpec", "TypeVarTuple"):
-                typevar_name = target.id
-                if typevar_name.startswith("_"):
-                    target_info = TypeVarInfo(cls_name=cls_name, name=typevar_name)
+                if target_name.startswith("_"):
+                    target_info = TypeVarInfo(cls_name=cls_name, name=target_name)
                     self.typevarlike_defs[target_info] = node
                 else:
                     self.error(target, Y001.format(cls_name))
@@ -198,13 +223,41 @@ class PyiVisitor(ast.NodeVisitor):
             # unusual cases where assignment to the result of a call is legitimate
             # in stubs.
             return
-        if isinstance(node.value, (ast.Num, ast.Str)):
+        if isinstance(node.value, (ast.Num, ast.Str, ast.Bytes)):
             self.error(node.value, Y015)
         else:
             self.error(node, Y093)
 
     def visit_Name(self, node: ast.Name) -> None:
         self.all_name_occurrences[node.id] += 1
+
+    def visit_Call(self, node: ast.Call) -> None:
+        self.visit(node.func)
+        # String literals can appear in positional arguments for
+        # TypeVar definitions.
+        with self.allow_string_literals():
+            for arg in node.args:
+                self.visit(arg)
+        # But in keyword arguments they're most likely TypeVar bounds,
+        # which should not be quoted.
+        for kw in node.keywords:
+            self.visit(kw)
+
+    # 3.8+
+    def visit_Constant(self, node: ast.Constant) -> None:
+        if not self.string_literals_allowed and isinstance(node.value, str):
+            self.error(node, Y020)
+
+    # 3.7 and lower
+    def visit_Str(self, node: ast.Str) -> None:
+        if not self.string_literals_allowed:
+            self.error(node, Y020)
+
+    def visit_Expr(self, node: ast.Expr) -> None:
+        if isinstance(node.value, ast.Str):
+            self.error(node, Y021)
+        else:
+            self.generic_visit(node)
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         if isinstance(node.annotation, ast.Name) and node.annotation.id == "TypeAlias":
@@ -250,9 +303,15 @@ class PyiVisitor(ast.NodeVisitor):
         self._check_union_members(members)
 
     def visit_Subscript(self, node: ast.Subscript) -> None:
-        self.generic_visit(node)
+        if isinstance(node.value, ast.Name):
+            value_id = node.value.id
+        else:
+            value_id = None
 
-        if not (isinstance(node.value, ast.Name) and node.value.id == "Union"):
+        self.visit(node.value)
+        if value_id == "Literal":
+            with self.allow_string_literals():
+                self.visit(node.slice)
             return
 
         # Union[str, int] parses differently depending on python versions:
@@ -260,15 +319,36 @@ class PyiVisitor(ast.NodeVisitor):
         # 3.9 and newer:  Subscript(value=Name(id='Union'), slice=Tuple(...))
         if sys.version_info >= (3, 9):
             if isinstance(node.slice, ast.Tuple):
-                self._check_union_members(node.slice.elts)
+                self._visit_slice_tuple(node.slice, value_id)
+            else:
+                self.visit(node.slice)
         else:
             if isinstance(node.slice, ast.Index) and isinstance(
                 node.slice.value, ast.Tuple
             ):
-                self._check_union_members(node.slice.value.elts)
+                self._visit_slice_tuple(node.slice.value, value_id)
+            else:
+                self.visit(node.slice)
+
+    def _visit_slice_tuple(self, node: ast.Tuple, parent: str | None) -> None:
+        if parent == "Union":
+            self._check_union_members(node.elts)
+        elif parent == "Annotated":
+            # Allow literals, except in the first argument
+            if len(node.elts) > 1:
+                self.visit(node.elts[0])
+                with self.allow_string_literals():
+                    for elt in node.elts[1:]:
+                        self.visit(elt)
+            else:
+                self.visit(node)
+        else:
+            self.visit(node)
 
     def visit_If(self, node: ast.If) -> None:
-        self.generic_visit(node)
+        # No types can appear in if conditions, so avoid confusing additional errors.
+        with self.allow_string_literals():
+            self.generic_visit(node)
         test = node.test
         if isinstance(test, ast.BoolOp):
             for expression in test.values:
@@ -435,8 +515,10 @@ class PyiVisitor(ast.NodeVisitor):
                 if isinstance(statement, ast.Pass):
                     self.error(statement, Y009)
                     continue
+                # Ellipsis is fine. Str (docstrings) is not but we produce
+                # tailored error message for it elsewhere.
                 elif isinstance(statement, ast.Expr) and isinstance(
-                    statement.value, ast.Ellipsis
+                    statement.value, (ast.Ellipsis, ast.Str)
                 ):
                     continue
             self.error(statement, Y010)
@@ -560,6 +642,8 @@ Y015 = 'Y015 Attribute must not have a default value other than "..."'
 Y016 = "Y016 Duplicate union member"
 Y017 = "Y017 Only simple assignments allowed"
 Y018 = 'Y018 {typevarlike_cls} "{typevar_name}" is not used'
+Y020 = "Y020 Quoted annotations should never be used in stubs"
+Y021 = "Y021 Docstrings should not be included in stubs"
 Y092 = "Y092 Top-level attribute must not have a default value"
 Y093 = "Y093 Use typing_extensions.TypeAlias for type aliases"
 
