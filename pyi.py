@@ -182,8 +182,9 @@ class PyiVisitor(ast.NodeVisitor):
             self.error(node, Y017)
             return
         assignment = node.value
-        # Attempt to find assignments to type helpers (typevars and aliases), which should
-        # usually be private. If they are private, they should be used in the same file.
+        # Attempt to find assignments to type helpers (typevars and aliases),
+        # which should usually be private. If they are private,
+        # they should be used at least once in the file in which they are defined.
         if isinstance(assignment, ast.Call) and isinstance(assignment.func, ast.Name):
             cls_name = assignment.func.id
             if cls_name in ("TypeVar", "ParamSpec", "TypeVarTuple"):
