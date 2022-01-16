@@ -172,7 +172,7 @@ class PyiVisitor(ast.NodeVisitor):
 
     @property
     def string_literals_allowed(self) -> bool:
-        """Whether string literals should currently be allowed."""
+        """Determine whether string literals should currently be allowed."""
         return bool(self._allow_string_literals)
 
     @property
