@@ -5,6 +5,7 @@ import logging
 import argparse
 import ast
 import sys
+from collections import Counter
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 from flake8 import checker  # type: ignore
@@ -31,6 +32,11 @@ class Error(NamedTuple):
     col: int
     message: str
     type: type
+
+
+class TypeVarInfo(NamedTuple):
+    cls_name: str
+    name: str
 
 
 class PyiAwareFlakesChecker(FlakesChecker):
@@ -146,6 +152,10 @@ class PyiAwareFileChecker(checker.FileChecker):
 class PyiVisitor(ast.NodeVisitor):
     filename: Path = Path("(none)")
     errors: list[Error] = field(default_factory=list)
+    # Mapping of all private TypeVars/ParamSpecs/TypeVarTuples to the nodes where they're defined
+    typevarlike_defs: dict[TypeVarInfo, ast.Assign] = field(default_factory=dict)
+    # Mapping of each name in the file to the no. of occurrences
+    all_name_occurrences: Counter[str] = field(default_factory=Counter)
     _class_nesting: int = 0
     _function_nesting: int = 0
 
@@ -171,21 +181,31 @@ class PyiVisitor(ast.NodeVisitor):
         if not isinstance(target, ast.Name):
             self.error(node, Y017)
             return
-        # Attempt to find assignments to type helpers (typevars and aliases), which should be
-        # private.
-        if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Name):
-            if node.value.func.id in ("TypeVar", "ParamSpec", "TypeVarTuple"):
-                if not target.id.startswith("_"):
-                    self.error(target, Y001.format(node.value.func.id))
+        assignment = node.value
+        # Attempt to find assignments to type helpers (typevars and aliases),
+        # which should usually be private. If they are private,
+        # they should be used at least once in the file in which they are defined.
+        if isinstance(assignment, ast.Call) and isinstance(assignment.func, ast.Name):
+            cls_name = assignment.func.id
+            if cls_name in ("TypeVar", "ParamSpec", "TypeVarTuple"):
+                typevar_name = target.id
+                if typevar_name.startswith("_"):
+                    target_info = TypeVarInfo(cls_name=cls_name, name=typevar_name)
+                    self.typevarlike_defs[target_info] = node
+                else:
+                    self.error(target, Y001.format(cls_name))
                 return
             # We allow assignment-based TypedDict creation for dicts that have
             # keys that aren't valid as identifiers.
-            elif node.value.func.id == "TypedDict":
+            elif cls_name == "TypedDict":
                 return
         if isinstance(node.value, (ast.Num, ast.Str)):
             self.error(node.value, Y015)
         else:
             self.error(node, Y093)
+
+    def visit_Name(self, node: ast.Name) -> None:
+        self.all_name_occurrences[node.id] += 1
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         if isinstance(node.annotation, ast.Name) and node.annotation.id == "TypeAlias":
@@ -226,7 +246,7 @@ class PyiVisitor(ast.NodeVisitor):
 
         # Do not call generic_visit(node), that would call this method again unnecessarily
         for member in members:
-            self.generic_visit(member)
+            self.visit(member)
 
         self._check_union_members(members)
 
@@ -439,6 +459,12 @@ class PyiVisitor(ast.NodeVisitor):
     def run(self, tree: ast.AST) -> Iterable[Error]:
         self.errors.clear()
         self.visit(tree)
+        for (cls_name, typevar_name), def_node in self.typevarlike_defs.items():
+            if self.all_name_occurrences[typevar_name] == 1:
+                self.error(
+                    def_node,
+                    Y018.format(typevarlike_cls=cls_name, typevar_name=typevar_name),
+                )
         yield from self.errors
 
 
@@ -533,6 +559,7 @@ Y014 = 'Y014 Default values for arguments must be "..."'
 Y015 = 'Y015 Attribute must not have a default value other than "..."'
 Y016 = "Y016 Duplicate union member"
 Y017 = "Y017 Only simple assignments allowed"
+Y018 = 'Y018 {typevarlike_cls} "{typevar_name}" is not used'
 Y092 = "Y092 Top-level attribute must not have a default value"
 Y093 = "Y093 Use typing_extensions.TypeAlias for type aliases"
 
