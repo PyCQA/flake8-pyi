@@ -36,15 +36,3 @@ Look in ``.github/workflows/`` to find the commands.
 For example, to run tests::
 
     $ python3 -m pytest
-
-Possible future changes
------------------------
-
-``flake8-pyi`` aims to provide support for modern conventions in writing
-typed Python code, such as using ``|`` instead of ``Union`` and using the
-``list`` builtin instead of ``typing.List``.
-
-The functionality that supports unquoted forward references in ``.pyi`` files
-should ideally be merged into ``flake8`` as the integration is
-currently pretty brittle (might break with future versions of ``pyflakes``,
-``flake8``, or due to interactions with other overly clever plugins).
