@@ -9,7 +9,7 @@ unreleased
 * extend Y001 to cover ParamSpec and TypeVarTuple in addition to TypeVar
 * introduce Y016 (duplicate union member)
 * support Python 3.10
-* discontinue support for 3.6
+* discontinue support for Python 3.6
 
 20.10.0
 ~~~~~~~
