@@ -25,7 +25,7 @@ Functionality
 Be careful when using this plugin in the same environment as other flake8
 plugins, because they might generate errors that are not appropriate for
 ``.pyi`` files (e.g., about missing docstrings). We recommend running
-``flake8-pyi`` in a dedicated virtual environment in your CI.
+``flake8-pyi`` in a dedicated environment in your CI.
 
 
 List of warnings
