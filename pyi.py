@@ -194,11 +194,10 @@ class PyiVisitor(ast.NodeVisitor):
                     self.typevarlike_defs[target_info] = node
                 else:
                     self.error(target, Y001.format(cls_name))
-                return
-            # We allow assignment-based TypedDict creation for dicts that have
-            # keys that aren't valid as identifiers.
-            elif cls_name == "TypedDict":
-                return
+            # We avoid triggering Y093 in this case because there are various
+            # unusual cases where assignment to the result of a call is legitimate
+            # in stubs.
+            return
         if isinstance(node.value, (ast.Num, ast.Str)):
             self.error(node.value, Y015)
         else:
