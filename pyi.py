@@ -444,7 +444,7 @@ class PyiTreeChecker:
 
     tree: Optional[ast.Module] = None
     filename: str = "(none)"
-    options: Any = None
+    options: Optional[argparse.Namespace] = None
 
     def run(self):
         path = Path(self.filename)
