@@ -4,6 +4,7 @@ Change Log
 unreleased
 ~~~~~~~~~~
 
+* introduce Y020 (never use quoted annotations in stubs)
 * extend Y010 to cover what was previously included in Y090 (disallow
   assignments in ``__init__`` methods) and Y091 (disallow ``raise``
   statements). The previous checks were disabled by default.
