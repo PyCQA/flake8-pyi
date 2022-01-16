@@ -498,6 +498,41 @@ class PyiVisitor(ast.NodeVisitor):
         if cls_typevar == return_annotation.id and cls_typevar.startswith("_"):
             self._Y019_error(method, cls_typevar)
 
+    def check_self_typevars(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
+        pos_or_keyword_args = node.args.args
+
+        if not pos_or_keyword_args:
+            return
+        return_annotation = node.returns
+
+        if not isinstance(return_annotation, ast.Name):
+            return
+        first_arg_annotation = pos_or_keyword_args[0].annotation
+
+        if not isinstance(first_arg_annotation, (ast.Name, ast.Subscript)):
+            return
+
+        decorator_names = {
+            decorator.id
+            for decorator in node.decorator_list
+            if isinstance(decorator, ast.Name)
+        }
+
+        if "classmethod" in decorator_names or node.name == "__new__":
+            self._check_class_method_for_bad_typevars(
+                method=node,
+                first_arg_annotation=first_arg_annotation,
+                return_annotation=return_annotation,
+            )
+        elif "staticmethod" in decorator_names:
+            return
+        else:
+            self._check_instance_method_for_bad_typevars(
+                method=node,
+                first_arg_annotation=first_arg_annotation,
+                return_annotation=return_annotation,
+            )
+
     def _visit_function(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         self._function_nesting += 1
         self.generic_visit(node)
@@ -517,49 +552,6 @@ class PyiVisitor(ast.NodeVisitor):
 
         if self.in_class:
             self.check_self_typevars(node)
-
-    def check_self_typevars(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
-        pos_or_keyword_args = node.args.args
-
-        if not pos_or_keyword_args:
-            return
-        return_annotation = node.returns
-
-        if not isinstance(return_annotation, ast.Name):
-            return
-        first_arg_annotation = pos_or_keyword_args[0].annotation
-
-        if not isinstance(first_arg_annotation, (ast.Name, ast.Subscript)):
-            return
-
-        if node.name == "__new__":
-            self._check_class_method_for_bad_typevars(
-                method=node,
-                first_arg_annotation=first_arg_annotation,
-                return_annotation=return_annotation,
-            )
-            return
-
-        decorator_names = {
-            decorator.id
-            for decorator in node.decorator_list
-            if isinstance(decorator, ast.Name)
-        }
-
-        if "classmethod" in decorator_names:
-            self._check_class_method_for_bad_typevars(
-                method=node,
-                first_arg_annotation=first_arg_annotation,
-                return_annotation=return_annotation,
-            )
-        elif "staticmethod" in decorator_names:
-            return
-        else:
-            self._check_instance_method_for_bad_typevars(
-                method=node,
-                first_arg_annotation=first_arg_annotation,
-                return_annotation=return_annotation,
-            )
 
     def visit_arguments(self, node: ast.arguments) -> None:
         self.generic_visit(node)
