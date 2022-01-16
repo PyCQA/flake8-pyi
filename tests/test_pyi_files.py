@@ -2,7 +2,6 @@ import glob
 import os
 import re
 import subprocess
-import sys
 
 import pytest
 
@@ -23,14 +22,6 @@ def test_pyi_file(path):
         match = re.search("# ([A-Z][0-9][0-9][0-9].*)", line)
         if match:
             expected_output += f"{path}:{lineno}: {match.group(1)}\n"
-
-    # TODO: is a python version dependent error message really a good idea?
-    if sys.version_info < (3, 9):
-        expected_output = re.sub(
-            r'Y016 Duplicate union member ".*"',
-            "Y016 Duplicate union member",
-            expected_output,
-        )
 
     run_results = [
         # Passing a file on command line

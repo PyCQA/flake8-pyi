@@ -22,6 +22,11 @@ from pyflakes.checker import (  # type: ignore[import]
 )
 from typing import ClassVar, NamedTuple
 
+if sys.version_info >= (3, 9):
+    from ast import unparse
+else:
+    from ast_decompiler import decompile as unparse
+
 __version__ = "20.10.0"
 
 LOG = logging.getLogger("flake8.pyi")
@@ -222,11 +227,7 @@ class PyiVisitor(ast.NodeVisitor):
 
         for members in members_by_dump.values():
             if len(members) >= 2:
-                if sys.version_info >= (3, 9):  # ast.unparse() exists
-                    error_string = f'{Y016} "{ast.unparse(members[1])}"'
-                else:
-                    error_string = Y016
-                self.error(members[1], error_string)
+                self.error(members[1], Y016.format(unparse(members[1])))
 
     def visit_BinOp(self, node: ast.BinOp) -> None:
         if not isinstance(node.op, ast.BitOr):
@@ -557,7 +558,7 @@ Y012 = 'Y012 Class body must not contain "pass"'
 Y013 = 'Y013 Non-empty class body must not contain "..."'
 Y014 = 'Y014 Default values for arguments must be "..."'
 Y015 = 'Y015 Attribute must not have a default value other than "..."'
-Y016 = "Y016 Duplicate union member"
+Y016 = 'Y016 Duplicate union member "{}"'
 Y017 = "Y017 Only simple assignments allowed"
 Y018 = 'Y018 {typevarlike_cls} "{typevar_name}" is not used'
 Y092 = "Y092 Top-level attribute must not have a default value"

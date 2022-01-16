@@ -36,7 +36,7 @@ setup(
     py_modules=["pyi"],
     zip_safe=False,
     python_requires=">=3.7",
-    install_requires=["flake8 >= 3.2.1", "pyflakes >= 2.1.1"],
+    install_requires=["flake8 >= 3.2.1", "pyflakes >= 2.1.1", 'ast-decompiler >= 0.4.0, <0.5.0; python_version < "3.9"'],
     test_suite="tests.test_pyi",
     classifiers=[
         "Development Status :: 3 - Alpha",
