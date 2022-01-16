@@ -438,7 +438,7 @@ class PyiVisitor(ast.NodeVisitor):
             new_syntax = re.sub(
                 fr"(\W){typevar_name}(\W)", r"\1Self\2", ast.unparse(cleaned_method)
             ).replace("\n   ", "")
-            error_message += f', e.g. {new_syntax}"'
+            error_message += f', e.g. "{new_syntax}"'
 
         self.error(node, error_message)
 
