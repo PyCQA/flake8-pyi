@@ -170,7 +170,8 @@ class PyiVisitor(ast.NodeVisitor):
         finally:
             self._allow_string_literals -= 1
 
-    def should_allow_string_literals(self) -> bool:
+    @property
+    def string_literals_allowed(self) -> bool:
         """Whether string literals should currently be allowed."""
         return bool(self._allow_string_literals)
 
@@ -244,12 +245,12 @@ class PyiVisitor(ast.NodeVisitor):
 
     # 3.8+
     def visit_Constant(self, node: ast.Constant) -> None:
-        if not self.should_allow_string_literals() and isinstance(node.value, str):
+        if not self.string_literals_allowed and isinstance(node.value, str):
             self.error(node, Y020)
 
     # 3.7 and lower
     def visit_Str(self, node: ast.Str) -> None:
-        if not self.should_allow_string_literals():
+        if not self.string_literals_allowed:
             self.error(node, Y020)
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
