@@ -5,6 +5,7 @@ unreleased
 ~~~~~~~~~~
 
 * introduce Y018 (detect unused TypeVars)
+* extend Y010 to check async functions in addition to normal functions
 * introduce Y093 (require using TypeAlias for type aliases)
 * introduce Y017 (disallows assignments with multiple targets or non-name targets)
 * extend Y001 to cover ParamSpec and TypeVarTuple in addition to TypeVar
