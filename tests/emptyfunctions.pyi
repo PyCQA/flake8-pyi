@@ -11,6 +11,9 @@ class BadClass:
     def __init__(self, x: int) -> None:
         self.x = x  # Y010 Function body must contain only "..."
 
+    async def async_assign(self, x: int) -> None:
+        self.x = x  # Y010 Function body must contain only "..."
+
 class WorseClass:
     def __init__(self, b: BadClass, x: int) -> None:
         b.x = x  # Y010 Function body must contain only "..."
