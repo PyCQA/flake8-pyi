@@ -11,7 +11,7 @@ Guide to the codebase
 ---------------------
 
 The plugin consists of a single file: ``pyi.py``. Tests are run using ``pytest``, and can be
-found in the `tests` folder.
+found in the ``tests`` folder.
 
 
 Tests and formatting

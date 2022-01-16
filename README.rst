@@ -19,9 +19,13 @@ Functionality
    expressions after the entire file has been read.  This enables support for
    first-class forward references that stub files use.
 
-The latter should ideally be merged into ``flake8`` as the integration is
-currently pretty brittle (might break with future versions of ``pyflakes``,
-``flake8``, or due to interactions with other overly clever plugins).
+3. Provides a number of ``.pyi``-specific warnings that enforce typeshed's
+   style guide.
+
+Note: Be careful when using this plugin in the same environment as other flake8
+plugins, as they might generate errors that are inappropriate for
+``.pyi`` files (e.g., about missing docstrings). We recommend running
+``flake8-pyi`` in a dedicated environment in your CI.
 
 
 List of warnings
@@ -38,7 +42,7 @@ currently emitted:
   differences between Python versions or platforms, but type checkers only
   understand a limited subset of Python syntax, and this warning triggers on
   conditionals that type checkers will probably not understand.
-* Y003: Unrecognized `sys.version_info` check. Similar, but triggers on some
+* Y003: Unrecognized ``sys.version_info`` check. Similar, but triggers on some
   comparisons involving version checks.
 * Y004: Version comparison must use only major and minor version. Type checkers
   like mypy don't know about patch versions of Python (e.g. 3.4.3 versus 3.4.4),
@@ -49,7 +53,7 @@ currently emitted:
 * Y006: Use only < and >= for version comparisons. Comparisons involving > and
   <= may produce unintuitive results when tools do use the full sys.version_info
   tuple.
-* Y007: Unrecognized `sys.platform` check. Platform checks should be simple
+* Y007: Unrecognized ``sys.platform`` check. Platform checks should be simple
   string comparisons.
 * Y008: Unrecognized platform. To prevent you from typos, we warn if you use a
   platform name outside a small set of known platforms (e.g. "linux" and
@@ -66,7 +70,7 @@ currently emitted:
 * Y014: All default values for arguments must be "...". A stronger version
   of Y011 that includes arguments without type annotations.
 * Y015: Attribute must not have a default value other than "...".
-* Y016: Unions shouldn't contain duplicates, e.g. `str | str` is not allowed.
+* Y016: Unions shouldn't contain duplicates, e.g. ``str | str`` is not allowed.
 * Y017: Stubs should not contain assignments with multiple targets or non-name
   targets.
 * Y018: A private TypeVar should be used at least once in the file in which it
@@ -75,6 +79,8 @@ currently emitted:
   defining custom TypeVars for their return annotation. This check currently
   applies for instance methods that return ``self``, class methods that return
   an instance of ``cls``, and ``__new__`` methods.
+* Y020: Quoted annotations should never be used in stubs.
+* Y021: Docstrings should not be included in stubs.
 
 The following warnings are disabled by default:
 
@@ -92,3 +98,9 @@ Authors
 
 Glued together by `Łukasz Langa <mailto:lukasz@langa.pl>`_ and
 `Jelle Zijlstra <mailto:jelle.zijlstra@gmail.com>`_.
+
+See also
+--------
+
+* `Changelog <./CHANGELOG.rst>`_
+* `Information for contributors <./CONTRIBUTING.rst>`_
