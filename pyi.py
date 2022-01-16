@@ -440,7 +440,7 @@ class PyiVisitor(ast.NodeVisitor):
             new_syntax = re.sub(
                 fr"(\W){typevar_name}(\W)", r"\1Self\2", ast.unparse(cleaned_method)
             ).replace("\n   ", "")
-            error_message += f", e.g. `{new_syntax}`"
+            error_message += f', e.g. {new_syntax}"'
 
         self.error(node, error_message)
 
@@ -664,7 +664,7 @@ Y015 = 'Y015 Attribute must not have a default value other than "..."'
 Y016 = "Y016 Duplicate union member"
 Y017 = "Y017 Only simple assignments allowed"
 Y018 = 'Y018 {typevarlike_cls} "{typevar_name}" is not used'
-Y019 = "Y019 Use `_typeshed.Self` instead of `{typevar_name}`"
+Y019 = 'Y019 Use "_typeshed.Self" instead of "{typevar_name}"'
 Y092 = "Y092 Top-level attribute must not have a default value"
 Y093 = "Y093 Use typing_extensions.TypeAlias for type aliases"
 
