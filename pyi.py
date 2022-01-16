@@ -7,7 +7,7 @@ import argparse
 import ast
 import sys
 from collections import Counter
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import dataclass, field
 from flake8 import checker  # type: ignore
 from flake8.plugins.pyflakes import FlakesChecker  # type: ignore
@@ -21,7 +21,7 @@ from pyflakes.checker import (  # type: ignore[import]
     ClassScope,
     FunctionScope,
 )
-from typing import ClassVar, Iterator, NamedTuple
+from typing import ClassVar, NamedTuple
 
 __version__ = "20.10.0"
 
