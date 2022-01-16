@@ -32,9 +32,9 @@ def test_pyi_file(path):
             expected_output,
         )
         expected_output = re.sub(
-            r'Y019 Use `_typeshed.Self instead of (_\W+).*',
-            r'Y019 Use `_typeshed.Self instead of \1',
-            expected_output
+            r"Y019 Use `_typeshed.Self instead of (_\W+).*",
+            r"Y019 Use `_typeshed.Self instead of \1",
+            expected_output,
         )
 
     run_results = [

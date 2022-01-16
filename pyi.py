@@ -502,8 +502,10 @@ class PyiVisitor(ast.NodeVisitor):
 
         # Rest of this method is devoted to finding TypeVars that should be _typeshed.Self, but aren't
 
-        if not self.in_class:
-            return
+        if self.in_class:
+            self.check_self_typevars(node)
+
+    def check_self_typevars(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         pos_or_keyword_args = node.args.args
 
         if not pos_or_keyword_args:
