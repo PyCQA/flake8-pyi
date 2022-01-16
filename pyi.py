@@ -190,16 +190,16 @@ class PyiVisitor(ast.NodeVisitor):
             # We error for unexpected things within functions separately.
             self.generic_visit(node)
             return
-        if len(node.targets) != 1:
-            self.error(node, Y017)
-            target_name = None
-        else:
+        if len(node.targets) == 1:
             target = node.targets[0]
-            if not isinstance(target, ast.Name):
+            if isinstance(target, ast.Name):
+                target_name = target.id
+            else:
                 self.error(node, Y017)
                 target_name = None
-            else:
-                target_name = target.id
+        else:
+            self.error(node, Y017)
+            target_name = None
         if target_name == "__all__":
             with self.allow_string_literals():
                 self.generic_visit(node)
