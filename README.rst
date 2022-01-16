@@ -29,10 +29,11 @@ List of warnings
 This plugin reserves codes starting with **Y0**. The following warnings are
 currently emitted:
 
-* Y001: Names of TypeVars in stubs should start with ``_``. This makes sure you
-  don't accidentally expose names internal to the stub.
-* Y002: If test must be a simple comparison against ``sys.platform`` or
-  ``sys.version_info``. Stub files support simple conditionals to indicate
+* Y001: Names of TypeVars, ParamSpecs and TypeVarTuples in stubs should usually
+  start with `_`. This makes sure you don't accidentally expose names internal
+  to the stub.
+* Y002: If test must be a simple comparison against `sys.platform` or
+  `sys.version_info`. Stub files support simple conditionals to indicate
   differences between Python versions or platforms, but type checkers only
   understand a limited subset of Python syntax, and this warning triggers on
   conditionals that type checkers will probably not understand.
@@ -55,8 +56,7 @@ currently emitted:
 * Y009: Empty body should contain "...", not "pass". This is just a stylistic
   choice, but it's the one typeshed made.
 * Y010: Function body must contain only "...". Stub files should not contain
-  code, so function bodies should be empty. Currently, we make exceptions for
-  raise statements and for assignments in ``__init__`` methods.
+  code, so function bodies should be empty.
 * Y011: All default values for typed function arguments must be "...". Type
   checkers ignore the default value, so the default value is not useful
   information in a stub file.
@@ -66,24 +66,15 @@ currently emitted:
   of Y011 that includes arguments without type annotations.
 * Y015: Attribute must not have a default value other than "...".
 * Y016: Unions shouldn't contain duplicates, e.g. ``str | str`` is not allowed.
+* Y017: Stubs should not contain assignments with multiple targets or non-name
+  targets.
+* Y018: A private TypeVar should be used at least once in the file in which it
+  is defined.
 
 The following warnings are disabled by default:
 
-* Y090: Use explicit attributes instead of assignments in ``__init__``. This
-  is a stricter version of Y010. Instead of::
-
-    class Thing:
-        def __init__(self, x: str) -> None:
-            self.x = x
-
-  you should write::
-
-     class Thing:
-         x: str
-         def __init__(self, x: str) -> None: ...
-
-* Y091: Function body must not contain "raise".
 * Y092: Top-level attribute must not have a default value.
+* Y093: Type aliases should be explicitly demarcated with ``typing.TypeAlias``.
 
 License
 -------

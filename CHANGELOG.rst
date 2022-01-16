@@ -4,7 +4,18 @@ Change Log
 unreleased
 ~~~~~~~~~~
 
+* extend Y010 to cover what was previously included in Y090 (disallow
+  assignments in ``__init__`` methods) and Y091 (disallow ``raise``
+  statements). The previous checks were disabled by default.
+* detect usage of non-integer indices in sys.version_info checks
+* extend Y010 to check async functions in addition to normal functions 
+* introduce Y093 (require using TypeAlias for type aliases)
+* introduce Y017 (disallows assignments with multiple targets or non-name targets)
+* extend Y001 to cover ParamSpec and TypeVarTuple in addition to TypeVar
+* introduce Y018 (detect unused TypeVars)
 * introduce Y016 (duplicate union member)
+* support Python 3.10
+* discontinue support for Python 3.6
 
 20.10.0
 ~~~~~~~

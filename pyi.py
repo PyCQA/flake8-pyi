@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
+from __future__ import annotations
 import logging
 
 import argparse
 import ast
-import attr
 import sys
+from collections import Counter
+from collections.abc import Iterable, Sequence
+from dataclasses import dataclass, field
 from flake8 import checker  # type: ignore
 from flake8.plugins.pyflakes import FlakesChecker  # type: ignore
 from itertools import chain
@@ -17,7 +20,7 @@ from pyflakes.checker import (  # type: ignore[import]
     ClassScope,
     FunctionScope,
 )
-from typing import Any, Iterable, List, NamedTuple, Optional, Sequence, Type
+from typing import ClassVar, NamedTuple
 
 __version__ = "20.10.0"
 
@@ -28,7 +31,12 @@ class Error(NamedTuple):
     lineno: int
     col: int
     message: str
-    type: Type[Any]
+    type: type
+
+
+class TypeVarInfo(NamedTuple):
+    cls_name: str
+    name: str
 
 
 class PyiAwareFlakesChecker(FlakesChecker):
@@ -93,8 +101,8 @@ class PyiAwareFlakesChecker(FlakesChecker):
 
         # What follows is copied from pyflakes 1.3.0. The only changes are the
         # deferHandleNode calls.
-        for deco in node.decorator_list:
-            self.handleNode(deco, node)
+        for decorator in node.decorator_list:
+            self.handleNode(decorator, node)
         for baseNode in node.bases:
             self.deferHandleNode(baseNode, node)
         if not PY2:
@@ -140,11 +148,21 @@ class PyiAwareFileChecker(checker.FileChecker):
         return super().run_check(plugin, **kwargs)
 
 
-@attr.s
+@dataclass
 class PyiVisitor(ast.NodeVisitor):
-    filename = attr.ib(default=Path("(none)"))
-    errors = attr.ib(type=List[Error], default=attr.Factory(list))
-    _class_nesting = attr.ib(default=0)
+    filename: Path = Path("(none)")
+    errors: list[Error] = field(default_factory=list)
+    # Mapping of all private TypeVars/ParamSpecs/TypeVarTuples to the nodes where they're defined
+    typevarlike_defs: dict[TypeVarInfo, ast.Assign] = field(default_factory=dict)
+    # Mapping of each name in the file to the no. of occurrences
+    all_name_occurrences: Counter[str] = field(default_factory=Counter)
+    _class_nesting: int = 0
+    _function_nesting: int = 0
+
+    @property
+    def in_function(self) -> bool:
+        """Determine whether we are inside a `def` statement"""
+        return bool(self._function_nesting)
 
     @property
     def in_class(self) -> bool:
@@ -153,23 +171,45 @@ class PyiVisitor(ast.NodeVisitor):
 
     def visit_Assign(self, node: ast.Assign) -> None:
         self.generic_visit(node)
-        # Attempt to find assignments to type helpers (typevars and aliases), which should be
-        # private.
-        if (
-            isinstance(node.value, ast.Call)
-            and isinstance(node.value.func, ast.Name)
-            and node.value.func.id == "TypeVar"
-        ):
-            for target in node.targets:
-                if isinstance(target, ast.Name) and not target.id.startswith("_"):
-                    # avoid catching AnyStr in typing (the only library TypeVar so far)
-                    if not self.filename.name == "typing.pyi":
-                        self.error(target, Y001)
-        if len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
-            if isinstance(node.value, (ast.Num, ast.Str)):
-                self.error(node.value, Y015)
+        if self.in_function:
+            # We error for unexpected things within functions separately.
+            return
+        if len(node.targets) != 1:
+            self.error(node, Y017)
+            return
+        target = node.targets[0]
+        if not isinstance(target, ast.Name):
+            self.error(node, Y017)
+            return
+        assignment = node.value
+        # Attempt to find assignments to type helpers (typevars and aliases),
+        # which should usually be private. If they are private,
+        # they should be used at least once in the file in which they are defined.
+        if isinstance(assignment, ast.Call) and isinstance(assignment.func, ast.Name):
+            cls_name = assignment.func.id
+            if cls_name in ("TypeVar", "ParamSpec", "TypeVarTuple"):
+                typevar_name = target.id
+                if typevar_name.startswith("_"):
+                    target_info = TypeVarInfo(cls_name=cls_name, name=typevar_name)
+                    self.typevarlike_defs[target_info] = node
+                else:
+                    self.error(target, Y001.format(cls_name))
+                return
+            # We allow assignment-based TypedDict creation for dicts that have
+            # keys that aren't valid as identifiers.
+            elif cls_name == "TypedDict":
+                return
+        if isinstance(node.value, (ast.Num, ast.Str)):
+            self.error(node.value, Y015)
+        else:
+            self.error(node, Y093)
+
+    def visit_Name(self, node: ast.Name) -> None:
+        self.all_name_occurrences[node.id] += 1
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
+        if isinstance(node.annotation, ast.Name) and node.annotation.id == "TypeAlias":
+            return
         if isinstance(node.target, ast.Name):
             if node.value and not isinstance(node.value, ast.Ellipsis):
                 self.error(node.value, Y015)
@@ -184,9 +224,10 @@ class PyiVisitor(ast.NodeVisitor):
         for members in members_by_dump.values():
             if len(members) >= 2:
                 if sys.version_info >= (3, 9):  # ast.unparse() exists
-                    self.error(members[1], f'{Y016} "{ast.unparse(members[1])}"')
+                    error_string = f'{Y016} "{ast.unparse(members[1])}"'
                 else:
-                    self.error(members[1], Y016)
+                    error_string = Y016
+                self.error(members[1], error_string)
 
     def visit_BinOp(self, node: ast.BinOp) -> None:
         if not isinstance(node.op, ast.BitOr):
@@ -205,36 +246,38 @@ class PyiVisitor(ast.NodeVisitor):
 
         # Do not call generic_visit(node), that would call this method again unnecessarily
         for member in members:
-            self.generic_visit(member)
+            self.visit(member)
 
         self._check_union_members(members)
 
     def visit_Subscript(self, node: ast.Subscript) -> None:
         self.generic_visit(node)
 
+        if not (isinstance(node.value, ast.Name) and node.value.id == "Union"):
+            return
+
         # Union[str, int] parses differently depending on python versions:
         # Before 3.9:     Subscript(value=Name(id='Union'), slice=Index(value=Tuple(...)))
         # 3.9 and newer:  Subscript(value=Name(id='Union'), slice=Tuple(...))
-        if isinstance(node.value, ast.Name) and node.value.id == "Union":
-            if sys.version_info >= (3, 9):
-                if isinstance(node.slice, ast.Tuple):
-                    self._check_union_members(node.slice.elts)
-            else:
-                if isinstance(node.slice, ast.Index) and isinstance(
-                    node.slice.value, ast.Tuple
-                ):
-                    self._check_union_members(node.slice.value.elts)
+        if sys.version_info >= (3, 9):
+            if isinstance(node.slice, ast.Tuple):
+                self._check_union_members(node.slice.elts)
+        else:
+            if isinstance(node.slice, ast.Index) and isinstance(
+                node.slice.value, ast.Tuple
+            ):
+                self._check_union_members(node.slice.value.elts)
 
     def visit_If(self, node: ast.If) -> None:
         self.generic_visit(node)
         test = node.test
         if isinstance(test, ast.BoolOp):
-            for expr in test.values:
-                self._check_if_expr(expr)
+            for expression in test.values:
+                self._check_if_expression(expression)
         else:
-            self._check_if_expr(test)
+            self._check_if_expression(test)
 
-    def _check_if_expr(self, node: ast.expr) -> None:
+    def _check_if_expression(self, node: ast.expr) -> None:
         if not isinstance(node, ast.Compare):
             self.error(node, Y002)
             return
@@ -261,7 +304,7 @@ class PyiVisitor(ast.NodeVisitor):
         # unless this is on, comparisons against a single integer aren't allowed
         must_be_single = False
         # if strict equality is allowed, it must be against a tuple of this length
-        can_have_strict_equals: Optional[int] = None
+        can_have_strict_equals: int | None = None
         version_info = node.left
         if isinstance(version_info, ast.Subscript):
             slc = version_info.slice
@@ -269,14 +312,19 @@ class PyiVisitor(ast.NodeVisitor):
                 # Python 3.9 flattens the AST and removes Index, so simulate that here
                 slice_num = slc if isinstance(slc, ast.Num) else slc.value
                 # anything other than the integer 0 doesn't make much sense
-                # (things that are in 2.7 and 3.7 but not 3.6?)
-                if isinstance(slice_num, ast.Num) and slice_num.n == 0:
+                if (
+                    isinstance(slice_num, ast.Num)
+                    and isinstance(slice_num.n, int)
+                    and slice_num.n == 0
+                ):
                     must_be_single = True
                 else:
                     self.error(node, Y003)
+                    return
             elif isinstance(slc, ast.Slice):
                 if slc.lower is not None or slc.step is not None:
                     self.error(node, Y003)
+                    return
                 elif (
                     # allow only [:1] and [:2]
                     isinstance(slc.upper, ast.Num)
@@ -286,9 +334,11 @@ class PyiVisitor(ast.NodeVisitor):
                     can_have_strict_equals = slc.upper.n
                 else:
                     self.error(node, Y003)
+                    return
             else:
                 # extended slicing
                 self.error(node, Y003)
+                return
         self._check_version_check(
             node,
             must_be_single=must_be_single,
@@ -300,17 +350,15 @@ class PyiVisitor(ast.NodeVisitor):
         node: ast.Compare,
         *,
         must_be_single: bool = False,
-        can_have_strict_equals: Optional[int] = None,
+        can_have_strict_equals: int | None = None,
     ) -> None:
         comparator = node.comparators[0]
         if must_be_single:
             if not isinstance(comparator, ast.Num) or not isinstance(comparator.n, int):
                 self.error(node, Y003)
+        elif not isinstance(comparator, ast.Tuple):
+            self.error(node, Y003)
         else:
-            if not isinstance(comparator, ast.Tuple):
-                self.error(node, Y003)
-                return
-
             if not all(isinstance(elt, ast.Num) for elt in comparator.elts):
                 self.error(node, Y003)
             elif len(comparator.elts) > 2:
@@ -361,7 +409,7 @@ class PyiVisitor(ast.NodeVisitor):
                 self.error(statement, Y009)
                 return
 
-        for i, statement in enumerate(node.body):
+        for statement in node.body:
             # "pass" should not used in class body
             if isinstance(statement, ast.Pass):
                 self.error(statement, Y012)
@@ -372,7 +420,15 @@ class PyiVisitor(ast.NodeVisitor):
                 self.error(statement, Y013)
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        self._visit_function(node)
+
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+        self._visit_function(node)
+
+    def _visit_function(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
+        self._function_nesting += 1
         self.generic_visit(node)
+        self._function_nesting -= 1
 
         for i, statement in enumerate(node.body):
             if i == 0:
@@ -384,15 +440,6 @@ class PyiVisitor(ast.NodeVisitor):
                     statement.value, ast.Ellipsis
                 ):
                     continue
-            # special-case raise for backwards compatibility
-            if isinstance(statement, ast.Raise):
-                self.error(statement, Y091)
-                continue
-            # allow assignments in constructor for now
-            # (though these should probably be changed)
-            if node.name == "__init__":
-                self.error(statement, Y090)
-                continue
             self.error(statement, Y010)
 
     def visit_arguments(self, node: ast.arguments) -> None:
@@ -404,10 +451,7 @@ class PyiVisitor(ast.NodeVisitor):
             if default is None:
                 continue  # keyword-only arg without a default
             if not isinstance(default, ast.Ellipsis):
-                if arg.annotation is None:
-                    self.error(default, Y014)
-                else:
-                    self.error(default, Y011)
+                self.error(default, (Y014 if arg.annotation is None else Y011))
 
     def error(self, node: ast.AST, message: str) -> None:
         self.errors.append(Error(node.lineno, node.col_offset, message, PyiTreeChecker))
@@ -415,17 +459,23 @@ class PyiVisitor(ast.NodeVisitor):
     def run(self, tree: ast.AST) -> Iterable[Error]:
         self.errors.clear()
         self.visit(tree)
+        for (cls_name, typevar_name), def_node in self.typevarlike_defs.items():
+            if self.all_name_occurrences[typevar_name] == 1:
+                self.error(
+                    def_node,
+                    Y018.format(typevarlike_cls=cls_name, typevar_name=typevar_name),
+                )
         yield from self.errors
 
 
-@attr.s
+@dataclass
 class PyiTreeChecker:
-    name = "flake8-pyi"
-    version = __version__
+    name: ClassVar[str] = "flake8-pyi"
+    version: ClassVar[str] = __version__
 
-    tree = attr.ib(default=None)
-    filename = attr.ib(default="(none)")
-    options = attr.ib(default=None)
+    tree: ast.Module | None = None
+    filename: str = "(none)"
+    options: argparse.Namespace | None = None
 
     def run(self):
         path = Path(self.filename)
@@ -490,7 +540,7 @@ class PyiTreeChecker:
         return False
 
 
-Y001 = "Y001 Name of private TypeVar must start with _"
+Y001 = "Y001 Name of private {} must start with _"
 Y002 = (
     "Y002 If test must be a simple comparison against sys.platform or sys.version_info"
 )
@@ -508,8 +558,9 @@ Y013 = 'Y013 Non-empty class body must not contain "..."'
 Y014 = 'Y014 Default values for arguments must be "..."'
 Y015 = 'Y015 Attribute must not have a default value other than "..."'
 Y016 = "Y016 Duplicate union member"
-Y090 = "Y090 Use explicit attributes instead of assignments in __init__"
-Y091 = 'Y091 Function body must not contain "raise"'
+Y017 = "Y017 Only simple assignments allowed"
+Y018 = 'Y018 {typevarlike_cls} "{typevar_name}" is not used'
 Y092 = "Y092 Top-level attribute must not have a default value"
+Y093 = "Y093 Use typing_extensions.TypeAlias for type aliases"
 
-DISABLED_BY_DEFAULT = [Y090, Y091, Y092]
+DISABLED_BY_DEFAULT = [Y092, Y093]
