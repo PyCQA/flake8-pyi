@@ -16,7 +16,7 @@ def h(x: Literal["a", "b"], y: Literal["c"], z: _T) -> _T:
     ...
 
 def i(x: Annotated[int, "lots", "of", "strings"]) -> None:
-    ...
+    """Documented and guaranteed useful."""  # Y020 Quoted annotations should never be used in stubs  # Y010 Function body must contain only "..."
 
 def j() -> "int":  # Y020 Quoted annotations should never be used in stubs
     ...
@@ -25,4 +25,4 @@ def j() -> "int":  # Y020 Quoted annotations should never be used in stubs
 Alias = list["int"]  # Y020 Quoted annotations should never be used in stubs
 
 class Child(list["int"]):  # Y020 Quoted annotations should never be used in stubs
-    ...
+    """Documented and guaranteed useful."""  # Y020 Quoted annotations should never be used in stubs

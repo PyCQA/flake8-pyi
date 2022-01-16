@@ -12,7 +12,7 @@ if sys.version_info[0j] == 2:  # Y003 Unrecognized sys.version_info check
 if sys.version_info[0] == (2, 7):  # Y003 Unrecognized sys.version_info check
     ...
 
-if sys.version_info[0] == b'2':  # Y003 Unrecognized sys.version_info check
+if sys.version_info[0] == '2':  # Y003 Unrecognized sys.version_info check
     ...
 
 if sys.version_info[1:] >= (7, 11):  # Y003 Unrecognized sys.version_info check
@@ -36,7 +36,7 @@ if sys.version_info[:2] == (2, 7):
 if sys.version_info[:2] == (2,):  # Y005 Version comparison must be against a length-2 tuple
     ...
 
-if sys.version_info[:2] == b"lol":  # Y003 Unrecognized sys.version_info check
+if sys.version_info[:2] == "lol":  # Y003 Unrecognized sys.version_info check
     ...
 
 if sys.version_info[:2.0] >= (3, 9):  # Y003 Unrecognized sys.version_info check
