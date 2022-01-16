@@ -540,7 +540,7 @@ class PyiTreeChecker:
         return False
 
 
-# Please keep README and CHANGELOG.rst in sync
+# Please keep error code lists in README and CHANGELOG up to date
 Y001 = "Y001 Name of private {} must start with _"
 Y002 = (
     "Y002 If test must be a simple comparison against sys.platform or sys.version_info"
