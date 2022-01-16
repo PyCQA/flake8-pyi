@@ -436,14 +436,14 @@ class PyiVisitor(ast.NodeVisitor):
             cleaned_method = deepcopy(node)
             cleaned_method.decorator_list.clear()
             new_syntax = re.sub(
-                fr"(\W){typevar_name}(\W)", r"\1Self\2", ast.unparse(cleaned_method)
+                fr"\b{typevar_name}\b", "Self", ast.unparse(cleaned_method)
             )
             new_syntax = re.sub(r"\s+", " ", new_syntax)
             error_message += f', e.g. "{new_syntax}"'
 
         # pass the node for the first argument to `self.error`,
         # rather than the function node,
-        # as linenos differ in Python <3.9 for decorated functions
+        # as linenos differ in Python 3.7 and 3.8+ for decorated functions
         self.error(node.args.args[0], error_message)
 
     def _check_instance_method_for_bad_typevars(
