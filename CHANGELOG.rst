@@ -4,6 +4,7 @@ Change Log
 unreleased
 ~~~~~~~~~~
 
+* detect usage of non-integer indices in sys.version_info checks
 * extend Y010 to check async functions in addition to normal functions 
 * introduce Y093 (require using TypeAlias for type aliases)
 * introduce Y017 (disallows assignments with multiple targets or non-name targets)
