@@ -154,8 +154,10 @@ class PyiVisitor(ast.NodeVisitor):
     errors: list[Error] = field(default_factory=list)
     # Mapping of all private TypeVars/ParamSpecs/TypeVarTuples to the nodes where they're defined
     typevarlike_defs: dict[TypeVarInfo, ast.Assign] = field(default_factory=dict)
-    # Mapping of each name in the file to the no. of occurences
-    all_name_occurences: Counter[str] = field(default_factory=Counter)
+    # Mapping of each name in the file to the no. of occurrences
+    all_name_occurrences: Counter[str] = field(default_factory=Counter)
+    # Collection of the linenos of all the union statements we've seen
+    unions_already_seen: set[int] = field(default_factory=set)
     _class_nesting: int = 0
     _function_nesting: int = 0
 
@@ -205,7 +207,7 @@ class PyiVisitor(ast.NodeVisitor):
             self.error(node, Y093)
 
     def visit_Name(self, node: ast.Name) -> None:
-        self.all_name_occurences[node.id] += 1
+        self.all_name_occurrences[node.id] += 1
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         if isinstance(node.annotation, ast.Name) and node.annotation.id == "TypeAlias":
@@ -246,7 +248,7 @@ class PyiVisitor(ast.NodeVisitor):
 
         # Do not call generic_visit(node), that would call this method again unnecessarily
         for member in members:
-            self.generic_visit(member)
+            self.visit(member)
 
         self._check_union_members(members)
 
@@ -455,7 +457,7 @@ class PyiVisitor(ast.NodeVisitor):
         self.errors.clear()
         self.visit(tree)
         for (cls_name, typevar_name), def_node in self.typevarlike_defs.items():
-            if self.all_name_occurences[typevar_name] == 1:
+            if self.all_name_occurrences[typevar_name] == 1:
                 self.error(
                     def_node,
                     Y018.format(typevarlike_cls=cls_name, typevar_name=typevar_name),
