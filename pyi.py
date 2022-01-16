@@ -157,7 +157,6 @@ class PyiVisitor(ast.NodeVisitor):
     # Mapping of each name in the file to the no. of occurrences
     all_name_occurrences: Counter[str] = field(default_factory=Counter)
     # Collection of the linenos of all the union statements we've seen
-    unions_already_seen: set[int] = field(default_factory=set)
     _class_nesting: int = 0
     _function_nesting: int = 0
 
