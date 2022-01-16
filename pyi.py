@@ -174,9 +174,7 @@ class PyiVisitor(ast.NodeVisitor):
         if isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Name):
             if node.value.func.id in ("TypeVar", "ParamSpec", "TypeVarTuple"):
                 if not target.id.startswith("_"):
-                    # avoid catching AnyStr in typing (the only library TypeVar so far)
-                    if self.filename.name != "typing.pyi":
-                        self.error(target, Y001.format(node.value.func.id))
+                    self.error(target, Y001.format(node.value.func.id))
                 return
             # We allow assignment-based TypedDict creation for dicts that have
             # keys that aren't valid as identifiers.
