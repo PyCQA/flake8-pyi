@@ -4,7 +4,8 @@ Change Log
 unreleased
 ~~~~~~~~~~
 
-* ``attrs`` is no longer a dependency; ``ast_decompiler`` has been
+* ``attrs`` is no longer a dependency
+* ``ast_decompiler`` has been
   added as a dependency on Python 3.8 and 3.7
 * remove Y092 (top-level attribute must not have a default value)
 * introduce Y021 (docstrings should not be included in stubs)
