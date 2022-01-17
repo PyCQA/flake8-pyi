@@ -42,26 +42,25 @@ class TypeVarInfo(NamedTuple):
     name: str
 
 
-# The collections import blacklist is for typing & typing_extensions
-#
-# OrderedDict is omitted:
+# OrderedDict is omitted from this blacklist:
 # -- In Python 3, we'd rather import it from collections, not typing or typing_extensions
 # -- But in Python 2, it cannot be imported from collections or typing, only from typing_extensions
 #
 # ChainMap does not exist in typing or typing_extensions in Python 2,
 # so we can disallow importing it from anywhere except collections
-_BAD_COLLECTIONS_ALIASES = {
+_COLLECTIONS_NOT_TYPING_OR_TYPING_EXTENSIONS = {
     "Counter": "Counter",
     "Deque": "deque",
     "DefaultDict": "defaultdict",
     "ChainMap": "ChainMap",
 }
-_BAD_COLLECTIONS_ALIASES = {
-    alias: f'"collections.{cls}"' for alias, cls in _BAD_COLLECTIONS_ALIASES.items()
+_COLLECTIONS_NOT_TYPING_OR_TYPING_EXTENSIONS = {
+    alias: f'"collections.{cls}"'
+    for alias, cls in _COLLECTIONS_NOT_TYPING_OR_TYPING_EXTENSIONS.items()
 }
 
 # Just-for-typing blacklist
-_BAD_BUILTINS_ALIASES = {
+_BUILTINS_NOT_TYPING = {
     alias: f'"builtins.{alias.lower()}"'
     for alias in ("Dict", "Frozenset", "List", "Set", "Tuple", "Type")
 }
@@ -70,7 +69,7 @@ _BAD_BUILTINS_ALIASES = {
 # so we disallow importing them from typing_extensions.
 #
 # We can't disallow importing collections.abc aliases from typing yet due to mypy/pytype errors.
-_BAD_COLLECTIONS_ABC_ALIASES = {
+_COLLECTIONSABC_OR_TYPING_NOT_TYPING_EXTENSIONS = {
     alias: f'"collections.abc.{alias}" or "typing.{alias}"'
     for alias in (
         "Awaitable",
@@ -242,19 +241,20 @@ class PyiVisitor(ast.NodeVisitor):
     def _check_typing_object(
         self, node: ast.Attribute | ast.ImportFrom, module_name: str, object_name: str
     ) -> None:
-        if object_name in _BAD_COLLECTIONS_ALIASES:
-            error_code, blacklist = Y022, _BAD_COLLECTIONS_ALIASES
+        if object_name in _COLLECTIONS_NOT_TYPING_OR_TYPING_EXTENSIONS:
+            error_code, blacklist = Y022, _COLLECTIONS_NOT_TYPING_OR_TYPING_EXTENSIONS
         elif object_name == "AsyncContextManager":
             error_code = Y022
             blacklist = {
                 "AsyncContextManager": '"contextlib.AbstractAsyncContextManager"'
             }
         elif module_name == "typing":
-            if object_name not in _BAD_BUILTINS_ALIASES:
+            if object_name not in _BUILTINS_NOT_TYPING:
                 return
-            error_code, blacklist = Y022, _BAD_BUILTINS_ALIASES
-        elif object_name in _BAD_COLLECTIONS_ABC_ALIASES:
-            error_code, blacklist = Y023, _BAD_COLLECTIONS_ABC_ALIASES
+            error_code, blacklist = Y022, _BUILTINS_NOT_TYPING
+        elif object_name in _COLLECTIONSABC_OR_TYPING_NOT_TYPING_EXTENSIONS:
+            error_code = Y023
+            blacklist = _COLLECTIONSABC_OR_TYPING_NOT_TYPING_EXTENSIONS
         elif object_name in _TYPING_NOT_TYPING_EXTENSIONS:
             error_code, blacklist = Y023, _TYPING_NOT_TYPING_EXTENSIONS
         elif object_name == "ContextManager":
