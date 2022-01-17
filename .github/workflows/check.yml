@@ -1,4 +1,4 @@
-name: ""
+name: tests
 
 on:
   push:
@@ -44,7 +44,7 @@ jobs:
     - run: |
         flake8 $(git ls-files | grep 'py$')
   tests:
-    name: test suite
+    name: pytest suite
     timeout-minutes: 5
     runs-on: ${{ matrix.os }}
     strategy:
