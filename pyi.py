@@ -388,11 +388,8 @@ class PyiVisitor(ast.NodeVisitor):
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         if isinstance(node.annotation, ast.Name) and node.annotation.id == "TypeAlias":
             return
-        if isinstance(node.target, ast.Name):
-            if node.value and not isinstance(node.value, ast.Ellipsis):
-                self.error(node.value, Y015)
-            elif node.value and not self.in_class:
-                self.error(node.value, Y092)
+        if node.value and not isinstance(node.value, ast.Ellipsis):
+            self.error(node.value, Y015)
 
     def _check_union_members(self, members: Sequence[ast.expr]) -> None:
         members_by_dump: dict[str, list[ast.expr]] = {}
@@ -888,6 +885,7 @@ Y025 = (
     'to avoid confusion with "builtins.set"'
 )
 Y092 = "Y092 Top-level attribute must not have a default value"
+>>>>>>> origin/master
 Y093 = "Y093 Use typing_extensions.TypeAlias for type aliases"
 
-DISABLED_BY_DEFAULT = [Y092, Y093]
+DISABLED_BY_DEFAULT = [Y093]

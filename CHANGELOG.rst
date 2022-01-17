@@ -4,6 +4,7 @@ Change Log
 unreleased
 ~~~~~~~~~~
 
+* remove Y092 (top-level attribute must not have a default value)
 * introduce Y021 (docstrings should not be included in stubs)
 * introduce Y020 (never use quoted annotations in stubs)
 * extend Y010 to cover what was previously included in Y090 (disallow
