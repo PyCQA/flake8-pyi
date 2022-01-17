@@ -4,6 +4,8 @@ Change Log
 unreleased
 ~~~~~~~~~~
 
+* ``attrs`` is no longer a dependency; ``ast_decompiler`` has been
+  added as a dependency
 * remove Y092 (top-level attribute must not have a default value)
 * introduce Y021 (docstrings should not be included in stubs)
 * introduce Y020 (never use quoted annotations in stubs)
