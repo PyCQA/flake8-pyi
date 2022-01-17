@@ -106,6 +106,7 @@ from typing import ChainMap  # Y022 Use "collections.ChainMap" instead of "typin
 from typing_extensions import DefaultDict  # Y022 Use "collections.defaultdict" instead of "typing_extensions.DefaultDict"
 from typing_extensions import ClassVar  # Y022 Use "typing.ClassVar" instead of "typing_extensions.ClassVar"
 from typing_extensions import Awaitable  # Y022 Use "collections.abc.Awaitable" or "typing.Awaitable" instead of "typing_extensions.Awaitable"
+from typing_extensions import AsyncContextManager  # Y022 Use "contextlib.AbstractAsyncContextManager" instead of "typing_extensions.AsyncContextManager"
 from typing_extensions import ContextManager  # Y022 Use "contextlib.AbstractContextManager" or "typing.ContextManager" instead of "typing_extensions.ContextManager"
 from typing_extensions import ChainMap  # Y022 Use "collections.ChainMap" instead of "typing_extensions.ChainMap"
 from collections.abc import Set  # Y023 Use "from collections.abc import Set as AbstractSet" to avoid confusion with "builtins.set"
