@@ -43,12 +43,18 @@ class TypeVarInfo(NamedTuple):
 
 
 # for both typing and typing_extensions
+#
+# OrderedDict is omitted:
+# -- In Python 3, we'd rather import it from collections, not typing or typing_extensions
+# -- But in Python 2, it cannot be imported from collections or typing, only from typing_extensions
+#
+# ChainMap does not exist in typing or typing_extensions in Python 2,
+# so we can disallow importing it from anywhere except collections
 _BAD_COLLECTIONS_ALIASES = {
     "Counter": "Counter",
     "Deque": "deque",
     "DefaultDict": "defaultdict",
     "ChainMap": "ChainMap",
-    "OrderedDict": "OrderedDict",
 }
 _BAD_COLLECTIONS_ALIASES = {
     alias: f'"collections.{cls}"' for alias, cls in _BAD_COLLECTIONS_ALIASES.items()
@@ -61,10 +67,10 @@ _BAD_BUILTINS_ALIASES = {
 }
 
 # Just for typing_extensions
-_BAD_CONTEXTLIB_ALIASES = {
-    alias: f'"contextlib.Abstract{alias}" or "typing.{alias}"'
-    for alias in ("ContextManager", "AsyncContextManager")
-}
+#
+# collections.abc aliases: none of these exist in typing or typing_extensions in Python 2,
+# so we disallow importing them from typing_extensions.
+# We can't disallow importing collections.abc aliases from typing yet due to mypy/pytype errors.
 _BAD_COLLECTIONS_ABC_ALIASES = {
     alias: f'"collections.abc.{alias}" or "typing.{alias}"'
     for alias in (
@@ -91,12 +97,19 @@ _TYPING_NOT_TYPING_EXTENSIONS = {
 
 # collections.abc.Set is dealt with separately as special cases
 FORBIDDEN_IMPORTS_MAPPING = {
-    "typing": {**_BAD_BUILTINS_ALIASES, **_BAD_COLLECTIONS_ALIASES},
+    "typing": {
+        **_BAD_BUILTINS_ALIASES,
+        **_BAD_COLLECTIONS_ALIASES,
+        # AsyncContextManager doesn't exist at all in Python 2, so we can disallow importing it from typing
+        'AsyncContextManager': '"contextlib.AbstractAsyncContextManager"'
+        },
     "typing_extensions": {
         **_BAD_COLLECTIONS_ABC_ALIASES,
-        **_BAD_CONTEXTLIB_ALIASES,
         **_BAD_COLLECTIONS_ALIASES,
         **_TYPING_NOT_TYPING_EXTENSIONS,
+        # ContextManager doesn't exist in contextlib in Python 2, so we have to allow importing it from typing
+        # We can disallow importing it from typing_extensions, however
+        'ContextManager': '"contextlib.AbstractContextManager" or "typing.ContextManager"'
     },
     "collections": {"namedtuple": '"typing.NamedTuple"'},
 }
