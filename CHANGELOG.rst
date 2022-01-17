@@ -4,6 +4,8 @@ Change Log
 unreleased
 ~~~~~~~~~~
 
+* introduce Y021 (docstrings should not be included in stubs)
+* introduce Y020 (never use quoted annotations in stubs)
 * extend Y010 to cover what was previously included in Y090 (disallow
   assignments in ``__init__`` methods) and Y091 (disallow ``raise``
   statements). The previous checks were disabled by default.
@@ -13,6 +15,7 @@ unreleased
 * introduce Y017 (disallows assignments with multiple targets or non-name targets)
 * extend Y001 to cover ParamSpec and TypeVarTuple in addition to TypeVar
 * introduce Y018 (detect unused TypeVars)
+* introduce Y019 (detect TypeVars that should be _typeshed.Self, but aren't)
 * introduce Y016 (duplicate union member)
 * support Python 3.10
 * discontinue support for Python 3.6

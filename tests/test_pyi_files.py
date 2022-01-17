@@ -19,9 +19,8 @@ def test_pyi_file(path):
             flags.extend(line.split()[2:])
             continue
 
-        match = re.search("# ([A-Z][0-9][0-9][0-9].*)", line)
-        if match:
-            expected_output += f"{path}:{lineno}: {match.group(1)}\n"
+        for match in re.finditer("# ([A-Z][0-9][0-9][0-9][^#]*)", line):
+            expected_output += f"{path}:{lineno}: {match.group(1).strip()}\n"
 
     run_results = [
         # Passing a file on command line
