@@ -268,7 +268,7 @@ class PyiVisitor(ast.NodeVisitor):
 
     def _Y022_check(
         self,
-        node: ast.Attribute | ast.alias,
+        node: ast.Attribute | ast.ImportFrom,
         object_name: str,
         module_name: str,
         blacklist: dict[str, str],
