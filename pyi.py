@@ -510,21 +510,19 @@ class PyiVisitor(ast.NodeVisitor):
     def _Y019_error(
         self, node: ast.FunctionDef | ast.AsyncFunctionDef, typevar_name: str
     ) -> None:
-        error_message = Y019.format(typevar_name=typevar_name)
+        cleaned_method = deepcopy(node)
+        cleaned_method.decorator_list.clear()
+        new_syntax = unparse(cleaned_method)
+        new_syntax = re.sub(fr"\b{typevar_name}\b", "Self", new_syntax)
+        new_syntax = re.sub(r"\s+", " ", new_syntax).strip()
 
-        if sys.version_info >= (3, 9):
-            cleaned_method = deepcopy(node)
-            cleaned_method.decorator_list.clear()
-            new_syntax = re.sub(
-                fr"\b{typevar_name}\b", "Self", ast.unparse(cleaned_method)
-            )
-            new_syntax = re.sub(r"\s+", " ", new_syntax)
-            error_message += f', e.g. "{new_syntax}"'
-
-        # pass the node for the first argument to `self.error`,
-        # rather than the function node,
-        # as linenos differ in Python 3.7 and 3.8+ for decorated functions
-        self.error(node.args.args[0], error_message)
+        self.error(
+            # pass the node for the first argument to `self.error`,
+            # rather than the function node,
+            # as linenos differ in Python 3.7 and 3.8+ for decorated functions
+            node.args.args[0],
+            Y019.format(typevar_name=typevar_name, new_syntax=new_syntax),
+        )
 
     def _check_instance_method_for_bad_typevars(
         self,
@@ -754,7 +752,7 @@ Y015 = 'Y015 Attribute must not have a default value other than "..."'
 Y016 = 'Y016 Duplicate union member "{}"'
 Y017 = "Y017 Only simple assignments allowed"
 Y018 = 'Y018 {typevarlike_cls} "{typevar_name}" is not used'
-Y019 = 'Y019 Use "_typeshed.Self" instead of "{typevar_name}"'
+Y019 = 'Y019 Use "_typeshed.Self" instead of "{typevar_name}", e.g. "{new_syntax}"'
 Y020 = "Y020 Quoted annotations should never be used in stubs"
 Y021 = "Y021 Docstrings should not be included in stubs"
 Y092 = "Y092 Top-level attribute must not have a default value"
