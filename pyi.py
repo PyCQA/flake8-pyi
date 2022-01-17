@@ -66,8 +66,6 @@ _BAD_BUILTINS_ALIASES = {
     for alias in ("Dict", "Frozenset", "List", "Set", "Tuple", "Type")
 }
 
-# Just-for-typing_extensions blacklist
-#
 # collections.abc aliases: none of these exist in typing or typing_extensions in Python 2,
 # so we disallow importing them from typing_extensions.
 #
@@ -94,32 +92,6 @@ _TYPING_NOT_TYPING_EXTENSIONS = {
         "NoReturn",
     )
 }
-
-
-# collections.abc.Set is dealt with separately as a special case
-#
-# AsyncContextManager doesn't exist at all in Python 2,
-# so we can disallow importing it from typing & typing_extensions.
-#
-# ContextManager doesn't exist in contextlib in Python 2, but does exist in typing,
-# so we have to allow importing it from typing.
-# We *can* disallow importing it from typing_extensions, however
-FORBIDDEN_Y022_IMPORTS = {
-    "typing": {
-        **_BAD_BUILTINS_ALIASES,
-        **_BAD_COLLECTIONS_ALIASES,
-        "AsyncContextManager": '"contextlib.AbstractAsyncContextManager"',
-    },
-    "typing_extensions": {
-        **_BAD_COLLECTIONS_ABC_ALIASES,
-        **_BAD_COLLECTIONS_ALIASES,
-        **_TYPING_NOT_TYPING_EXTENSIONS,
-        "AsyncContextManager": '"contextlib.AbstractAsyncContextManager"',
-        "ContextManager": '"contextlib.AbstractContextManager" or "typing.ContextManager"',
-    }
-}
-
-FORBIDDEN_
 
 
 class PyiAwareFlakesChecker(FlakesChecker):
@@ -267,49 +239,75 @@ class PyiVisitor(ast.NodeVisitor):
         """Determine whether we are inside a `class` statement"""
         return bool(self._class_nesting)
 
-    def _Y022_check(
-        self,
-        node: ast.Attribute | ast.ImportFrom,
-        object_name: str,
-        module_name: str,
-        blacklist: dict[str, str],
+    def _check_typing_object(
+        self, node: ast.Attribute | ast.ImportFrom, module_name: str, object_name: str
     ) -> None:
-        if object_name in blacklist:
-            error_message = Y022.format(
-                good_cls_name=blacklist[object_name],
-                bad_cls_alias=object_name,
-            )
-            self.error(node, error_message)
+        if object_name in _BAD_COLLECTIONS_ALIASES:
+            error_code, blacklist = Y022, _BAD_COLLECTIONS_ALIASES
+        elif object_name == "AsyncContextManager":
+            error_code = Y022
+            blacklist = {
+                "AsyncContextManager": '"contextlib.AbstractAsyncContextManager"'
+            }
+        elif module_name == "typing":
+            if object_name not in _BAD_BUILTINS_ALIASES:
+                return
+            error_code, blacklist = Y022, _BAD_BUILTINS_ALIASES
+        elif object_name in _BAD_COLLECTIONS_ABC_ALIASES:
+            error_code, blacklist = Y023, _BAD_COLLECTIONS_ABC_ALIASES
+        elif object_name in _TYPING_NOT_TYPING_EXTENSIONS:
+            error_code, blacklist = Y023, _TYPING_NOT_TYPING_EXTENSIONS
+        elif object_name == "ContextManager":
+            error_code = Y023
+            blacklist = {
+                "ContextManager": '"contextlib.AbstractContextManager" or "typing.ContextManager"'
+            }
+        else:
+            return
+
+        error_message = error_code.format(
+            good_cls_name=blacklist[object_name],
+            bad_cls_alias=f"{module_name}.{object_name}",
+        )
+        self.error(node, error_message)
 
     def visit_Attribute(self, node: ast.Attribute) -> None:
         self.generic_visit(node)
         thing = node.value
         if not isinstance(thing, ast.Name):
             return
-        thingname = thing.id
-        if thingname in FORBIDDEN_IMPORTS_MAPPING:
-            self._Y022_check(
-                node=node,
-                object_name=node.attr,
-                module_name=thingname,
-                blacklist=FORBIDDEN_IMPORTS_MAPPING[thingname],
-            )
+        thingname, attribute = thing.id, node.attr
+
+        if thingname == "collections" and attribute == "namedtuple":
+            return self.error(node, Y024)
+        elif thingname not in {"typing", "typing_extensions"}:
+            return
+
+        self._check_typing_object(
+            node=node, module_name=thingname, object_name=attribute
+        )
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         module_name, imported_objects = node.module, node.names
-        if module_name in FORBIDDEN_IMPORTS_MAPPING:
-            forbidden_imports = FORBIDDEN_IMPORTS_MAPPING[module_name]
-            for obj in imported_objects:
-                self._Y022_check(
-                    node=node,
-                    object_name=obj.name,
-                    module_name=module_name,
-                    blacklist=forbidden_imports,
-                )
-        elif module_name == "collections.abc":
-            for obj in imported_objects:
-                if obj.name == "Set" and obj.asname != "AbstractSet":
-                    self.error(node, Y023)
+
+        if module_name == "collections.abc" and any(
+            obj.name == "Set" and obj.asname != "AbstractSet"
+            for obj in imported_objects
+        ):
+            return self.error(node, Y025)
+
+        elif module_name == "collections" and any(
+            obj.name == "namedtuple" for obj in imported_objects
+        ):
+            return self.error(node, Y024)
+
+        elif module_name not in {"typing", "typing_extensions"}:
+            return
+
+        for obj in imported_objects:
+            self._check_typing_object(
+                node=node, module_name=module_name, object_name=obj.name
+            )
 
     def visit_Assign(self, node: ast.Assign) -> None:
         if self.in_function:
@@ -386,6 +384,7 @@ class PyiVisitor(ast.NodeVisitor):
             self.generic_visit(node)
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
+        self.generic_visit(node)
         if isinstance(node.annotation, ast.Name) and node.annotation.id == "TypeAlias":
             return
         if node.value and not isinstance(node.value, ast.Ellipsis):
@@ -877,15 +876,14 @@ Y018 = 'Y018 {typevarlike_cls} "{typevar_name}" is not used'
 Y019 = 'Y019 Use "_typeshed.Self" instead of "{typevar_name}"'
 Y020 = "Y020 Quoted annotations should never be used in stubs"
 Y021 = "Y021 Docstrings should not be included in stubs"
-Y022 = 'Y022 Use {good_cls_name} instead of "typing.{bad_cls_alias}"'
-Y023 = 'Y023 Use {good_cls_name} instead of "typing_extensions.{bad_cls_alias}"'
+Y022 = 'Y022 Use {good_cls_name} instead of "{bad_cls_alias}"'
+Y023 = 'Y023 Use {good_cls_name} instead of "{bad_cls_alias}"'
 Y024 = 'Y024 Use "typing.NamedTuple" instead of "collections.namedtuple"'
 Y025 = (
     'Y025 Use "from collections.abc import Set as AbstractSet" '
     'to avoid confusion with "builtins.set"'
 )
 Y092 = "Y092 Top-level attribute must not have a default value"
->>>>>>> origin/master
 Y093 = "Y093 Use typing_extensions.TypeAlias for type aliases"
 
 DISABLED_BY_DEFAULT = [Y093]
