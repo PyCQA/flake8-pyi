@@ -5,9 +5,11 @@ import logging
 
 import argparse
 import ast
+import re
 import sys
 from collections import Counter
 from collections.abc import Iterable, Iterator, Sequence
+from copy import deepcopy
 from dataclasses import dataclass, field
 from flake8 import checker  # type: ignore
 from flake8.plugins.pyflakes import FlakesChecker  # type: ignore
@@ -504,6 +506,112 @@ class PyiVisitor(ast.NodeVisitor):
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
         self._visit_function(node)
 
+    def _Y019_error(
+        self, node: ast.FunctionDef | ast.AsyncFunctionDef, typevar_name: str
+    ) -> None:
+        error_message = Y019.format(typevar_name=typevar_name)
+
+        if sys.version_info >= (3, 9):
+            cleaned_method = deepcopy(node)
+            cleaned_method.decorator_list.clear()
+            new_syntax = re.sub(
+                fr"\b{typevar_name}\b", "Self", ast.unparse(cleaned_method)
+            )
+            new_syntax = re.sub(r"\s+", " ", new_syntax)
+            error_message += f', e.g. "{new_syntax}"'
+
+        # pass the node for the first argument to `self.error`,
+        # rather than the function node,
+        # as linenos differ in Python 3.7 and 3.8+ for decorated functions
+        self.error(node.args.args[0], error_message)
+
+    def _check_instance_method_for_bad_typevars(
+        self,
+        *,
+        method: ast.FunctionDef | ast.AsyncFunctionDef,
+        first_arg_annotation: ast.Name | ast.Subscript,
+        return_annotation: ast.Name,
+    ) -> None:
+        if not isinstance(first_arg_annotation, ast.Name):
+            return
+
+        if first_arg_annotation.id != return_annotation.id:
+            return
+
+        arg1_annotation_name = first_arg_annotation.id
+
+        if arg1_annotation_name.startswith("_"):
+            self._Y019_error(method, arg1_annotation_name)
+
+    def _check_class_method_for_bad_typevars(
+        self,
+        *,
+        method: ast.FunctionDef | ast.AsyncFunctionDef,
+        first_arg_annotation: ast.Name | ast.Subscript,
+        return_annotation: ast.Name,
+    ) -> None:
+        if not isinstance(first_arg_annotation, ast.Subscript):
+            return
+
+        cls_typevar: str
+
+        # see comment in visit_Subscript
+        if sys.version_info >= (3, 9):
+            if isinstance(first_arg_annotation.slice, ast.Name):
+                cls_typevar = first_arg_annotation.slice.id
+            else:
+                return
+        else:
+            if isinstance(first_arg_annotation.slice, ast.Index) and isinstance(
+                first_arg_annotation.slice.value, ast.Name
+            ):
+                cls_typevar = first_arg_annotation.slice.value.id
+            else:
+                return
+
+        if not isinstance(first_arg_annotation.value, ast.Name):
+            return
+        if first_arg_annotation.value.id != "type":
+            return
+
+        if cls_typevar == return_annotation.id and cls_typevar.startswith("_"):
+            self._Y019_error(method, cls_typevar)
+
+    def check_self_typevars(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
+        pos_or_keyword_args = node.args.args
+
+        if not pos_or_keyword_args:
+            return
+        return_annotation = node.returns
+
+        if not isinstance(return_annotation, ast.Name):
+            return
+        first_arg_annotation = pos_or_keyword_args[0].annotation
+
+        if not isinstance(first_arg_annotation, (ast.Name, ast.Subscript)):
+            return
+
+        decorator_names = {
+            decorator.id
+            for decorator in node.decorator_list
+            if isinstance(decorator, ast.Name)
+        }
+
+        if "classmethod" in decorator_names or node.name == "__new__":
+            self._check_class_method_for_bad_typevars(
+                method=node,
+                first_arg_annotation=first_arg_annotation,
+                return_annotation=return_annotation,
+            )
+        elif "staticmethod" in decorator_names:
+            return
+        else:
+            self._check_instance_method_for_bad_typevars(
+                method=node,
+                first_arg_annotation=first_arg_annotation,
+                return_annotation=return_annotation,
+            )
+
     def _visit_function(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         self._function_nesting += 1
         self.generic_visit(node)
@@ -522,6 +630,9 @@ class PyiVisitor(ast.NodeVisitor):
                 ):
                     continue
             self.error(statement, Y010)
+
+        if self.in_class:
+            self.check_self_typevars(node)
 
     def visit_arguments(self, node: ast.arguments) -> None:
         self.generic_visit(node)
@@ -642,6 +753,7 @@ Y015 = 'Y015 Attribute must not have a default value other than "..."'
 Y016 = "Y016 Duplicate union member"
 Y017 = "Y017 Only simple assignments allowed"
 Y018 = 'Y018 {typevarlike_cls} "{typevar_name}" is not used'
+Y019 = 'Y019 Use "_typeshed.Self" instead of "{typevar_name}"'
 Y020 = "Y020 Quoted annotations should never be used in stubs"
 Y021 = "Y021 Docstrings should not be included in stubs"
 Y092 = "Y092 Top-level attribute must not have a default value"
