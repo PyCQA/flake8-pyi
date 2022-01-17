@@ -104,7 +104,7 @@ _TYPING_NOT_TYPING_EXTENSIONS = {
 # ContextManager doesn't exist in contextlib in Python 2, but does exist in typing,
 # so we have to allow importing it from typing.
 # We *can* disallow importing it from typing_extensions, however
-FORBIDDEN_IMPORTS_MAPPING = {
+FORBIDDEN_Y022_IMPORTS = {
     "typing": {
         **_BAD_BUILTINS_ALIASES,
         **_BAD_COLLECTIONS_ALIASES,
@@ -116,9 +116,10 @@ FORBIDDEN_IMPORTS_MAPPING = {
         **_TYPING_NOT_TYPING_EXTENSIONS,
         "AsyncContextManager": '"contextlib.AbstractAsyncContextManager"',
         "ContextManager": '"contextlib.AbstractContextManager" or "typing.ContextManager"',
-    },
-    "collections": {"namedtuple": '"typing.NamedTuple"'},
+    }
 }
+
+FORBIDDEN_
 
 
 class PyiAwareFlakesChecker(FlakesChecker):
@@ -276,7 +277,7 @@ class PyiVisitor(ast.NodeVisitor):
         if object_name in blacklist:
             error_message = Y022.format(
                 good_cls_name=blacklist[object_name],
-                bad_cls_alias=f'"{module_name}.{object_name}"',
+                bad_cls_alias=object_name,
             )
             self.error(node, error_message)
 
@@ -879,9 +880,11 @@ Y018 = 'Y018 {typevarlike_cls} "{typevar_name}" is not used'
 Y019 = 'Y019 Use "_typeshed.Self" instead of "{typevar_name}"'
 Y020 = "Y020 Quoted annotations should never be used in stubs"
 Y021 = "Y021 Docstrings should not be included in stubs"
-Y022 = "Y022 Use {good_cls_name} instead of {bad_cls_alias}"
-Y023 = (
-    'Y023 Use "from collections.abc import Set as AbstractSet" '
+Y022 = 'Y022 Use {good_cls_name} instead of "typing.{bad_cls_alias}"'
+Y023 = 'Y023 Use {good_cls_name} instead of "typing_extensions.{bad_cls_alias}"'
+Y024 = 'Y024 Use "typing.NamedTuple" instead of "collections.namedtuple"'
+Y025 = (
+    'Y025 Use "from collections.abc import Set as AbstractSet" '
     'to avoid confusion with "builtins.set"'
 )
 Y092 = "Y092 Top-level attribute must not have a default value"
