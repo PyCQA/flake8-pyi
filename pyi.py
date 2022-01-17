@@ -300,7 +300,7 @@ class PyiVisitor(ast.NodeVisitor):
             forbidden_imports = FORBIDDEN_IMPORTS_MAPPING[module_name]
             for obj in imported_objects:
                 self._Y022_check(
-                    node=obj,
+                    node=node,
                     object_name=obj.name,
                     module_name=module_name,
                     blacklist=forbidden_imports,
@@ -308,7 +308,7 @@ class PyiVisitor(ast.NodeVisitor):
         elif module_name == "collections.abc":
             for obj in imported_objects:
                 if obj.name == "Set" and obj.asname != "AbstractSet":
-                    self.error(obj, Y023)
+                    self.error(node, Y023)
 
     def visit_Assign(self, node: ast.Assign) -> None:
         if self.in_function:
