@@ -6,6 +6,7 @@ on:
 
 jobs:
   black:
+    name: black
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -17,6 +18,7 @@ jobs:
     - run: |
         black --check $(git ls-files | grep 'py$')
   mypy:
+    name: mypy
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -27,6 +29,7 @@ jobs:
     - run: pip install -r requirements-dev.txt
     - run: mypy pyi.py
   flake8:
+    name: flake8
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -39,6 +42,7 @@ jobs:
     - run: |
         flake8 $(git ls-files | grep 'py$')
   tests:
+    name: test suite
     timeout-minutes: 5
     runs-on: ${{ matrix.os }}
     strategy:
@@ -54,6 +58,7 @@ jobs:
     - run: pip install -r requirements-dev.txt
     - run: python3 -m pytest
   check-typeshed:
+    name: typeshed_primer
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
