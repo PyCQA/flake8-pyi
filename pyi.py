@@ -862,7 +862,7 @@ Y020 = "Y020 Quoted annotations should never be used in stubs"
 Y021 = "Y021 Docstrings should not be included in stubs"
 Y022 = "Y022 Use {good_cls_name} instead of {bad_cls_alias}"
 Y023 = (
-    'Y023 Use "from collections.abc import Set as AbstractSet"'
+    'Y023 Use "from collections.abc import Set as AbstractSet" '
     'to avoid confusion with "builtins.set"'
 )
 Y092 = "Y092 Top-level attribute must not have a default value"
