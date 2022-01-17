@@ -108,14 +108,14 @@ FORBIDDEN_IMPORTS_MAPPING = {
     "typing": {
         **_BAD_BUILTINS_ALIASES,
         **_BAD_COLLECTIONS_ALIASES,
-        'AsyncContextManager': '"contextlib.AbstractAsyncContextManager"'
+        "AsyncContextManager": '"contextlib.AbstractAsyncContextManager"',
     },
     "typing_extensions": {
         **_BAD_COLLECTIONS_ABC_ALIASES,
         **_BAD_COLLECTIONS_ALIASES,
         **_TYPING_NOT_TYPING_EXTENSIONS,
-        'AsyncContextManager': '"contextlib.AbstractAsyncContextManager"',
-        'ContextManager': '"contextlib.AbstractContextManager" or "typing.ContextManager"'
+        "AsyncContextManager": '"contextlib.AbstractAsyncContextManager"',
+        "ContextManager": '"contextlib.AbstractContextManager" or "typing.ContextManager"',
     },
     "collections": {"namedtuple": '"typing.NamedTuple"'},
 }
