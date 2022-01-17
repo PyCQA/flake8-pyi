@@ -20,15 +20,19 @@ def test_pyi_file(path):
             flags.extend(line.split()[2:])
             continue
 
-        match = re.search("# ([A-Z][0-9][0-9][0-9].*)", line)
-        if match:
-            expected_output += f"{path}:{lineno}: {match.group(1)}\n"
+        for match in re.finditer("# ([A-Z][0-9][0-9][0-9][^#]*)", line):
+            expected_output += f"{path}:{lineno}: {match.group(1).strip()}\n"
 
-    # TODO: is a python version dependent error message really a good idea?
+    # TODO: are python-version-dependent error messages really a good idea?
     if sys.version_info < (3, 9):
         expected_output = re.sub(
             r'Y016 Duplicate union member ".*"',
             "Y016 Duplicate union member",
+            expected_output,
+        )
+        expected_output = re.sub(
+            r'Y019 Use "_typeshed\.Self" instead of ("_\w+"), e\.g\. "def .*?: \.\.\."',
+            r'Y019 Use "_typeshed.Self" instead of \1',
             expected_output,
         )
 
