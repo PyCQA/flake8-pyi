@@ -1,7 +1,7 @@
-from typing import List, Union
+from typing import Union
 
 
-ManyStr = List[EitherStr]
+ManyStr = list[EitherStr]
 EitherStr = Union[str, bytes]
 
 

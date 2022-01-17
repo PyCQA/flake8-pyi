@@ -1,8 +1,8 @@
 # flags: --no-pyi-aware-file-checker
-from typing import List, Union
+from typing import Union
 
 
-ManyStr = List[EitherStr]  # F821 undefined name 'EitherStr'
+ManyStr = list[EitherStr]  # F821 undefined name 'EitherStr'
 EitherStr = Union[str, bytes]
 
 

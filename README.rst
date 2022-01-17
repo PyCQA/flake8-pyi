@@ -81,6 +81,12 @@ currently emitted:
   an instance of ``cls``, and ``__new__`` methods.
 * Y020: Quoted annotations should never be used in stubs.
 * Y021: Docstrings should not be included in stubs.
+* Y022: Use typing-module aliases to stdlib objects as little as possible
+  (``builtins.list`` instead of ``typing.List``, etc.). For typing-only objects
+  such as ``ClassVar`` or ``NoReturn``, import objects from ``typing`` instead
+  of ``typing_extensions`` wherever possible.
+* Y023: Always alias ``collections.abc.Set`` when importing it, so as to avoid
+  confusion with ``builtins.set``.
 
 The following warnings are disabled by default:
 

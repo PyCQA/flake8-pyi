@@ -19,6 +19,8 @@ unreleased
 * introduce Y016 (duplicate union member)
 * support Python 3.10
 * discontinue support for Python 3.6
+* introduce Y022 (banning various imports)
+* introduce Y023 (always alias ``collections.abc.Set``)
 
 20.10.0
 ~~~~~~~
