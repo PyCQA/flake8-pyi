@@ -89,6 +89,10 @@ _TYPING_NOT_TYPING_EXTENSIONS = {
     )
 }
 
+_ASYNC_CONTEXTMANAGER_BLACKLIST = {
+    "AsyncContextManager": '"contextlib.AbstractAsyncContextManager"'
+}
+
 
 class PyiAwareFlakesChecker(FlakesChecker):
     def deferHandleNode(self, node, parent):
@@ -235,28 +239,45 @@ class PyiVisitor(ast.NodeVisitor):
         """Determine whether we are inside a `class` statement"""
         return bool(self._class_nesting)
 
-    def _check_typing_object(
+    def _check_import_or_attribute(
         self, node: ast.Attribute | ast.ImportFrom, module_name: str, object_name: str
     ) -> None:
-        if object_name in _COLLECTIONS_NOT_TYPING_OR_TYPING_EXTENSIONS:
-            error_code, blacklist = Y022, _COLLECTIONS_NOT_TYPING_OR_TYPING_EXTENSIONS
-        elif object_name == "AsyncContextManager":
+        if module_name == "collections":
+            if object_name == "namedtuple":
+                self.error(node, Y024)
+            return
+
+        if module_name == "typing":
             error_code = Y022
-            blacklist = {
-                "AsyncContextManager": '"contextlib.AbstractAsyncContextManager"'
-            }
-        elif module_name == "typing":
-            if object_name not in _BUILTINS_NOT_TYPING:
+
+            if object_name in _BUILTINS_NOT_TYPING:
+                blacklist = _BUILTINS_NOT_TYPING
+            elif object_name in _COLLECTIONS_NOT_TYPING_OR_TYPING_EXTENSIONS:
+                blacklist = _COLLECTIONS_NOT_TYPING_OR_TYPING_EXTENSIONS
+            elif object_name == "AsyncContextManager":
+                blacklist = _ASYNC_CONTEXTMANAGER_BLACKLIST
+            else:
                 return
-            error_code, blacklist = Y022, _BUILTINS_NOT_TYPING
-        elif object_name in _TYPING_NOT_TYPING_EXTENSIONS:
-            error_code, blacklist = Y023, _TYPING_NOT_TYPING_EXTENSIONS
-        elif object_name == "ContextManager":
-            suggested_syntax = (
-                '"contextlib.AbstractContextManager" '
-                '(or "typing.ContextManager" in Python 2-compatible code)'
-            )
-            error_code, blacklist = Y023, {"ContextManager": suggested_syntax}
+
+        elif module_name == "typing_extensions":
+            if object_name in _COLLECTIONS_NOT_TYPING_OR_TYPING_EXTENSIONS:
+                error_code, blacklist = (
+                    Y022,
+                    _COLLECTIONS_NOT_TYPING_OR_TYPING_EXTENSIONS,
+                )
+            elif object_name == "AsyncContextManager":
+                error_code, blacklist = Y022, _ASYNC_CONTEXTMANAGER_BLACKLIST
+            elif object_name in _TYPING_NOT_TYPING_EXTENSIONS:
+                error_code, blacklist = Y023, _TYPING_NOT_TYPING_EXTENSIONS
+            elif object_name == "ContextManager":
+                suggested_syntax = (
+                    '"contextlib.AbstractContextManager" '
+                    '(or "typing.ContextManager" in Python 2-compatible code)'
+                )
+                error_code, blacklist = Y023, {"ContextManager": suggested_syntax}
+            else:
+                return
+
         else:
             return
 
@@ -271,19 +292,16 @@ class PyiVisitor(ast.NodeVisitor):
         thing = node.value
         if not isinstance(thing, ast.Name):
             return
-        thingname, attribute = thing.id, node.attr
 
-        if thingname == "collections" and attribute == "namedtuple":
-            return self.error(node, Y024)
-        elif thingname not in {"typing", "typing_extensions"}:
-            return
-
-        self._check_typing_object(
-            node=node, module_name=thingname, object_name=attribute
+        self._check_import_or_attribute(
+            node=node, module_name=thing.id, object_name=node.attr
         )
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         module_name, imported_objects = node.module, node.names
+
+        if module_name is None:
+            return
 
         if module_name == "collections.abc" and any(
             obj.name == "Set" and obj.asname != "AbstractSet"
@@ -291,16 +309,8 @@ class PyiVisitor(ast.NodeVisitor):
         ):
             return self.error(node, Y025)
 
-        elif module_name == "collections" and any(
-            obj.name == "namedtuple" for obj in imported_objects
-        ):
-            return self.error(node, Y024)
-
-        elif module_name not in {"typing", "typing_extensions"}:
-            return
-
         for obj in imported_objects:
-            self._check_typing_object(
+            self._check_import_or_attribute(
                 node=node, module_name=module_name, object_name=obj.name
             )
 
