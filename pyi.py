@@ -48,30 +48,35 @@ class TypeVarInfo(NamedTuple):
 #
 # ChainMap does not exist in typing or typing_extensions in Python 2,
 # so we can disallow importing it from anywhere except collections
-_COLLECTIONS_NOT_TYPING_OR_TYPING_EXTENSIONS = {
-    "Counter": "Counter",
-    "Deque": "deque",
-    "DefaultDict": "defaultdict",
-    "ChainMap": "ChainMap",
-}
-_COLLECTIONS_NOT_TYPING_OR_TYPING_EXTENSIONS = {
-    alias: f'"collections.{cls}"'
-    for alias, cls in _COLLECTIONS_NOT_TYPING_OR_TYPING_EXTENSIONS.items()
+_BAD_Y022_IMPORTS = {
+    # typing aliases for collections
+    "typing.Counter": "collections.Counter",
+    "typing.Deque": "collections.deque",
+    "typing.DefaultDict": "collections.defaultdict",
+    "typing.ChainMap": "collections.ChainMap",
+    # typing aliases for builtins
+    "typing.Dict": "builtins.dict",
+    "typing.FrozenSet": "builtins.frozenset",
+    "typing.List": "builtins.list",
+    "typing.Set": "builtins.set",
+    "typing.Tuple": "builtins.tuple",
+    "typing.Type": "builtins.type",
+    # One typing alias for contextlib
+    "typing.AsyncContextManager": "contextlib.AbstractAsyncContextManager",
+    # typing_extensions aliases for collections
+    "typing_extensions.Counter": "collections.Counter",
+    "typing_extensions.Deque": "collections.deque",
+    "typing_extensions.DefaultDict": "collections.defaultdict",
+    "typing_extensions.ChainMap": "collections.ChainMap",
+    # One typing_extensions alias for a builtin
+    "typing_extensions.Type": "builtins.type",
+    # one typing_extensions alias for contextlib
+    "typing_extensions.AsyncContextManager": "contextlib.AbstractAsyncContextManager",
 }
 
-# Just-for-typing blacklist
-_BUILTINS_NOT_TYPING = {
-    alias: f'"builtins.{alias.lower()}"'
-    for alias in ("Dict", "Frozenset", "List", "Set", "Tuple", "Type")
-}
-
-# collections.abc aliases: none of these exist in typing or typing_extensions in Python 2,
-# so we disallow importing them from typing_extensions.
-#
-# We can't disallow importing collections.abc aliases from typing yet due to mypy/pytype errors.
-_TYPING_NOT_TYPING_EXTENSIONS = {
-    alias: f'"typing.{alias}"'
-    for alias in (
+# typing_extensions.ContextManager is omitted from this collection - special-cased
+_BAD_Y023_IMPORTS = frozenset(
+    {
         # collections.abc aliases
         "Awaitable",
         "Coroutine",
@@ -86,12 +91,8 @@ _TYPING_NOT_TYPING_EXTENSIONS = {
         "overload",
         "Text",
         "NoReturn",
-    )
-}
-
-_ASYNC_CONTEXTMANAGER_BLACKLIST = {
-    "AsyncContextManager": '"contextlib.AbstractAsyncContextManager"'
-}
+    }
+)
 
 
 class PyiAwareFlakesChecker(FlakesChecker):
@@ -242,49 +243,41 @@ class PyiVisitor(ast.NodeVisitor):
     def _check_import_or_attribute(
         self, node: ast.Attribute | ast.ImportFrom, module_name: str, object_name: str
     ) -> None:
-        if module_name == "collections":
-            if object_name == "namedtuple":
-                self.error(node, Y024)
-            return
+        fullname = f"{module_name}.{object_name}"
 
-        if module_name == "typing":
-            error_code = Y022
+        # Y022 errors
+        if fullname in _BAD_Y022_IMPORTS:
+            error_message = Y022.format(
+                good_cls_name=f'"{_BAD_Y022_IMPORTS[fullname]}"',
+                bad_cls_alias=fullname,
+            )
 
-            if object_name in _BUILTINS_NOT_TYPING:
-                blacklist = _BUILTINS_NOT_TYPING
-            elif object_name in _COLLECTIONS_NOT_TYPING_OR_TYPING_EXTENSIONS:
-                blacklist = _COLLECTIONS_NOT_TYPING_OR_TYPING_EXTENSIONS
-            elif object_name == "AsyncContextManager":
-                blacklist = _ASYNC_CONTEXTMANAGER_BLACKLIST
-            else:
-                return
-
+        # Y023 errors
         elif module_name == "typing_extensions":
-            if object_name == "Type":
-                error_code, blacklist = Y022, {"Type": '"builtins.type"'}
-            elif object_name in _COLLECTIONS_NOT_TYPING_OR_TYPING_EXTENSIONS:
-                error_code = Y022
-                blacklist = _COLLECTIONS_NOT_TYPING_OR_TYPING_EXTENSIONS
-            elif object_name == "AsyncContextManager":
-                error_code, blacklist = Y022, _ASYNC_CONTEXTMANAGER_BLACKLIST
-            elif object_name in _TYPING_NOT_TYPING_EXTENSIONS:
-                error_code, blacklist = Y023, _TYPING_NOT_TYPING_EXTENSIONS
+            if object_name in _BAD_Y023_IMPORTS:
+                error_message = Y023.format(
+                    good_cls_name=f'"typing.{object_name}"',
+                    bad_cls_alias=f"typing_extensions.{object_name}",
+                )
             elif object_name == "ContextManager":
                 suggested_syntax = (
                     '"contextlib.AbstractContextManager" '
                     '(or "typing.ContextManager" in Python 2-compatible code)'
                 )
-                error_code, blacklist = Y023, {"ContextManager": suggested_syntax}
+                error_message = Y023.format(
+                    good_cls_name=suggested_syntax,
+                    bad_cls_alias="typing_extensions.ContextManager",
+                )
             else:
                 return
+
+        # Y024 errors
+        elif fullname == "collections.namedtuple":
+            error_message = Y024
 
         else:
             return
 
-        error_message = error_code.format(
-            good_cls_name=blacklist[object_name],
-            bad_cls_alias=f"{module_name}.{object_name}",
-        )
         self.error(node, error_message)
 
     def visit_Attribute(self, node: ast.Attribute) -> None:
