@@ -888,7 +888,6 @@ Y025 = (
     'Y025 Use "from collections.abc import Set as AbstractSet" '
     'to avoid confusion with "builtins.set"'
 )
-Y092 = "Y092 Top-level attribute must not have a default value"
 Y093 = "Y093 Use typing_extensions.TypeAlias for type aliases"
 
 DISABLED_BY_DEFAULT = [Y093]
