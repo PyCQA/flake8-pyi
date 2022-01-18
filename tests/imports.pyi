@@ -106,6 +106,7 @@ from typing import Dict  # Y022 Use "builtins.dict" instead of "typing.Dict"
 from typing import Counter  # Y022 Use "collections.Counter" instead of "typing.Counter"
 from typing import AsyncContextManager  # Y022 Use "contextlib.AbstractAsyncContextManager" instead of "typing.AsyncContextManager"
 from typing import ChainMap  # Y022 Use "collections.ChainMap" instead of "typing.ChainMap"
+from typing_extensions import Type  # Y022 Use "builtins.type" instead of "typing_extensions.Type"
 from typing_extensions import DefaultDict  # Y022 Use "collections.defaultdict" instead of "typing_extensions.DefaultDict"
 from typing_extensions import ChainMap  # Y022 Use "collections.ChainMap" instead of "typing_extensions.ChainMap"
 from typing_extensions import AsyncContextManager  # Y022 Use "contextlib.AbstractAsyncContextManager" instead of "typing_extensions.AsyncContextManager"
@@ -121,9 +122,18 @@ from collections.abc import Set  # Y025 Use "from collections.abc import Set as 
 
 # GOOD ATTRIBUTE ACCESS
 foo: typing.SupportsIndex
-bar: typing_extensions.Final[int]
-baz: collections.abc.Sized
-blah: collections.deque[int]
+
+@typing_extensions.final
+def bar(arg: collections.abc.Sized) -> typing_extensions.Literal[True]:
+    ...
+
+
+class Fish:
+    blah: collections.deque[int]
+
+    def method(self, arg: typing.SupportsInt = ...) -> None:
+        ...
+
 
 # BAD ATTRIBUTE ACCESS (Y022 code)
 a: typing.Dict[str, int]  # Y022 Use "builtins.dict" instead of "typing.Dict"
@@ -144,10 +154,10 @@ class Spam:
     def meth1() -> typing_extensions.DefaultDict[bytes, bytes]:  # Y022 Use "collections.defaultdict" instead of "typing_extensions.DefaultDict"
         ...
 
-    def meth2(f: typing_extensions.ChainMap[str, str]) -> None:  # Y022 Use "collections.ChainMap" instead of "typing_extensions.ChainMap"
+    def meth2(self, f: typing_extensions.ChainMap[str, str]) -> None:  # Y022 Use "collections.ChainMap" instead of "typing_extensions.ChainMap"
         ...
 
-    def meth3(g: typing_extensions.AsyncContextManager[Any] = ...) -> None:  # Y022 Use "contextlib.AbstractAsyncContextManager" instead of "typing_extensions.AsyncContextManager"
+    def meth3(self, g: typing_extensions.AsyncContextManager[Any] = ...) -> None:  # Y022 Use "contextlib.AbstractAsyncContextManager" instead of "typing_extensions.AsyncContextManager"
         ...
 
 

@@ -260,11 +260,11 @@ class PyiVisitor(ast.NodeVisitor):
                 return
 
         elif module_name == "typing_extensions":
-            if object_name in _COLLECTIONS_NOT_TYPING_OR_TYPING_EXTENSIONS:
-                error_code, blacklist = (
-                    Y022,
-                    _COLLECTIONS_NOT_TYPING_OR_TYPING_EXTENSIONS,
-                )
+            if object_name == "Type":
+                error_code, blacklist = Y022, {"Type": '"builtins.type"'}
+            elif object_name in _COLLECTIONS_NOT_TYPING_OR_TYPING_EXTENSIONS:
+                error_code = Y022
+                blacklist = _COLLECTIONS_NOT_TYPING_OR_TYPING_EXTENSIONS
             elif object_name == "AsyncContextManager":
                 error_code, blacklist = Y022, _ASYNC_CONTEXTMANAGER_BLACKLIST
             elif object_name in _TYPING_NOT_TYPING_EXTENSIONS:
