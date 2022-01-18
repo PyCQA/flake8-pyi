@@ -23,6 +23,10 @@ unreleased
 * introduce Y016 (duplicate union member)
 * support Python 3.10
 * discontinue support for Python 3.6
+* introduce Y022 (prefer stdlib classes over ``typing`` aliases)
+* introduce Y023 (prefer ``typing`` over ``typing_extensions``)
+* introduce Y024 (prefer ``typing.NamedTuple`` to ``collections.namedtuple``)
+* introduce Y025 (always alias ``collections.abc.Set``)
 
 20.10.0
 ~~~~~~~

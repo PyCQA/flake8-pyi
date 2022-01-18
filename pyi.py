@@ -47,6 +47,59 @@ class TypeVarInfo(NamedTuple):
     name: str
 
 
+# OrderedDict is omitted from this blacklist:
+# -- In Python 3, we'd rather import it from collections, not typing or typing_extensions
+# -- But in Python 2, it cannot be imported from collections or typing, only from typing_extensions
+#
+# ChainMap does not exist in typing or typing_extensions in Python 2,
+# so we can disallow importing it from anywhere except collections
+_BAD_Y022_IMPORTS = {
+    # typing aliases for collections
+    "typing.Counter": "collections.Counter",
+    "typing.Deque": "collections.deque",
+    "typing.DefaultDict": "collections.defaultdict",
+    "typing.ChainMap": "collections.ChainMap",
+    # typing aliases for builtins
+    "typing.Dict": "builtins.dict",
+    "typing.FrozenSet": "builtins.frozenset",
+    "typing.List": "builtins.list",
+    "typing.Set": "builtins.set",
+    "typing.Tuple": "builtins.tuple",
+    "typing.Type": "builtins.type",
+    # One typing alias for contextlib
+    "typing.AsyncContextManager": "contextlib.AbstractAsyncContextManager",
+    # typing_extensions aliases for collections
+    "typing_extensions.Counter": "collections.Counter",
+    "typing_extensions.Deque": "collections.deque",
+    "typing_extensions.DefaultDict": "collections.defaultdict",
+    "typing_extensions.ChainMap": "collections.ChainMap",
+    # One typing_extensions alias for a builtin
+    "typing_extensions.Type": "builtins.type",
+    # one typing_extensions alias for contextlib
+    "typing_extensions.AsyncContextManager": "contextlib.AbstractAsyncContextManager",
+}
+
+# typing_extensions.ContextManager is omitted from this collection - special-cased
+_BAD_Y023_IMPORTS = frozenset(
+    {
+        # collections.abc aliases
+        "Awaitable",
+        "Coroutine",
+        "AsyncIterable",
+        "AsyncIterator",
+        "AsyncGenerator",
+        # typing aliases
+        "Protocol",
+        "runtime_checkable",
+        "ClassVar",
+        "NewType",
+        "overload",
+        "Text",
+        "NoReturn",
+    }
+)
+
+
 class PyiAwareFlakesChecker(FlakesChecker):
     def deferHandleNode(self, node, parent):
         self.deferFunction(lambda: self.handleNode(node, parent))
@@ -192,6 +245,73 @@ class PyiVisitor(ast.NodeVisitor):
         """Determine whether we are inside a `class` statement"""
         return bool(self._class_nesting)
 
+    def _check_import_or_attribute(
+        self, node: ast.Attribute | ast.ImportFrom, module_name: str, object_name: str
+    ) -> None:
+        fullname = f"{module_name}.{object_name}"
+
+        # Y022 errors
+        if fullname in _BAD_Y022_IMPORTS:
+            error_message = Y022.format(
+                good_cls_name=f'"{_BAD_Y022_IMPORTS[fullname]}"',
+                bad_cls_alias=fullname,
+            )
+
+        # Y023 errors
+        elif module_name == "typing_extensions":
+            if object_name in _BAD_Y023_IMPORTS:
+                error_message = Y023.format(
+                    good_cls_name=f'"typing.{object_name}"',
+                    bad_cls_alias=f"typing_extensions.{object_name}",
+                )
+            elif object_name == "ContextManager":
+                suggested_syntax = (
+                    '"contextlib.AbstractContextManager" '
+                    '(or "typing.ContextManager" in Python 2-compatible code)'
+                )
+                error_message = Y023.format(
+                    good_cls_name=suggested_syntax,
+                    bad_cls_alias="typing_extensions.ContextManager",
+                )
+            else:
+                return
+
+        # Y024 errors
+        elif fullname == "collections.namedtuple":
+            error_message = Y024
+
+        else:
+            return
+
+        self.error(node, error_message)
+
+    def visit_Attribute(self, node: ast.Attribute) -> None:
+        self.generic_visit(node)
+        thing = node.value
+        if not isinstance(thing, ast.Name):
+            return
+
+        self._check_import_or_attribute(
+            node=node, module_name=thing.id, object_name=node.attr
+        )
+
+    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
+        module_name, imported_objects = node.module, node.names
+
+        if module_name is None:
+            return
+
+        if module_name == "collections.abc" and any(
+            obj.name == "Set" and obj.asname != "AbstractSet"
+            for obj in imported_objects
+        ):
+            return self.error(node, Y025)
+
+        for obj in imported_objects:
+            self._check_import_or_attribute(
+                node=node, module_name=module_name, object_name=obj.name
+            )
+
     def visit_Assign(self, node: ast.Assign) -> None:
         if self.in_function:
             # We error for unexpected things within functions separately.
@@ -267,6 +387,7 @@ class PyiVisitor(ast.NodeVisitor):
             self.generic_visit(node)
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
+        self.generic_visit(node)
         if isinstance(node.annotation, ast.Name) and node.annotation.id == "TypeAlias":
             return
         if node.value and not isinstance(node.value, ast.Ellipsis):
@@ -752,6 +873,13 @@ Y018 = 'Y018 {typevarlike_cls} "{typevar_name}" is not used'
 Y019 = 'Y019 Use "_typeshed.Self" instead of "{typevar_name}", e.g. "{new_syntax}"'
 Y020 = "Y020 Quoted annotations should never be used in stubs"
 Y021 = "Y021 Docstrings should not be included in stubs"
+Y022 = 'Y022 Use {good_cls_name} instead of "{bad_cls_alias}"'
+Y023 = 'Y023 Use {good_cls_name} instead of "{bad_cls_alias}"'
+Y024 = 'Y024 Use "typing.NamedTuple" instead of "collections.namedtuple"'
+Y025 = (
+    'Y025 Use "from collections.abc import Set as AbstractSet" '
+    'to avoid confusion with "builtins.set"'
+)
 Y093 = "Y093 Use typing_extensions.TypeAlias for type aliases"
 
 DISABLED_BY_DEFAULT = [Y093]
