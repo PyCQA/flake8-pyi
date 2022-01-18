@@ -69,19 +69,16 @@ _BUILTINS_NOT_TYPING = {
 # so we disallow importing them from typing_extensions.
 #
 # We can't disallow importing collections.abc aliases from typing yet due to mypy/pytype errors.
-_COLLECTIONSABC_OR_TYPING_NOT_TYPING_EXTENSIONS = {
-    alias: f'"collections.abc.{alias}" or "typing.{alias}"'
+_TYPING_NOT_TYPING_EXTENSIONS = {
+    alias: f'"typing.{alias}"'
     for alias in (
+        # collections.abc aliases
         "Awaitable",
         "Coroutine",
         "AsyncIterable",
         "AsyncIterator",
         "AsyncGenerator",
-    )
-}
-_TYPING_NOT_TYPING_EXTENSIONS = {
-    alias: f'"typing.{alias}"'
-    for alias in (
+        # typing aliases
         "Protocol",
         "runtime_checkable",
         "ClassVar",
@@ -252,16 +249,14 @@ class PyiVisitor(ast.NodeVisitor):
             if object_name not in _BUILTINS_NOT_TYPING:
                 return
             error_code, blacklist = Y022, _BUILTINS_NOT_TYPING
-        elif object_name in _COLLECTIONSABC_OR_TYPING_NOT_TYPING_EXTENSIONS:
-            error_code = Y023
-            blacklist = _COLLECTIONSABC_OR_TYPING_NOT_TYPING_EXTENSIONS
         elif object_name in _TYPING_NOT_TYPING_EXTENSIONS:
             error_code, blacklist = Y023, _TYPING_NOT_TYPING_EXTENSIONS
         elif object_name == "ContextManager":
-            error_code = Y023
-            blacklist = {
-                "ContextManager": '"contextlib.AbstractContextManager" or "typing.ContextManager"'
-            }
+            suggested_syntax = (
+                '"contextlib.AbstractContextManager" '
+                '(or "typing.ContextManager" in Python 2-compatible code)'
+            )
+            error_code, blacklist = Y023, {"ContextManager": suggested_syntax}
         else:
             return
 

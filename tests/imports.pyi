@@ -112,8 +112,8 @@ from typing_extensions import AsyncContextManager  # Y022 Use "contextlib.Abstra
 
 # BAD IMPORTS (Y023 code)
 from typing_extensions import ClassVar  # Y023 Use "typing.ClassVar" instead of "typing_extensions.ClassVar"
-from typing_extensions import Awaitable  # Y023 Use "collections.abc.Awaitable" or "typing.Awaitable" instead of "typing_extensions.Awaitable"
-from typing_extensions import ContextManager  # Y023 Use "contextlib.AbstractContextManager" or "typing.ContextManager" instead of "typing_extensions.ContextManager"
+from typing_extensions import Awaitable  # Y023 Use "typing.Awaitable" instead of "typing_extensions.Awaitable"
+from typing_extensions import ContextManager  # Y023 Use "contextlib.AbstractContextManager" (or "typing.ContextManager" in Python 2-compatible code) instead of "typing_extensions.ContextManager"
 
 # BAD IMPORTS: OTHER
 from collections import namedtuple  # Y024 Use "typing.NamedTuple" instead of "collections.namedtuple"
@@ -139,8 +139,8 @@ class Foo:
     attribute: typing_extensions.ClassVar[int]  # Y023 Use "typing.ClassVar" instead of "typing_extensions.ClassVar"
 
 
-h: typing_extensions.Awaitable[float]  # Y023 Use "collections.abc.Awaitable" or "typing.Awaitable" instead of "typing_extensions.Awaitable"
-i: typing_extensions.ContextManager[None]  # Y023 Use "contextlib.AbstractContextManager" or "typing.ContextManager" instead of "typing_extensions.ContextManager"
+h: typing_extensions.Awaitable[float]  # Y023 Use "typing.Awaitable" instead of "typing_extensions.Awaitable"
+i: typing_extensions.ContextManager[None]  # Y023 Use "contextlib.AbstractContextManager" (or "typing.ContextManager" in Python 2-compatible code) instead of "typing_extensions.ContextManager"
 
 # BAD ATTRIBUTE ACCESS: OTHER
 j: collections.namedtuple  # Y024 Use "typing.NamedTuple" instead of "collections.namedtuple"
