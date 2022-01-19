@@ -91,6 +91,8 @@ currently emitted:
   for more precise type inference.
 * Y025: Always alias ``collections.abc.Set`` when importing it, so as to avoid
   confusion with ``builtins.set``.
+* Y028: Always use class-based syntax for ``typing.NamedTuple``, instead of
+  assignment-based syntax.
 
 The following warnings are disabled by default:
 
