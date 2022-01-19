@@ -1,8 +1,8 @@
-from typing import Union
+from typing import Union, TypeAlias
 
 
-ManyStr = list[EitherStr]
-EitherStr = Union[str, bytes]
+ManyStr: TypeAlias = list[EitherStr]
+EitherStr: TypeAlias = Union[str, bytes]
 
 
 def function(accepts: EitherStr) -> None:

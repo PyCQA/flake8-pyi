@@ -1,9 +1,9 @@
 # flags: --no-pyi-aware-file-checker
-from typing import Union
+from typing import Union, TypeAlias
 
 
-ManyStr = list[EitherStr]  # F821 undefined name 'EitherStr'
-EitherStr = Union[str, bytes]
+ManyStr: TypeAlias = list[EitherStr]  # F821 undefined name 'EitherStr'
+EitherStr: TypeAlias = Union[str, bytes]
 
 
 def function(accepts: EitherStr) -> None:

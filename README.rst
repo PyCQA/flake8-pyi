@@ -91,12 +91,16 @@ currently emitted:
   for more precise type inference.
 * Y025: Always alias ``collections.abc.Set`` when importing it, so as to avoid
   confusion with ``builtins.set``.
+* Y026: Type aliases should be explicitly demarcated with ``typing.TypeAlias``.
 * Y028: Always use class-based syntax for ``typing.NamedTuple``, instead of
   assignment-based syntax.
 
-The following warnings are disabled by default:
+Many error codes enforce modern conventions, and some cannot yet be used in
+all cases:
 
-* Y093: Type aliases should be explicitly demarcated with ``typing.TypeAlias``.
+* Y026 is incompatible with the pytype type checker and should be turned
+  off for stubs that need to be compatible with pytype. A fix is tracked
+  `here <https://github.com/google/pytype/issues/787>`_.
 
 License
 -------
