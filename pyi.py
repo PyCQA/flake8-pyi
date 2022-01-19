@@ -646,9 +646,12 @@ class PyiVisitor(ast.NodeVisitor):
         if (
             self.in_class
             and node.name in {"__repr__", "__str__"}
-            and not any(deco.id == "abstractmethod" for deco in node.decorator_list)
             and isinstance(node.returns, ast.Name)
             and node.returns.id == "str"
+            and not any(
+                isinstance(deco, ast.Name) and deco.id == "abstractmethod"
+                for deco in node.decorator_list
+            )
         ):
             self.error(node, Y029)
         self._visit_function(node)
