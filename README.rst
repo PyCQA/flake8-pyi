@@ -92,6 +92,9 @@ currently emitted:
 * Y025: Always alias ``collections.abc.Set`` when importing it, so as to avoid
   confusion with ``builtins.set``.
 * Y026: Type aliases should be explicitly demarcated with ``typing.TypeAlias``.
+* Y027: Same as Y022. Unlike Y022, however, the imports disallowed with this
+  error code are required if you wish to write Python 2-compatible stubs.
+  Switch this error code off in your config file if you support Python 2.
 * Y028: Always use class-based syntax for ``typing.NamedTuple``, instead of
   assignment-based syntax.
 
@@ -101,6 +104,8 @@ all cases:
 * Y026 is incompatible with the pytype type checker and should be turned
   off for stubs that need to be compatible with pytype. A fix is tracked
   `here <https://github.com/google/pytype/issues/787>`_.
+* Y027 is incompatible with Python 2 and should only be used in stubs
+  that are meant only for Python 3.
 
 License
 -------

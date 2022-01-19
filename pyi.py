@@ -47,12 +47,8 @@ class TypeVarInfo(NamedTuple):
     name: str
 
 
-# OrderedDict is omitted from this blacklist:
-# -- In Python 3, we'd rather import it from collections, not typing or typing_extensions
-# -- But in Python 2, it cannot be imported from collections or typing, only from typing_extensions
-#
-# ChainMap does not exist in typing or typing_extensions in Python 2,
-# so we can disallow importing it from anywhere except collections
+# ChainMap and AsyncContextManager do not exist in typing or typing_extensions in Python 2,
+# so we can disallow importing them from anywhere except collections and contextlib respectively.
 _BAD_Y022_IMPORTS = {
     # typing aliases for collections
     "typing.Counter": "collections.Counter",
@@ -79,7 +75,7 @@ _BAD_Y022_IMPORTS = {
     "typing_extensions.AsyncContextManager": "contextlib.AbstractAsyncContextManager",
 }
 
-# typing_extensions.ContextManager is omitted from this collection - special-cased
+# typing_extensions.ContextManager is omitted from the Y023 and Y027 collections - special-cased
 _BAD_Y023_IMPORTS = frozenset(
     {
         # collections.abc aliases
@@ -98,6 +94,12 @@ _BAD_Y023_IMPORTS = frozenset(
         "NoReturn",
     }
 )
+
+_BAD_Y027_IMPORTS = {
+    "typing.ContextManager": "contextlib.AbstractContextManager",
+    "typing.OrderedDict": "collections.OrderedDict",
+    "typing_extensions.OrderedDict": "collections.OrderedDict",
+}
 
 
 class PyiAwareFlakesChecker(FlakesChecker):
@@ -254,6 +256,13 @@ class PyiVisitor(ast.NodeVisitor):
         if fullname in _BAD_Y022_IMPORTS:
             error_message = Y022.format(
                 good_cls_name=f'"{_BAD_Y022_IMPORTS[fullname]}"',
+                bad_cls_alias=fullname,
+            )
+
+        # Y027 errors
+        elif fullname in _BAD_Y027_IMPORTS:
+            error_message = Y027.format(
+                good_cls_name=f'"{_BAD_Y027_IMPORTS[fullname]}"',
                 bad_cls_alias=fullname,
             )
 
@@ -870,4 +879,5 @@ Y025 = (
     'to avoid confusion with "builtins.set"'
 )
 Y026 = "Y026 Use typing_extensions.TypeAlias for type aliases"
+Y027 = 'Y027 Use {good_cls_name} instead of "{bad_cls_alias}"'
 Y028 = "Y028 Use class-based syntax for NamedTuples"
