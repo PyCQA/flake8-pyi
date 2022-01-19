@@ -21,6 +21,7 @@ unreleased
 * introduce Y018 (detect unused TypeVars)
 * introduce Y019 (detect TypeVars that should be _typeshed.Self, but aren't)
 * introduce Y016 (duplicate union member)
+* introduce Y028 (Use class-based syntax for NamedTuples)
 * support Python 3.10
 * discontinue support for Python 3.6
 * introduce Y022 (prefer stdlib classes over ``typing`` aliases)
