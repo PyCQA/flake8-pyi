@@ -1,8 +1,8 @@
-from typing import Optional, Union
+from typing import Optional, Union, TypeAlias
 
 
-MaybeCStr = Optional[CStr]
-CStr = Union[C, str]
+MaybeCStr: TypeAlias = Optional[CStr]
+CStr: TypeAlias = Union[C, str]
 __version__: str
 __author__: str
 

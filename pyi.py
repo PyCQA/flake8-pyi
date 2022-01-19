@@ -355,14 +355,15 @@ class PyiVisitor(ast.NodeVisitor):
                     self.typevarlike_defs[target_info] = node
                 else:
                     self.error(target, Y001.format(cls_name))
-            # We avoid triggering Y093 in this case because there are various
-            # unusual cases where assignment to the result of a call is legitimate
-            # in stubs.
-            return
         if isinstance(node.value, (ast.Num, ast.Str, ast.Bytes)):
             self.error(node.value, Y015)
-        else:
-            self.error(node, Y093)
+        # We avoid triggering Y026 for calls and = ... because there are various
+        # unusual cases where assignment to the result of a call is legitimate
+        # in stubs.
+        elif target_name != "__all__" and not isinstance(
+            node.value, (ast.Ellipsis, ast.Call)
+        ):
+            self.error(node, Y026)
 
     def visit_Name(self, node: ast.Name) -> None:
         self.all_name_occurrences[node.id] += 1
@@ -812,8 +813,7 @@ class PyiTreeChecker:
         if path.suffix == ".pyi":
             visitor = PyiVisitor(filename=path)
             for error in visitor.run(self.tree):
-                if self.should_warn(error.message[:4]):
-                    yield error
+                yield error
 
     @classmethod
     def add_options(cls, parser):
@@ -839,35 +839,12 @@ class PyiTreeChecker:
         except optparse.OptionConflictError:
             # In tests, sometimes this option gets called twice for some reason.
             pass
-        parser.extend_default_ignore(DISABLED_BY_DEFAULT)
 
     @classmethod
     def parse_options(cls, optmanager, options, extra_args):
         """This is also brittle, only checked with flake8 3.2.1 and master."""
         if not options.no_pyi_aware_file_checker:
             checker.FileChecker = PyiAwareFileChecker
-
-    # Functionality to ignore some warnings. Adapted from flake8-bugbear.
-    def should_warn(self, code):
-        """Returns `True` if flake8-pyi should emit a particular warning.
-        flake8 overrides default ignores when the user specifies
-        `ignore = ` in configuration.  This is problematic because it means
-        specifying anything in `ignore = ` implicitly enables all optional
-        warnings.  This function is a workaround for this behavior.
-        Users should explicitly enable these warnings.
-        """
-        if code[:3] != "Y09":
-            # Normal warnings are safe for emission.
-            return True
-
-        if self.options is None:
-            return True
-
-        for i in range(2, len(code) + 1):
-            if code[:i] in self.options.select:
-                return True
-
-        return False
 
 
 # Please keep error code lists in README and CHANGELOG up to date
@@ -901,8 +878,6 @@ Y025 = (
     'Y025 Use "from collections.abc import Set as AbstractSet" '
     'to avoid confusion with "builtins.set"'
 )
+Y026 = "Y026 Use typing_extensions.TypeAlias for type aliases"
 Y027 = 'Y027 Use {good_cls_name} instead of "{bad_cls_alias}"'
 Y028 = "Y028 Use class-based syntax for NamedTuples"
-Y093 = "Y093 Use typing_extensions.TypeAlias for type aliases"
-
-DISABLED_BY_DEFAULT = [Y093]
