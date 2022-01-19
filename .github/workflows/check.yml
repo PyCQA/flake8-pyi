@@ -19,6 +19,17 @@ jobs:
     - run: pip install -r requirements-dev.txt
     - run: |
         black --check $(git ls-files | grep 'py$')
+  isort:
+    name: isort
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: "3.10"
+    - run: pip install -r requirements-dev.txt
+    - run: isort --check-only --diff pyi.py
   mypy:
     name: mypy
     runs-on: ubuntu-latest
