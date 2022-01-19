@@ -346,13 +346,12 @@ class PyiVisitor(ast.NodeVisitor):
                     self.typevarlike_defs[target_info] = node
                 else:
                     self.error(target, Y001.format(cls_name))
-            # We avoid triggering Y026 in this case because there are various
-            # unusual cases where assignment to the result of a call is legitimate
-            # in stubs.
-            return
         if isinstance(node.value, (ast.Num, ast.Str, ast.Bytes)):
             self.error(node.value, Y015)
-        elif target_name != "__all__" and not isinstance(node.value, ast.Ellipsis):
+        # We avoid triggering Y026 for calls and = ... because there are various
+        # unusual cases where assignment to the result of a call is legitimate
+        # in stubs.
+        elif target_name != "__all__" and not isinstance(node.value, (ast.Ellipsis, ast.Call)):
             self.error(node, Y026)
 
     def visit_Name(self, node: ast.Name) -> None:
