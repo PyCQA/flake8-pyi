@@ -351,7 +351,9 @@ class PyiVisitor(ast.NodeVisitor):
         # We avoid triggering Y026 for calls and = ... because there are various
         # unusual cases where assignment to the result of a call is legitimate
         # in stubs.
-        elif target_name != "__all__" and not isinstance(node.value, (ast.Ellipsis, ast.Call)):
+        elif target_name != "__all__" and not isinstance(
+            node.value, (ast.Ellipsis, ast.Call)
+        ):
             self.error(node, Y026)
 
     def visit_Name(self, node: ast.Name) -> None:
