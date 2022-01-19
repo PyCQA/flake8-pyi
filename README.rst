@@ -105,8 +105,10 @@ MIT
 Authors
 -------
 
-Glued together by `Łukasz Langa <mailto:lukasz@langa.pl>`_ and
-`Jelle Zijlstra <mailto:jelle.zijlstra@gmail.com>`_.
+Originally created by `Łukasz Langa <mailto:lukasz@langa.pl>`_ and
+now maintained by
+`Jelle Zijlstra <mailto:jelle.zijlstra@gmail.com>`_, Alex Waygood,
+Sebastian Rittau, Akuli, and Shantanu.
 
 See also
 --------
