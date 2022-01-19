@@ -94,6 +94,8 @@ currently emitted:
 * Y027: Same as Y022. Unlike Y022, however, the imports disallowed with this
   error code are required if you wish to write Python 2-compatible stubs.
   Switch this error code off in your config file if you support Python 2.
+* Y028: Always use class-based syntax for ``typing.NamedTuple``, instead of
+  assignment-based syntax.
 
 The following warnings are disabled by default:
 
