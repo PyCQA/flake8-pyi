@@ -92,6 +92,8 @@ currently emitted:
 * Y025: Always alias ``collections.abc.Set`` when importing it, so as to avoid
   confusion with ``builtins.set``.
 * Y026: Type aliases should be explicitly demarcated with ``typing.TypeAlias``.
+* Y028: Always use class-based syntax for ``typing.NamedTuple``, instead of
+  assignment-based syntax.
 
 License
 -------
@@ -102,8 +104,11 @@ MIT
 Authors
 -------
 
-Glued together by `Łukasz Langa <mailto:lukasz@langa.pl>`_ and
-`Jelle Zijlstra <mailto:jelle.zijlstra@gmail.com>`_.
+Originally created by `Łukasz Langa <mailto:lukasz@langa.pl>`_ and
+now maintained by
+`Jelle Zijlstra <mailto:jelle.zijlstra@gmail.com>`_,
+`Alex Waygood <mailto:alex.waygood@gmail.com>`_,
+Sebastian Rittau, Akuli, and Shantanu.
 
 See also
 --------

@@ -359,7 +359,19 @@ class PyiVisitor(ast.NodeVisitor):
         self.all_name_occurrences[node.id] += 1
 
     def visit_Call(self, node: ast.Call) -> None:
-        self.visit(node.func)
+        function = node.func
+        self.visit(function)
+        if isinstance(function, ast.Name):
+            if function.id == "NamedTuple":
+                return self.error(node, Y028)
+        elif isinstance(function, ast.Attribute):
+            if (
+                isinstance(function.value, ast.Name)
+                and function.value.id == "typing"
+                and function.attr == "NamedTuple"
+            ):
+                return self.error(node, Y028)
+
         # String literals can appear in positional arguments for
         # TypeVar definitions.
         with self.allow_string_literals():
@@ -857,3 +869,4 @@ Y025 = (
     'to avoid confusion with "builtins.set"'
 )
 Y026 = "Y026 Use typing_extensions.TypeAlias for type aliases"
+Y028 = "Y028 Use class-based syntax for NamedTuples"
