@@ -352,7 +352,7 @@ class PyiVisitor(ast.NodeVisitor):
             return
         if isinstance(node.value, (ast.Num, ast.Str, ast.Bytes)):
             self.error(node.value, Y015)
-        elif target_name != "__all__":
+        elif target_name != "__all__" and not isinstance(node.value, ast.Ellipsis):
             self.error(node, Y026)
 
     def visit_Name(self, node: ast.Name) -> None:
