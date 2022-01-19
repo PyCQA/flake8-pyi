@@ -107,7 +107,8 @@ Authors
 
 Originally created by `Łukasz Langa <mailto:lukasz@langa.pl>`_ and
 now maintained by
-`Jelle Zijlstra <mailto:jelle.zijlstra@gmail.com>`_, Alex Waygood,
+`Jelle Zijlstra <mailto:jelle.zijlstra@gmail.com>`_,
+`Alex Waygood <mailto:alex.waygood@gmail.com>`_,
 Sebastian Rittau, Akuli, and Shantanu.
 
 See also
