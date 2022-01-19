@@ -91,6 +91,9 @@ currently emitted:
   for more precise type inference.
 * Y025: Always alias ``collections.abc.Set`` when importing it, so as to avoid
   confusion with ``builtins.set``.
+* Y027: Same as Y022. Unlike Y022, however, the imports disallowed with this
+  error code are required if you wish to write Python 2-compatible stubs.
+  Switch this error code off in your config file if you support Python 2.
 
 The following warnings are disabled by default:
 

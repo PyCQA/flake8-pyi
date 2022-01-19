@@ -84,7 +84,6 @@ from typing import (
     NewType,
     NoReturn,
     overload,
-    ContextManager  # ContextManager must be importable from typing (but not typing_extensions) for Python 2 compabitility
 )
 from typing_extensions import (
     Concatenate,
@@ -97,7 +96,6 @@ from typing_extensions import (
     TypeGuard,
     Annotated,
     TypedDict,
-    OrderedDict  # OrderedDict must be importable from typing_extensions (but not typing) for Python 2 compatibility
 )
 
 
@@ -115,6 +113,11 @@ from typing_extensions import AsyncContextManager  # Y022 Use "contextlib.Abstra
 from typing_extensions import ClassVar  # Y023 Use "typing.ClassVar" instead of "typing_extensions.ClassVar"
 from typing_extensions import Awaitable  # Y023 Use "typing.Awaitable" instead of "typing_extensions.Awaitable"
 from typing_extensions import ContextManager  # Y023 Use "contextlib.AbstractContextManager" (or "typing.ContextManager" in Python 2-compatible code) instead of "typing_extensions.ContextManager"
+
+# BAD IMPORTS (Y027 code)
+from typing import ContextManager  # Y027 Use "contextlib.AbstractContextManager" instead of "typing.ContextManager"
+from typing import OrderedDict  # Y027 Use "collections.OrderedDict" instead of "typing.OrderedDict"
+from typing_extensions import OrderedDict  # Y027 Use "collections.OrderedDict" instead of "typing_extensions.OrderedDict"
 
 # BAD IMPORTS: OTHER
 from collections import namedtuple  # Y024 Use "typing.NamedTuple" instead of "collections.namedtuple"
@@ -168,6 +171,10 @@ class Foo:
 
 h: typing_extensions.Awaitable[float]  # Y023 Use "typing.Awaitable" instead of "typing_extensions.Awaitable"
 i: typing_extensions.ContextManager[None]  # Y023 Use "contextlib.AbstractContextManager" (or "typing.ContextManager" in Python 2-compatible code) instead of "typing_extensions.ContextManager"
+
+# BAD ATTRIBUTE ACCESS (Y027 code)
+k: typing_extensions.OrderedDict[int, str]  # Y027 Use "collections.OrderedDict" instead of "typing_extensions.OrderedDict"
+l: typing.ContextManager  # Y027 Use "contextlib.AbstractContextManager" instead of "typing.ContextManager"
 
 # BAD ATTRIBUTE ACCESS: OTHER
 j: collections.namedtuple  # Y024 Use "typing.NamedTuple" instead of "collections.namedtuple"

@@ -27,6 +27,7 @@ unreleased
 * introduce Y023 (prefer ``typing`` over ``typing_extensions``)
 * introduce Y024 (prefer ``typing.NamedTuple`` to ``collections.namedtuple``)
 * introduce Y025 (always alias ``collections.abc.Set``)
+* introduce Y027 (Python 2-incompatible extension of Y022)
 
 20.10.0
 ~~~~~~~
