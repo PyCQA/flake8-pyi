@@ -1,4 +1,4 @@
-from typing import TypeVar, Literal, Annotated
+from typing import TypeVar, Literal, Annotated, TypeAlias
 
 __all__ = ["f", "g"]
 
@@ -22,7 +22,7 @@ def j() -> "int":  # Y020 Quoted annotations should never be used in stubs
     ...
 
 
-Alias = list["int"]  # Y020 Quoted annotations should never be used in stubs
+Alias: TypeAlias = list["int"]  # Y020 Quoted annotations should never be used in stubs
 
 class Child(list["int"]):  # Y020 Quoted annotations should never be used in stubs
     """Documented and guaranteed useful."""  # Y021 Docstrings should not be included in stubs

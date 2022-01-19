@@ -91,10 +91,7 @@ currently emitted:
   for more precise type inference.
 * Y025: Always alias ``collections.abc.Set`` when importing it, so as to avoid
   confusion with ``builtins.set``.
-
-The following warnings are disabled by default:
-
-* Y093: Type aliases should be explicitly demarcated with ``typing.TypeAlias``.
+* Y026: Type aliases should be explicitly demarcated with ``typing.TypeAlias``.
 
 License
 -------
