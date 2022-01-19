@@ -18,7 +18,7 @@ Tests and formatting
 --------------------
 
 When you make a pull request, GitHub Actions runs the full test suite. ``black``
-formatting is also checked automatically (but only for ``pyi.py``).
+and ``isort`` formatting is also checked automatically (but only for ``pyi.py``).
 
 We advise setting up a virtual environment before formatting your PR or (optionally)
 running the tests::
@@ -27,8 +27,9 @@ running the tests::
     $ source env/bin/activate
     $ pip install -r requirements-dev.txt
 
-To format your code with ``black``, run::
+To format your code with ``isort`` and ``black``, run::
 
+    $ isort pyi.py
     $ black pyi.py
 
 If you want, you can also run locally the commands that GitHub Actions runs.

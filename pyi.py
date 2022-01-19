@@ -1,29 +1,30 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-from contextlib import contextmanager
-import logging
 
 import argparse
 import ast
+import logging
+import optparse
 import re
 import sys
 from collections import Counter
 from collections.abc import Iterable, Iterator, Sequence
+from contextlib import contextmanager
 from copy import deepcopy
 from dataclasses import dataclass, field
+from itertools import chain
+from pathlib import Path
+from typing import ClassVar, NamedTuple
+
 from flake8 import checker  # type: ignore
 from flake8.plugins.pyflakes import FlakesChecker  # type: ignore
-from itertools import chain
-import optparse
-from pathlib import Path
 from pyflakes.checker import (  # type: ignore[import]
     PY2,
     ClassDefinition,
-    ModuleScope,
     ClassScope,
     FunctionScope,
+    ModuleScope,
 )
-from typing import ClassVar, NamedTuple
 
 if sys.version_info >= (3, 9):
     from ast import unparse
