@@ -45,7 +45,7 @@ jobs:
         flake8 $(git ls-files | grep 'py$')
   tests:
     name: pytest suite
-    timeout-minutes: 5
+    timeout-minutes: 10
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
