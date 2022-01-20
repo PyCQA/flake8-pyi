@@ -461,15 +461,10 @@ class PyiVisitor(ast.NodeVisitor):
         new_literal_members: list[ast.expr] = []
 
         for literal in literals_in_union:
-            if sys.version_info >= (3, 9):
-                contents = literal
+            if isinstance(literal, ast.Tuple):
+                new_literal_members.extend(literal.elts)
             else:
-                contents = literal.value
-
-            if isinstance(contents, ast.Tuple):
-                new_literal_members.extend(contents.elts)
-            else:
-                new_literal_members.append(contents)
+                new_literal_members.append(literal)
 
         new_literal_slice = unparse(ast.Tuple(new_literal_members)).strip("()")
 
