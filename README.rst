@@ -100,6 +100,9 @@ currently emitted:
 * Y029: It is almost always redundant to define ``__str__`` or ``__repr__`` in
   a stub file, as the signatures are almost always identical to
   ``object.__str__``and ``object.__repr__``.
+* Y030: Union expressions should never have more than one ``Literal`` member,
+  as ``Literal[1] | Literal[2]`` is semantically identical to
+  ``Literal[1, 2]``.
 
 Many error codes enforce modern conventions, and some cannot yet be used in
 all cases:
