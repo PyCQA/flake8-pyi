@@ -212,15 +212,18 @@ class PyiAwareFileChecker(checker.FileChecker):
         return super().run_check(plugin, **kwargs)
 
 
-# Union[str, int] parses differently depending on python versions:
-# Before 3.9:     Subscript(value=Name(id='Union'), slice=Index(value=Tuple(...)))
-# 3.9 and newer:  Subscript(value=Name(id='Union'), slice=Tuple(...))
-#
-# This class deletes unnecessary Index nodes on Python <3.9.
 class LegacyNormalizer(ast.NodeTransformer):
+    """Transform AST to be consistent across Python versions."""
+
     if sys.version_info < (3, 9):
 
         def visit_Index(self, node: ast.Index) -> ast.expr:
+            """Index nodes no longer exist in Python 3.9.
+
+            For example, consider the AST representing Union[str, int].
+            Before 3.9:    Subscript(value=Name(id='Union'), slice=Index(value=Tuple(...)))
+            3.9 and newer: Subscript(value=Name(id='Union'), slice=Tuple(...))
+            """
             return node.value
 
 
