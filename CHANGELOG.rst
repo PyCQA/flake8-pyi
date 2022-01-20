@@ -30,6 +30,7 @@ unreleased
 * introduce Y025 (always alias ``collections.abc.Set``)
 * introduce Y027 (Python 2-incompatible extension of Y022)
 * all errors are now enabled by default
+* introduce Y029 (never define ``__repr__`` or ``__str__``)
 
 20.10.0
 ~~~~~~~
