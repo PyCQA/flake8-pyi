@@ -219,6 +219,7 @@ class PyiAwareFileChecker(checker.FileChecker):
 # This class deletes unnecessary Index nodes on Python <3.9.
 class LegacyNormalizer(ast.NodeTransformer):
     if sys.version_info < (3, 9):
+
         def visit_Index(self, node: ast.Index) -> ast.expr:
             return node.value
 
