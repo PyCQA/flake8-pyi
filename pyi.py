@@ -463,9 +463,9 @@ class PyiVisitor(ast.NodeVisitor):
         new_literal_slice = unparse(ast.Tuple(new_literal_members)).strip('()')
 
         if non_literals_in_union:
-            suggestion = f'Combine them into one Literal member, e.g. "Literal[{new_literal_slice}]".'
+            suggestion = f'Combine them into one, e.g. "Literal[{new_literal_slice}]".'
         else:
-            suggestion = f'Use a single Literal instead, e.g. "Literal[{new_literal_slice}]".'
+            suggestion = f'Use a single Literal, e.g. "Literal[{new_literal_slice}]".'
 
         self.error(members[0], Y030.format(suggestion=suggestion))
 
