@@ -31,6 +31,7 @@ unreleased
 * introduce Y027 (Python 2-incompatible extension of Y022)
 * all errors are now enabled by default
 * introduce Y029 (never define ``__repr__`` or ``__str__``)
+* introduce Y030 (use ``Literal['foo', 'bar']`` instead of ``Literal['foo'] | Literal['bar']``)
 
 20.10.0
 ~~~~~~~
