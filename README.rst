@@ -98,8 +98,8 @@ currently emitted:
 * Y028: Always use class-based syntax for ``typing.NamedTuple``, instead of
   assignment-based syntax.
 * Y029: It is almost always redundant to define ``__str__`` or ``__repr__`` in
-  a stub file, as the signatures are always identical to ``object.__str__`` and
-  ``object.__repr__``.
+  a stub file, as the signatures are almost always identical to
+  ``object.__str__``and ``object.__repr__``.
 
 Many error codes enforce modern conventions, and some cannot yet be used in
 all cases:
