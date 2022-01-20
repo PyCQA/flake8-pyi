@@ -427,9 +427,10 @@ class PyiVisitor(ast.NodeVisitor):
                 self.error(member_list[1], Y016.format(unparse(member_list[1])))
                 dupes_in_union = True
 
-        if dupes_in_union:
-            return
+        if not dupes_in_union:
+            self._check_for_multiple_literals(members)
 
+    def _check_for_multiple_literals(self, members: Sequence[ast.expr]) -> None:
         literals_in_union, non_literals_in_union = [], []
 
         for member in members:
