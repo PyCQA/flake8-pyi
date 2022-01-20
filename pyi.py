@@ -532,7 +532,7 @@ class PyiVisitor(ast.NodeVisitor):
         version_info = node.left
         if isinstance(version_info, ast.Subscript):
             slc = version_info.slice
-            # FIXME: ast.Num isn't used on new Python versions
+            # TODO: ast.Num works, but is deprecated
             if isinstance(slc, ast.Num):
                 # anything other than the integer 0 doesn't make much sense
                 if isinstance(slc.n, int) and slc.n == 0:
