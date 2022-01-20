@@ -460,7 +460,7 @@ class PyiVisitor(ast.NodeVisitor):
                     ):
                         new_literal_members.extend(literal.value.elts)
 
-        new_literal_slice = unparse(ast.Tuple(new_literal_members)).strip('()')
+        new_literal_slice = unparse(ast.Tuple(new_literal_members)).strip("()")
 
         if non_literals_in_union:
             suggestion = f'Combine them into one, e.g. "Literal[{new_literal_slice}]".'
