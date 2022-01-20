@@ -454,10 +454,10 @@ class PyiVisitor(ast.NodeVisitor):
             else:
                 contents = literal.value
 
-            if isinstance(contents, ast.Constant):
-                new_literal_members.append(literal)
-            elif isinstance(literal, ast.Tuple):
+            if isinstance(literal, ast.Tuple):
                 new_literal_members.extend(literal.elts)
+            else:
+                new_literal_members.append(literal)
 
         new_literal_slice = unparse(ast.Tuple(new_literal_members)).strip("()")
 
