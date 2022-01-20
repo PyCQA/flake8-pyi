@@ -643,6 +643,9 @@ class PyiVisitor(ast.NodeVisitor):
                 self.error(statement, Y013)
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        # Raise an error for defining __str__ or __repr__ on a class, but only if:
+        # 1). The method is not decorated with @abstractmethod
+        # 2). The method has the exact same signature as object.__str__/object.__repr__
         if (
             self.in_class
             and node.name in {"__repr__", "__str__"}
@@ -653,7 +656,15 @@ class PyiVisitor(ast.NodeVisitor):
                 for deco in node.decorator_list
             )
         ):
-            self.error(node, Y029)
+            all_args = node.args
+            # pos-only args don't exist on 3.7
+            pos_only_args: list[ast.arg] = getattr(all_args, "posonlyargs", [])
+            pos_or_kwd_args = all_args.args
+            kwd_only_args = all_args.kwonlyargs
+
+            if ((len(pos_only_args) + len(pos_or_kwd_args)) == 1) and not kwd_only_args:
+                self.error(node, Y029)
+
         self._visit_function(node)
 
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
