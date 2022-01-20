@@ -421,9 +421,53 @@ class PyiVisitor(ast.NodeVisitor):
         for member in members:
             members_by_dump.setdefault(ast.dump(member), []).append(member)
 
-        for members in members_by_dump.values():
-            if len(members) >= 2:
-                self.error(members[1], Y016.format(unparse(members[1])))
+        dupes_in_union = False
+        for member_list in members_by_dump.values():
+            if len(member_list) >= 2:
+                self.error(member_list[1], Y016.format(unparse(member_list[1])))
+                dupes_in_union = True
+
+        if dupes_in_union:
+            return
+
+        literals_in_union, non_literals_in_union = [], []
+
+        for member in members:
+            if (
+                isinstance(member, ast.Subscript)
+                and isinstance(member.value, ast.Name)
+                and member.value.id == "Literal"
+            ):
+                literals_in_union.append(member.slice)
+            else:
+                non_literals_in_union.append(member)
+
+        if len(literals_in_union) < 2:
+            return
+
+        new_literal_members: list[ast.expr] = []
+
+        for literal in literals_in_union:
+            if isinstance(literal, ast.Constant):
+                new_literal_members.append(literal)
+            else:
+                if sys.version_info >= (3, 9):
+                    if isinstance(literal, ast.Tuple):
+                        new_literal_members.extend(literal.elts)
+                else:
+                    if isinstance(literal, ast.Index) and isinstance(
+                        literal.value, ast.Tuple
+                    ):
+                        new_literal_members.extend(literal.value.elts)
+
+        new_literal_slice = unparse(ast.Tuple(new_literal_members)).strip('()')
+
+        if non_literals_in_union:
+            suggestion = f'Combine them into one Literal member, e.g. "Literal[{new_literal_slice}]".'
+        else:
+            suggestion = f'Use a single Literal instead, e.g. "Literal[{new_literal_slice}]".'
+
+        self.error(members[0], Y030.format(suggestion=suggestion))
 
     def visit_BinOp(self, node: ast.BinOp) -> None:
         if not isinstance(node.op, ast.BitOr):
@@ -905,3 +949,4 @@ Y026 = "Y026 Use typing_extensions.TypeAlias for type aliases"
 Y027 = 'Y027 Use {good_cls_name} instead of "{bad_cls_alias}"'
 Y028 = "Y028 Use class-based syntax for NamedTuples"
 Y029 = "Y029 Defining __repr__ or __str__ in a stub is almost always redundant"
+Y030 = "Y030 Multiple Literal members in a union. {suggestion}"
