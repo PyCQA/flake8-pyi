@@ -28,8 +28,7 @@ unreleased
 * all errors are now enabled by default
 * remove Y092 (top-level attribute must not have a default value)
 * ``attrs`` is no longer a dependency
-* ``ast_decompiler`` has been
-  added as a dependency on Python 3.8 and 3.7
+* ``ast_decompiler`` has been added as a dependency on Python 3.8 and 3.7
 * support Python 3.10
 * discontinue support for Python 3.6
 
