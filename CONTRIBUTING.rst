@@ -37,3 +37,21 @@ Look in ``.github/workflows/`` to find the commands.
 For example, to run tests::
 
     $ python3 -m pytest
+
+
+Making a release
+----------------
+
+``flake8-pyi`` uses calendar-based versioning. For example, the first
+release in January 2022 should be called 22.1.0, followed by 22.1.1.
+
+Releasing a new version is easy:
+
+- Make a PR that updates the version header in ``CHANGELOG.rst``
+  and the ``__version__`` attribute in ``pyi.py``.
+- Merge the PR and wait for tests to complete.
+- Draft a release using the GitHub UI. The tag name should be
+  identical to the version (e.g., ``22.1.0``) and the release notes
+  should be copied from ``CHANGELOG.rst``.
+- A workflow will run and automatically upload the release to PyPI.
+  If it doesn't work, check the Actions tab to see what went wrong.
