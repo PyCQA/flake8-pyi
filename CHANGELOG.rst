@@ -4,34 +4,33 @@ Change Log
 unreleased
 ~~~~~~~~~~
 
-* ``attrs`` is no longer a dependency
-* ``ast_decompiler`` has been
-  added as a dependency on Python 3.8 and 3.7
-* remove Y092 (top-level attribute must not have a default value)
-* introduce Y021 (docstrings should not be included in stubs)
-* introduce Y020 (never use quoted annotations in stubs)
+* extend Y001 to cover ParamSpec and TypeVarTuple in addition to TypeVar
+* detect usage of non-integer indices in ``sys.version_info`` checks
+* extend Y010 to check async functions in addition to normal functions 
 * extend Y010 to cover what was previously included in Y090 (disallow
   assignments in ``__init__`` methods) and Y091 (disallow ``raise``
   statements). The previous checks were disabled by default.
-* detect usage of non-integer indices in sys.version_info checks
-* extend Y010 to check async functions in addition to normal functions 
-* introduce Y026 (require using TypeAlias for type aliases)
+* introduce Y016 (duplicate union member)
 * introduce Y017 (disallows assignments with multiple targets or non-name targets)
-* extend Y001 to cover ParamSpec and TypeVarTuple in addition to TypeVar
 * introduce Y018 (detect unused TypeVars)
 * introduce Y019 (detect TypeVars that should be _typeshed.Self, but aren't)
-* introduce Y016 (duplicate union member)
-* introduce Y028 (Use class-based syntax for NamedTuples)
-* support Python 3.10
-* discontinue support for Python 3.6
+* introduce Y020 (never use quoted annotations in stubs)
+* introduce Y021 (docstrings should not be included in stubs)
 * introduce Y022 (prefer stdlib classes over ``typing`` aliases)
 * introduce Y023 (prefer ``typing`` over ``typing_extensions``)
 * introduce Y024 (prefer ``typing.NamedTuple`` to ``collections.namedtuple``)
+* introduce Y026 (require using TypeAlias for type aliases)
 * introduce Y025 (always alias ``collections.abc.Set``)
 * introduce Y027 (Python 2-incompatible extension of Y022)
-* all errors are now enabled by default
+* introduce Y028 (Use class-based syntax for NamedTuples)
 * introduce Y029 (never define ``__repr__`` or ``__str__``)
 * introduce Y030 (use ``Literal['foo', 'bar']`` instead of ``Literal['foo'] | Literal['bar']``)
+* all errors are now enabled by default
+* remove Y092 (top-level attribute must not have a default value)
+* ``attrs`` is no longer a dependency
+* ``ast_decompiler`` has been added as a dependency on Python 3.8 and 3.7
+* support Python 3.10
+* discontinue support for Python 3.6
 
 20.10.0
 ~~~~~~~
