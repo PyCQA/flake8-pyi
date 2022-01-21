@@ -1,5 +1,4 @@
-def empty(x: int) -> float:
-    ...
+def empty(x: int) -> float: ...
 
 def passing(x: int) -> float:
     pass  # Y009 Empty body should contain "...", not "pass"
@@ -25,8 +24,7 @@ def multiple_ellipses(x: int) -> float:
     ...
     ...  # Y010 Function body must contain only "..."
 
-async def empty_async(x: int) -> float:
-    ...
+async def empty_async(x: int) -> float: ...
 
 async def passing_async(x: int) -> float:
     pass  # Y009 Empty body should contain "...", not "pass"

@@ -1,5 +1,4 @@
-class EmptyClass:
-    ...
+class EmptyClass: ...
 
 class PassingEmptyClass:
     pass  # Y009 Empty body should contain "...", not "pass"
