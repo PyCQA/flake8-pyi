@@ -127,54 +127,39 @@ from collections.abc import Set  # Y025 Use "from collections.abc import Set as 
 foo: typing.SupportsIndex
 
 @typing_extensions.final
-def bar(arg: collections.abc.Sized) -> typing_extensions.Literal[True]:
-    ...
+def bar(arg: collections.abc.Sized) -> typing_extensions.Literal[True]: ...
 
 
 class Fish:
     blah: collections.deque[int]
-
-    def method(self, arg: typing.SupportsInt = ...) -> None:
-        ...
+    def method(self, arg: typing.SupportsInt = ...) -> None: ...
 
 
 # BAD ATTRIBUTE ACCESS (Y022 code)
 a: typing.Dict[str, int]  # Y022 Use "builtins.dict" instead of "typing.Dict"
 
-def func1() -> typing.Counter[float]:  # Y022 Use "collections.Counter" instead of "typing.Counter"
-    ...
-
-
-def func2(c: typing.AsyncContextManager[None]) -> None:  # Y022 Use "contextlib.AbstractAsyncContextManager" instead of "typing.AsyncContextManager"
-    ...
-
-
-def func3(d: typing.ChainMap[int, str] = ...) -> None:  # Y022 Use "collections.ChainMap" instead of "typing.ChainMap"
-    ...
-
+def func1() -> typing.Counter[float]: ...  # Y022 Use "collections.Counter" instead of "typing.Counter"
+def func2(c: typing.AsyncContextManager[None]) -> None: ...  # Y022 Use "contextlib.AbstractAsyncContextManager" instead of "typing.AsyncContextManager"
+def func3(d: typing.ChainMap[int, str] = ...) -> None: ...  # Y022 Use "collections.ChainMap" instead of "typing.ChainMap"
 
 class Spam:
-    def meth1() -> typing_extensions.DefaultDict[bytes, bytes]:  # Y022 Use "collections.defaultdict" instead of "typing_extensions.DefaultDict"
-        ...
-
-    def meth2(self, f: typing_extensions.ChainMap[str, str]) -> None:  # Y022 Use "collections.ChainMap" instead of "typing_extensions.ChainMap"
-        ...
-
-    def meth3(self, g: typing_extensions.AsyncContextManager[Any] = ...) -> None:  # Y022 Use "contextlib.AbstractAsyncContextManager" instead of "typing_extensions.AsyncContextManager"
-        ...
+    def meth1(self) -> typing_extensions.DefaultDict[bytes, bytes]: ...  # Y022 Use "collections.defaultdict" instead of "typing_extensions.DefaultDict"
+    def meth2(self, f: typing_extensions.ChainMap[str, str]) -> None: ...  # Y022 Use "collections.ChainMap" instead of "typing_extensions.ChainMap"
+    def meth3(self, g: typing_extensions.AsyncContextManager[Any] = ...) -> None: ...  # Y022 Use "contextlib.AbstractAsyncContextManager" instead of "typing_extensions.AsyncContextManager"
 
 
 # BAD ATTRIBUTE ACCESS (Y023 code)
 class Foo:
     attribute: typing_extensions.ClassVar[int]  # Y023 Use "typing.ClassVar" instead of "typing_extensions.ClassVar"
 
-
 h: typing_extensions.Awaitable[float]  # Y023 Use "typing.Awaitable" instead of "typing_extensions.Awaitable"
 i: typing_extensions.ContextManager[None]  # Y023 Use "contextlib.AbstractContextManager" (or "typing.ContextManager" in Python 2-compatible code) instead of "typing_extensions.ContextManager"
+
 
 # BAD ATTRIBUTE ACCESS (Y027 code)
 k: typing_extensions.OrderedDict[int, str]  # Y027 Use "collections.OrderedDict" instead of "typing_extensions.OrderedDict"
 l: typing.ContextManager  # Y027 Use "contextlib.AbstractContextManager" instead of "typing.ContextManager"
+
 
 # BAD ATTRIBUTE ACCESS: OTHER
 j: collections.namedtuple  # Y024 Use "typing.NamedTuple" instead of "collections.namedtuple"
