@@ -34,7 +34,7 @@ List of warnings
 This plugin reserves codes starting with **Y0**. The following warnings are
 currently emitted:
 
-* Y001: Names of ``TypeVar``s, ``ParamSpec``s and ``TypeVarTuple``s in stubs
+* Y001: Names of ``TypeVar``\ s, ``ParamSpec``\ s and ``TypeVarTuple``\ s in stubs
   should usually start with ``_``. This makes sure you don't accidentally expose
   names internal to the stub.
 * Y002: If test must be a simple comparison against ``sys.platform`` or
@@ -76,7 +76,7 @@ currently emitted:
 * Y018: A private ``TypeVar`` should be used at least once in the file in which
   it is defined.
 * Y019: Certain kinds of methods should use ``_typeshed.Self`` instead of
-  defining custom ``TypeVar``s for their return annotation. This check currently
+  defining custom ``TypeVar``\ s for their return annotation. This check currently
   applies for instance methods that return ``self``, class methods that return
   an instance of ``cls``, and ``__new__`` methods.
 * Y020: Quoted annotations should never be used in stubs.
