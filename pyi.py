@@ -28,8 +28,6 @@ from pyflakes.checker import (  # type: ignore[import]
 
 if sys.version_info >= (3, 9):
     from ast import unparse
-
-
 else:
     from ast_decompiler import decompile as unparse
 
@@ -79,24 +77,22 @@ _BAD_Y022_IMPORTS = {
 }
 
 # typing_extensions.ContextManager is omitted from the Y023 and Y027 collections - special-cased
-_BAD_Y023_IMPORTS = frozenset(
-    {
-        # collections.abc aliases
-        "Awaitable",
-        "Coroutine",
-        "AsyncIterable",
-        "AsyncIterator",
-        "AsyncGenerator",
-        # typing aliases
-        "Protocol",
-        "runtime_checkable",
-        "ClassVar",
-        "NewType",
-        "overload",
-        "Text",
-        "NoReturn",
-    }
-)
+_BAD_Y023_IMPORTS = frozenset({
+    # collections.abc aliases
+    "Awaitable",
+    "Coroutine",
+    "AsyncIterable",
+    "AsyncIterator",
+    "AsyncGenerator",
+    # typing aliases
+    "Protocol",
+    "runtime_checkable",
+    "ClassVar",
+    "NewType",
+    "overload",
+    "Text",
+    "NoReturn",
+})
 
 _BAD_Y027_IMPORTS = {
     "typing.ContextManager": "contextlib.AbstractContextManager",
