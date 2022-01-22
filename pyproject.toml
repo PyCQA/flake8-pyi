@@ -4,4 +4,4 @@ combine_as_imports = true
 skip = ["tests/imports.pyi"]
 
 [tool.black]
-force-exclude = ".*.pyi"
+force-exclude = ".*\\.pyi"
