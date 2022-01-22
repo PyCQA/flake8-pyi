@@ -25,6 +25,7 @@ unreleased
 * introduce Y028 (Use class-based syntax for NamedTuples)
 * introduce Y029 (never define ``__repr__`` or ``__str__``)
 * introduce Y030 (use ``Literal['foo', 'bar']`` instead of ``Literal['foo'] | Literal['bar']``)
+* introduce Y031 (use class-based syntax for TypedDicts where possible)
 * all errors are now enabled by default
 * remove Y092 (top-level attribute must not have a default value)
 * ``attrs`` is no longer a dependency
