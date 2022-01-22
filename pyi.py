@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-from collections import Counter
 import argparse
 import ast
 import logging
 import optparse
 import re
 import sys
+from collections import Counter
 from collections.abc import Iterable, Iterator, Sequence
 from contextlib import contextmanager
 from copy import deepcopy
