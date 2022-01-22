@@ -231,8 +231,8 @@ class LegacyNormalizer(ast.NodeTransformer):
             return node.value
 
 
-def _is_list_of_constants(seq: list[ast.expr | None]) -> TypeGuard[list[ast.Constant]]:
-    return all(isinstance(item, ast.Constant) for item in seq)
+def _is_list_of_str_nodes(seq: list[ast.expr | None]) -> TypeGuard[list[ast.Str]]:
+    return all(isinstance(item, ast.Str) for item in seq)
 
 
 def _is_bad_TypedDict(node: ast.Call) -> bool:
@@ -257,10 +257,10 @@ def _is_bad_TypedDict(node: ast.Call) -> bool:
 
     typed_dict_fields = typed_dict_annotations.keys
 
-    if not _is_list_of_constants(typed_dict_fields):
+    if not _is_list_of_str_nodes(typed_dict_fields):
         return False
 
-    fieldnames = [field.value for field in typed_dict_fields]
+    fieldnames = [field.s for field in typed_dict_fields]
 
     return all(
         fieldname.isidentifier() and not iskeyword(fieldname)
