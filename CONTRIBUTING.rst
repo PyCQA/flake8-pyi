@@ -17,11 +17,12 @@ found in the ``tests`` folder.
 Tests and formatting
 --------------------
 
-When you make a pull request, GitHub Actions runs the full test suite. ``black``
-and ``isort`` formatting is also checked automatically (but only for ``pyi.py``).
+When you make a pull request, `pre-commit.ci <https://pre-commit.ci/>`_ bots will
+automatically reformat your code using ``black`` and ``isort``. GitHub Actions will
+also run the full test suite on your proposed changes.
 
-We advise setting up a virtual environment before formatting your PR or (optionally)
-running the tests::
+If you wish to (optionally) run the tests or format your code prior to submitting your PR,
+however, we advise setting up a virtual environment first::
 
     $ python3 -m venv env
     $ source env/bin/activate
