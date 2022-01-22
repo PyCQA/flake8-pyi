@@ -63,3 +63,6 @@ target/
 # virtualenvs
 /env*/
 /.venv*/
+
+# IDEs
+.vscode/

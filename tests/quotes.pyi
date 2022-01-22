@@ -1,4 +1,4 @@
-from typing import TypeVar, Literal, Annotated, TypeAlias
+from typing import Annotated, Literal, TypeAlias, TypeVar
 
 __all__ = ["f", "g"]
 

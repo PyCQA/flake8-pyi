@@ -1,4 +1,4 @@
-from typing import Union, TypeAlias
+from typing import TypeAlias, Union
 
 ManyStr: TypeAlias = list[EitherStr]
 EitherStr: TypeAlias = Union[str, bytes]
