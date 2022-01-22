@@ -103,6 +103,10 @@ currently emitted:
 * Y030: Union expressions should never have more than one ``Literal`` member,
   as ``Literal[1] | Literal[2]`` is semantically identical to
   ``Literal[1, 2]``.
+* Y031: TypedDicts should class-based syntax instead of assignment-based
+  syntax wherever possible. (In situations where this is not possible, such as
+  if a field is a Python keyword or an invalid identifier, this error will not
+  be raised.)
 
 Many error codes enforce modern conventions, and some cannot yet be used in
 all cases:
