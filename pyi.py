@@ -77,22 +77,24 @@ _BAD_Y022_IMPORTS = {
 }
 
 # typing_extensions.ContextManager is omitted from the Y023 and Y027 collections - special-cased
-_BAD_Y023_IMPORTS = frozenset({
-    # collections.abc aliases
-    "Awaitable",
-    "Coroutine",
-    "AsyncIterable",
-    "AsyncIterator",
-    "AsyncGenerator",
-    # typing aliases
-    "Protocol",
-    "runtime_checkable",
-    "ClassVar",
-    "NewType",
-    "overload",
-    "Text",
-    "NoReturn",
-})
+_BAD_Y023_IMPORTS = frozenset(
+    {
+        # collections.abc aliases
+        "Awaitable",
+        "Coroutine",
+        "AsyncIterable",
+        "AsyncIterator",
+        "AsyncGenerator",
+        # typing aliases
+        "Protocol",
+        "runtime_checkable",
+        "ClassVar",
+        "NewType",
+        "overload",
+        "Text",
+        "NoReturn",
+    }
+)
 
 _BAD_Y027_IMPORTS = {
     "typing.ContextManager": "contextlib.AbstractContextManager",
