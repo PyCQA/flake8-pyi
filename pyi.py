@@ -243,7 +243,7 @@ def _is_bad_TypedDict(node: ast.Call) -> bool:
     """
 
     args = node.args
-    if len(args) < 2:
+    if len(args) != 2:
         return False
 
     typed_dict_annotations = args[1]
