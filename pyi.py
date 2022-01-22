@@ -13,8 +13,9 @@ from contextlib import contextmanager
 from copy import deepcopy
 from dataclasses import dataclass, field
 from itertools import chain
+from keyword import iskeyword
 from pathlib import Path
-from typing import ClassVar, NamedTuple
+from typing import TYPE_CHECKING, ClassVar, NamedTuple
 
 from flake8 import checker  # type: ignore
 from flake8.plugins.pyflakes import FlakesChecker  # type: ignore
@@ -30,6 +31,9 @@ if sys.version_info >= (3, 9):
     from ast import unparse
 else:
     from ast_decompiler import decompile as unparse
+
+if TYPE_CHECKING:
+    from typing import TypeGuard
 
 __version__ = "20.10.0"
 
@@ -227,6 +231,43 @@ class LegacyNormalizer(ast.NodeTransformer):
             return node.value
 
 
+def _is_list_of_constants(seq: list[ast.expr | None]) -> TypeGuard[list[ast.Constant]]:
+    return all(isinstance(item, ast.Constant) for item in seq)
+
+
+def _is_bad_TypedDict(node: ast.Call) -> bool:
+    """Evaluate whether an assignment-based TypedDict should be rewritten using class syntax.
+
+    Return `False` if the TypedDict appears as though it may be invalidly defined;
+    type-checkers will raise an error in that eventuality.
+    """
+
+    args = node.args
+    if len(args) < 2:
+        return False
+
+    typed_dict_annotations = args[1]
+
+    # The runtime supports many ways of creating a TypedDict,
+    # e.g. `T = TypeDict('T', [['foo', int], ['bar', str]])`,
+    # but PEP 589 states that type-checkers are only expected
+    # to accept a dictionary literal for the second argument.
+    if not isinstance(typed_dict_annotations, ast.Dict):
+        return False
+
+    typed_dict_fields = typed_dict_annotations.keys
+
+    if not _is_list_of_constants(typed_dict_fields):
+        return False
+
+    fieldnames = [field.value for field in typed_dict_fields]
+
+    return all(
+        fieldname.isidentifier() and not iskeyword(fieldname)
+        for fieldname in fieldnames
+    )
+
+
 @dataclass
 class PyiVisitor(ast.NodeVisitor):
     filename: Path = Path("(none)")
@@ -388,15 +429,19 @@ class PyiVisitor(ast.NodeVisitor):
         function = node.func
         self.visit(function)
         if isinstance(function, ast.Name):
-            if function.id == "NamedTuple":
+            callable_name = function.id
+            if callable_name == "NamedTuple":
                 return self.error(node, Y028)
+            elif callable_name == "TypedDict" and _is_bad_TypedDict(node):
+                return self.error(node, Y031)
+
         elif isinstance(function, ast.Attribute):
-            if (
-                isinstance(function.value, ast.Name)
-                and function.value.id == "typing"
-                and function.attr == "NamedTuple"
-            ):
-                return self.error(node, Y028)
+            if isinstance(function.value, ast.Name) and function.value.id == "typing":
+                callable_name = function.attr
+                if callable_name == "NamedTuple":
+                    return self.error(node, Y028)
+                elif callable_name == "TypedDict" and _is_bad_TypedDict(node):
+                    return self.error(node, Y031)
 
         # String literals can appear in positional arguments for
         # TypeVar definitions.
@@ -934,3 +979,4 @@ Y027 = 'Y027 Use {good_cls_name} instead of "{bad_cls_alias}"'
 Y028 = "Y028 Use class-based syntax for NamedTuples"
 Y029 = "Y029 Defining __repr__ or __str__ in a stub is almost always redundant"
 Y030 = "Y030 Multiple Literal members in a union. {suggestion}"
+Y031 = "Y031 Use class-based syntax for TypedDicts where possible"
