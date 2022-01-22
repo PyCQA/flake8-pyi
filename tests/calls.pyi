@@ -11,10 +11,12 @@ class V(NamedTuple):
 # BAD TYPEDDICTS
 W = TypedDict("W", {'foo': str, 'bar': int})  # Y031 Use class-based syntax for TypedDicts where possible
 B = typing.TypedDict("B", {'foo': str, 'bar': int})  # Y031 Use class-based syntax for TypedDicts where possible
+WithTotal = TypedDict("WithTotal", {'foo': str, 'bar': int}, total=False)  # Y031 Use class-based syntax for TypedDicts where possible
 
-# we don't want this one to raise an error (type-checkers already do that for us),
+# we don't want these two to raise errors (type-checkers already do that for us),
 # we just want to make sure the plugin doesn't crash if it comes across an invalid TypedDict
 InvalidTypedDict = TypedDict("InvalidTypedDict", {7: 9, b"wot": [8, 3]})
+WeirdThirdArg = TypedDict("WeirdThirdArg", {'foo': int, "wot": str}, "who knows?")
 
 # GOOD TYPEDDICTS
 C = TypedDict("B", {'field has a space': list[int]})
