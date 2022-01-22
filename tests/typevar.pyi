@@ -1,5 +1,6 @@
-from _typeshed import Self
 from typing import ParamSpec, TypeVar, TypeVarTuple
+
+from _typeshed import Self
 
 T = TypeVar("T")  # Y001 Name of private TypeVar must start with _
 _T = TypeVar("_T")  # Y018 TypeVar "_T" is not used

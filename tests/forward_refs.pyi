@@ -1,4 +1,4 @@
-from typing import Optional, Union, TypeAlias
+from typing import Optional, TypeAlias, Union
 
 MaybeCStr: TypeAlias = Optional[CStr]
 CStr: TypeAlias = Union[C, str]

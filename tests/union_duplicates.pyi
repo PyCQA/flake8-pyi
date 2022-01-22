@@ -1,4 +1,5 @@
 from typing import Union
+
 from typing_extensions import Literal, TypeAlias
 
 def f1_pipe(x: int | str) -> None:
