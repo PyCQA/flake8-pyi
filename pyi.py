@@ -514,6 +514,8 @@ class PyiVisitor(ast.NodeVisitor):
         if isinstance(node.slice, ast.Tuple):
             self._visit_slice_tuple(node.slice, value_id)
         else:
+            if value_id in ("Tuple", "tuple"):
+                self.error(node, Y032)
             self.visit(node.slice)
 
     def _visit_slice_tuple(self, node: ast.Tuple, parent: str | None) -> None:
@@ -934,3 +936,4 @@ Y027 = 'Y027 Use {good_cls_name} instead of "{bad_cls_alias}"'
 Y028 = "Y028 Use class-based syntax for NamedTuples"
 Y029 = "Y029 Defining __repr__ or __str__ in a stub is almost always redundant"
 Y030 = "Y030 Multiple Literal members in a union. {suggestion}"
+Y032 = "Y032 Single-element tuple"
