@@ -1,8 +1,8 @@
 Change Log
 ----------
 
-unreleased
-~~~~~~~~~~
+22.1.0rc1
+~~~~~~~~~
 
 * extend Y001 to cover ParamSpec and TypeVarTuple in addition to TypeVar
 * detect usage of non-integer indices in ``sys.version_info`` checks
