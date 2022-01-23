@@ -272,7 +272,7 @@ def _is_bad_TypedDict(node: ast.Call) -> bool:
 
 @dataclass
 class NestingCounter:
-    """Context manager to help the PyiVisitor keep track of internal state"""
+    """Class to help the PyiVisitor keep track of internal state"""
 
     nesting: int = 0
 
