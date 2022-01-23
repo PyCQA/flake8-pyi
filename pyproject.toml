@@ -5,3 +5,6 @@ skip = ["tests/imports.pyi"]
 
 [tool.black]
 force-exclude = ".*\\.pyi"
+
+[tool.mypy]
+show_error_codes = true
