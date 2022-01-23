@@ -120,7 +120,8 @@ class PyiAwareFlakesChecker(FlakesChecker):
         assignments (the type aliases might have forward references).
         """
         if not isinstance(self.scope, ModuleScope):
-            return super().ASSIGN(node)
+            super().ASSIGN(node)
+            return
 
         for target in node.targets:
             self.handleNode(target, node)
@@ -165,7 +166,8 @@ class PyiAwareFlakesChecker(FlakesChecker):
         if not isinstance(self.scope, ModuleScope):
             # This shouldn't be necessary because .pyi files don't nest
             # scopes much, but better safe than sorry.
-            return super().CLASSDEF(node)
+            super().CLASSDEF(node)
+            return
 
         # What follows is copied from pyflakes 1.3.0. The only changes are the
         # deferHandleNode calls.
