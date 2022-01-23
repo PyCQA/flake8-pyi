@@ -8,7 +8,7 @@ import optparse
 import re
 import sys
 from collections import Counter
-from collections.abc import Iterable, Iterator, Sequence
+from collections.abc import Iterable, Sequence
 from copy import deepcopy
 from dataclasses import dataclass, field
 from itertools import chain
