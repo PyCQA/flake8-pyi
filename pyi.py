@@ -111,7 +111,7 @@ class PyiAwareFlakesChecker(FlakesChecker):
     def deferHandleNode(self, node, parent):
         self.deferFunction(lambda: self.handleNode(node, parent))
 
-    def ASSIGN(self, node):
+    def ASSIGN(self, node) -> None:
         """This is a custom implementation of ASSIGN derived from
         handleChildren() in pyflakes 1.3.0.
 
@@ -120,14 +120,15 @@ class PyiAwareFlakesChecker(FlakesChecker):
         assignments (the type aliases might have forward references).
         """
         if not isinstance(self.scope, ModuleScope):
-            return super().ASSIGN(node)
+            super().ASSIGN(node)
+            return
 
         for target in node.targets:
             self.handleNode(target, node)
 
         self.deferHandleNode(node.value, node)
 
-    def ANNASSIGN(self, node):
+    def ANNASSIGN(self, node) -> None:
         """
         Annotated assignments don't have annotations evaluated on function
         scope, hence the custom implementation. Compared to the pyflakes
@@ -150,22 +151,23 @@ class PyiAwareFlakesChecker(FlakesChecker):
                 # ...now.
                 self.handleNode(node.value, node)
 
-    def LAMBDA(self, node):
+    def LAMBDA(self, node) -> None:
         """This is likely very brittle, currently works for pyflakes 1.3.0.
 
         Deferring annotation handling depends on the fact that during calls
         to LAMBDA visiting the function's body is already deferred and the
         only eager calls to `handleNode` are for annotations.
         """
-        self.handleNode, self.deferHandleNode = self.deferHandleNode, self.handleNode
+        self.handleNode, self.deferHandleNode = self.deferHandleNode, self.handleNode  # type: ignore[assignment]
         super().LAMBDA(node)
-        self.handleNode, self.deferHandleNode = self.deferHandleNode, self.handleNode
+        self.handleNode, self.deferHandleNode = self.deferHandleNode, self.handleNode  # type: ignore[assignment]
 
-    def CLASSDEF(self, node):
+    def CLASSDEF(self, node) -> None:
         if not isinstance(self.scope, ModuleScope):
             # This shouldn't be necessary because .pyi files don't nest
             # scopes much, but better safe than sorry.
-            return super().CLASSDEF(node)
+            super().CLASSDEF(node)
+            return
 
         # What follows is copied from pyflakes 1.3.0. The only changes are the
         # deferHandleNode calls.
@@ -190,7 +192,7 @@ class PyiAwareFlakesChecker(FlakesChecker):
         self.popScope()
         self.addBinding(node, ClassDefinition(node.name, node))
 
-    def handleNodeDelete(self, node):
+    def handleNodeDelete(self, node) -> None:
         """Null implementation.
 
         Lets users use `del` in stubs to denote private names.
@@ -904,7 +906,8 @@ class PyiTreeChecker:
     filename: str = "(none)"
     options: argparse.Namespace | None = None
 
-    def run(self):
+    def run(self) -> Iterable[Error]:
+        assert self.tree is not None
         path = Path(self.filename)
         if path.suffix == ".pyi":
             visitor = PyiVisitor(filename=path)
@@ -912,7 +915,7 @@ class PyiTreeChecker:
                 yield error
 
     @classmethod
-    def add_options(cls, parser):
+    def add_options(cls, parser) -> None:
         """This is brittle, there's multiple levels of caching of defaults."""
         if isinstance(parser.parser, argparse.ArgumentParser):
             parser.parser.set_defaults(filename="*.py,*.pyi")
@@ -937,7 +940,7 @@ class PyiTreeChecker:
             pass
 
     @classmethod
-    def parse_options(cls, optmanager, options, extra_args):
+    def parse_options(cls, optmanager, options, extra_args) -> None:
         """This is also brittle, only checked with flake8 3.2.1 and master."""
         if not options.no_pyi_aware_file_checker:
             checker.FileChecker = PyiAwareFileChecker
