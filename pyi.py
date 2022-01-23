@@ -9,7 +9,6 @@ import re
 import sys
 from collections import Counter
 from collections.abc import Iterable, Iterator, Sequence
-from contextlib import contextmanager
 from copy import deepcopy
 from dataclasses import dataclass, field
 from itertools import chain
@@ -33,6 +32,7 @@ else:
     from ast_decompiler import decompile as unparse
 
 if TYPE_CHECKING:
+    from types import TracebackType
     from typing import TypeGuard
 
 __version__ = "22.1.0"
@@ -271,6 +271,27 @@ def _is_bad_TypedDict(node: ast.Call) -> bool:
 
 
 @dataclass
+class AttributeManager:
+    """Context manager to help the PyiVisitor keep track of internal state"""
+
+    nesting: int = 0
+
+    def __enter__(self) -> None:
+        self.nesting += 1
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_inst: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
+        self.nesting -= 1
+
+    def __bool__(self) -> bool:
+        return bool(self.nesting)
+
+
+@dataclass
 class PyiVisitor(ast.NodeVisitor):
     filename: Path = Path("(none)")
     errors: list[Error] = field(default_factory=list)
@@ -278,33 +299,10 @@ class PyiVisitor(ast.NodeVisitor):
     typevarlike_defs: dict[TypeVarInfo, ast.Assign] = field(default_factory=dict)
     # Mapping of each name in the file to the no. of occurrences
     all_name_occurrences: Counter[str] = field(default_factory=Counter)
-    _class_nesting: int = 0
-    _function_nesting: int = 0
-    _allow_string_literals: int = 0
 
-    @contextmanager
-    def allow_string_literals(self) -> Iterator[None]:
-        """Context manager that indicates that string literals should be allowed."""
-        self._allow_string_literals += 1
-        try:
-            yield
-        finally:
-            self._allow_string_literals -= 1
-
-    @property
-    def string_literals_allowed(self) -> bool:
-        """Determine whether string literals should currently be allowed."""
-        return bool(self._allow_string_literals)
-
-    @property
-    def in_function(self) -> bool:
-        """Determine whether we are inside a `def` statement"""
-        return bool(self._function_nesting)
-
-    @property
-    def in_class(self) -> bool:
-        """Determine whether we are inside a `class` statement"""
-        return bool(self._class_nesting)
+    string_literals_allowed: AttributeManager = AttributeManager()
+    in_function: AttributeManager = AttributeManager()
+    in_class: AttributeManager = AttributeManager()
 
     def _check_import_or_attribute(
         self, node: ast.Attribute | ast.ImportFrom, module_name: str, object_name: str
@@ -396,7 +394,7 @@ class PyiVisitor(ast.NodeVisitor):
             self.error(node, Y017)
             target_name = None
         if target_name == "__all__":
-            with self.allow_string_literals():
+            with self.string_literals_allowed:
                 self.generic_visit(node)
         else:
             self.generic_visit(node)
@@ -447,7 +445,7 @@ class PyiVisitor(ast.NodeVisitor):
 
         # String literals can appear in positional arguments for
         # TypeVar definitions.
-        with self.allow_string_literals():
+        with self.string_literals_allowed:
             for arg in node.args:
                 self.visit(arg)
         # But in keyword arguments they're most likely TypeVar bounds,
@@ -554,7 +552,7 @@ class PyiVisitor(ast.NodeVisitor):
 
         self.visit(node.value)
         if value_id == "Literal":
-            with self.allow_string_literals():
+            with self.string_literals_allowed:
                 self.visit(node.slice)
             return
 
@@ -570,7 +568,7 @@ class PyiVisitor(ast.NodeVisitor):
             # Allow literals, except in the first argument
             if len(node.elts) > 1:
                 self.visit(node.elts[0])
-                with self.allow_string_literals():
+                with self.string_literals_allowed:
                     for elt in node.elts[1:]:
                         self.visit(elt)
             else:
@@ -580,7 +578,7 @@ class PyiVisitor(ast.NodeVisitor):
 
     def visit_If(self, node: ast.If) -> None:
         # No types can appear in if conditions, so avoid confusing additional errors.
-        with self.allow_string_literals():
+        with self.string_literals_allowed:
             self.generic_visit(node)
         test = node.test
         if isinstance(test, ast.BoolOp):
@@ -701,9 +699,8 @@ class PyiVisitor(ast.NodeVisitor):
             self.error(node, Y007)
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
-        self._class_nesting += 1
-        self.generic_visit(node)
-        self._class_nesting -= 1
+        with self.in_class:
+            self.generic_visit(node)
 
         # empty class body should contain "..." not "pass"
         if len(node.body) == 1:
@@ -850,9 +847,8 @@ class PyiVisitor(ast.NodeVisitor):
             )
 
     def _visit_function(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
-        self._function_nesting += 1
-        self.generic_visit(node)
-        self._function_nesting -= 1
+        with self.in_function:
+            self.generic_visit(node)
 
         for i, statement in enumerate(node.body):
             if i == 0:
