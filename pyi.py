@@ -8,7 +8,8 @@ import optparse
 import re
 import sys
 from collections import Counter
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Iterator, Sequence
+from contextlib import contextmanager
 from copy import deepcopy
 from dataclasses import dataclass, field
 from itertools import chain
@@ -32,7 +33,6 @@ else:
     from ast_decompiler import decompile as unparse
 
 if TYPE_CHECKING:
-    from types import TracebackType
     from typing import TypeGuard
 
 __version__ = "22.1.0"
@@ -271,23 +271,22 @@ def _is_bad_TypedDict(node: ast.Call) -> bool:
 
 
 @dataclass
-class AttributeManager:
+class NestingCounter:
     """Context manager to help the PyiVisitor keep track of internal state"""
 
     nesting: int = 0
 
-    def __enter__(self) -> None:
+    @contextmanager
+    def enabled(self) -> Iterator[None]:
         self.nesting += 1
+        try:
+            yield
+        finally:
+            self.nesting -= 1
 
-    def __exit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_inst: BaseException | None,
-        exc_tb: TracebackType | None,
-    ) -> None:
-        self.nesting -= 1
-
-    def __bool__(self) -> bool:
+    @property
+    def active(self) -> bool:
+        """Determine whether the level of nesting is currently non-zero"""
         return bool(self.nesting)
 
 
@@ -300,9 +299,9 @@ class PyiVisitor(ast.NodeVisitor):
     # Mapping of each name in the file to the no. of occurrences
     all_name_occurrences: Counter[str] = field(default_factory=Counter)
 
-    string_literals_allowed: AttributeManager = AttributeManager()
-    in_function: AttributeManager = AttributeManager()
-    in_class: AttributeManager = AttributeManager()
+    string_literals_allowed: NestingCounter = NestingCounter()
+    in_function: NestingCounter = NestingCounter()
+    in_class: NestingCounter = NestingCounter()
 
     def _check_import_or_attribute(
         self, node: ast.Attribute | ast.ImportFrom, module_name: str, object_name: str
@@ -379,7 +378,7 @@ class PyiVisitor(ast.NodeVisitor):
             )
 
     def visit_Assign(self, node: ast.Assign) -> None:
-        if self.in_function:
+        if self.in_function.active:
             # We error for unexpected things within functions separately.
             self.generic_visit(node)
             return
@@ -394,7 +393,7 @@ class PyiVisitor(ast.NodeVisitor):
             self.error(node, Y017)
             target_name = None
         if target_name == "__all__":
-            with self.string_literals_allowed:
+            with self.string_literals_allowed.enabled():
                 self.generic_visit(node)
         else:
             self.generic_visit(node)
@@ -445,7 +444,7 @@ class PyiVisitor(ast.NodeVisitor):
 
         # String literals can appear in positional arguments for
         # TypeVar definitions.
-        with self.string_literals_allowed:
+        with self.string_literals_allowed.enabled():
             for arg in node.args:
                 self.visit(arg)
         # But in keyword arguments they're most likely TypeVar bounds,
@@ -455,12 +454,12 @@ class PyiVisitor(ast.NodeVisitor):
 
     # 3.8+
     def visit_Constant(self, node: ast.Constant) -> None:
-        if not self.string_literals_allowed and isinstance(node.value, str):
+        if not self.string_literals_allowed.active and isinstance(node.value, str):
             self.error(node, Y020)
 
     # 3.7 and lower
     def visit_Str(self, node: ast.Str) -> None:
-        if not self.string_literals_allowed:
+        if not self.string_literals_allowed.active:
             self.error(node, Y020)
 
     def visit_Expr(self, node: ast.Expr) -> None:
@@ -552,7 +551,7 @@ class PyiVisitor(ast.NodeVisitor):
 
         self.visit(node.value)
         if value_id == "Literal":
-            with self.string_literals_allowed:
+            with self.string_literals_allowed.enabled():
                 self.visit(node.slice)
             return
 
@@ -568,7 +567,7 @@ class PyiVisitor(ast.NodeVisitor):
             # Allow literals, except in the first argument
             if len(node.elts) > 1:
                 self.visit(node.elts[0])
-                with self.string_literals_allowed:
+                with self.string_literals_allowed.enabled():
                     for elt in node.elts[1:]:
                         self.visit(elt)
             else:
@@ -578,7 +577,7 @@ class PyiVisitor(ast.NodeVisitor):
 
     def visit_If(self, node: ast.If) -> None:
         # No types can appear in if conditions, so avoid confusing additional errors.
-        with self.string_literals_allowed:
+        with self.string_literals_allowed.enabled():
             self.generic_visit(node)
         test = node.test
         if isinstance(test, ast.BoolOp):
@@ -699,7 +698,7 @@ class PyiVisitor(ast.NodeVisitor):
             self.error(node, Y007)
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
-        with self.in_class:
+        with self.in_class.enabled():
             self.generic_visit(node)
 
         # empty class body should contain "..." not "pass"
@@ -728,7 +727,7 @@ class PyiVisitor(ast.NodeVisitor):
         # 1). The method is not decorated with @abstractmethod
         # 2). The method has the exact same signature as object.__str__/object.__repr__
         if (
-            self.in_class
+            self.in_class.active
             and node.name in {"__repr__", "__str__"}
             and isinstance(node.returns, ast.Name)
             and node.returns.id == "str"
@@ -847,7 +846,7 @@ class PyiVisitor(ast.NodeVisitor):
             )
 
     def _visit_function(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
-        with self.in_function:
+        with self.in_function.enabled():
             self.generic_visit(node)
 
         for i, statement in enumerate(node.body):
@@ -864,7 +863,7 @@ class PyiVisitor(ast.NodeVisitor):
                     continue
             self.error(statement, Y010)
 
-        if self.in_class:
+        if self.in_class.active:
             self.check_self_typevars(node)
 
     def visit_arguments(self, node: ast.arguments) -> None:
