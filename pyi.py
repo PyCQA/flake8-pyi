@@ -299,9 +299,9 @@ class PyiVisitor(ast.NodeVisitor):
     # Mapping of each name in the file to the no. of occurrences
     all_name_occurrences: Counter[str] = field(default_factory=Counter)
 
-    string_literals_allowed: NestingCounter = NestingCounter()
-    in_function: NestingCounter = NestingCounter()
-    in_class: NestingCounter = NestingCounter()
+    string_literals_allowed: NestingCounter = field(default_factor=NestingCounter)
+    in_function: NestingCounter = field(default_factory=NestingCounter)
+    in_class: NestingCounter = field(default_factory=NestingCounter)
 
     def _check_import_or_attribute(
         self, node: ast.Attribute | ast.ImportFrom, module_name: str, object_name: str
