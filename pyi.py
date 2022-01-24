@@ -303,7 +303,7 @@ class PyiVisitor(ast.NodeVisitor):
         self.in_class = NestingCounter()
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(filename={self.filename})"
+        return f"{self.__class__.__name__}(filename={self.filename!r})"
 
     def _check_import_or_attribute(
         self, node: ast.Attribute | ast.ImportFrom, module_name: str, object_name: str
