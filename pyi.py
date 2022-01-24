@@ -290,18 +290,20 @@ class NestingCounter:
         return bool(self.nesting)
 
 
-@dataclass
 class PyiVisitor(ast.NodeVisitor):
-    filename: Path = Path("(none)")
-    errors: list[Error] = field(default_factory=list)
-    # Mapping of all private TypeVars/ParamSpecs/TypeVarTuples to the nodes where they're defined
-    typevarlike_defs: dict[TypeVarInfo, ast.Assign] = field(default_factory=dict)
-    # Mapping of each name in the file to the no. of occurrences
-    all_name_occurrences: Counter[str] = field(default_factory=Counter)
-
-    string_literals_allowed: NestingCounter = field(default_factory=NestingCounter)
-    in_function: NestingCounter = field(default_factory=NestingCounter)
-    in_class: NestingCounter = field(default_factory=NestingCounter)
+    def __init__(self, filename: Path = Path("none")) -> None:
+        self.filename = filename
+        self.errors: list[Error] = []
+        # Mapping of all private TypeVars/ParamSpecs/TypeVarTuples to the nodes where they're defined
+        self.typevarlike_defs: dict[TypeVarInfo, ast.Assign] = {}
+        # Mapping of each name in the file to the no. of occurrences
+        self.all_name_occurrences: Counter[str] = Counter()
+        self.string_literals_allowed = NestingCounter()
+        self.in_function = NestingCounter()
+        self.in_class = NestingCounter()
+        
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(filename={self.filename})"
 
     def _check_import_or_attribute(
         self, node: ast.Attribute | ast.ImportFrom, module_name: str, object_name: str
