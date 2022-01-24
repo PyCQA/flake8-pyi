@@ -11,7 +11,7 @@ from collections import Counter
 from collections.abc import Iterable, Iterator, Sequence
 from contextlib import contextmanager
 from copy import deepcopy
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from itertools import chain
 from keyword import iskeyword
 from pathlib import Path
