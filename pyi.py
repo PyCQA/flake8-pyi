@@ -301,7 +301,7 @@ class PyiVisitor(ast.NodeVisitor):
         self.string_literals_allowed = NestingCounter()
         self.in_function = NestingCounter()
         self.in_class = NestingCounter()
-        
+
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(filename={self.filename})"
 
