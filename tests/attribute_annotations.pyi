@@ -15,8 +15,6 @@ thing_using_field6: field6
 thing_using_field7: field7
 
 class Foo:
-    field1: int
-    field2: int = ...
     field3 = ...  # type: int
     field4: int = 0  # Y015 Attribute must not have a default value other than "..."
     field5 = 0  # type: int  # Y015 Attribute must not have a default value other than "..."

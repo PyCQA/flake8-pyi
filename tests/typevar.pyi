@@ -12,10 +12,11 @@ _Ts = TypeVarTuple("_Ts")  # Y018 TypeVarTuple "_Ts" is not used
 _UsedTypeVar = TypeVar("_UsedTypeVar")
 def func(arg: _UsedTypeVar) -> _UsedTypeVar: ...
 
+_UsedOnlyInClassDef = TypeVar("_UsedOnlyInClassDef")
+class Foo(list[_UsedOnlyInClassDef]): ...
+
 _TypeVarUsedInBinOp = TypeVar("_TypeVarUsedInBinOp", bound=str)
 def func2(arg: _TypeVarUsedInBinOp | int) -> _TypeVarUsedInBinOp | int: ...
-
-_UnusedTypeVarWithSameNameAsClassAttributeElswhere = TypeVar("_UnusedTypeVarWithSameNameAsClassAttributeElswhere")  # Y018 TypeVar "_UnusedTypeVarWithSameNameAsClassAttributeElswhere" is not used
 
 _S = TypeVar("_S")
 
@@ -35,4 +36,3 @@ class GoodClass:
     def good_cls_method_2(cls, arg1: _S, arg2: _S) -> _S: ...
     @staticmethod
     def static_method(arg1: _S) -> _S: ...
-    _UnusedTypeVarWithSameNameAsClassAttributeElswhere: str
