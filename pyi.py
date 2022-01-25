@@ -233,6 +233,11 @@ class LegacyNormalizer(ast.NodeTransformer):
             return node.value
 
 
+def _unparse_assign_node(node: ast.Assign | ast.AnnAssign) -> str:
+    """Unparse an Assign node, and remove any newlines in it"""
+    return unparse(node).replace("\n", "")
+
+
 def _is_list_of_str_nodes(seq: list[ast.expr | None]) -> TypeGuard[list[ast.Str]]:
     return all(isinstance(item, ast.Str) for item in seq)
 
@@ -895,10 +900,11 @@ class PyiVisitor(ast.NodeVisitor):
                 )
 
     def _Y015_error(self, node: ast.Assign | ast.AnnAssign) -> None:
+        old_syntax = _unparse_assign_node(node)
         copy_of_node = deepcopy(node)
         copy_of_node.value = ast.Constant(value=...)
-        new_syntax = unparse(copy_of_node).replace("\n", "")
-        error_message = Y015.format(old_syntax=unparse(node), new_syntax=new_syntax)
+        new_syntax = _unparse_assign_node(copy_of_node)
+        error_message = Y015.format(old_syntax=old_syntax, new_syntax=new_syntax)
         self.error(node, error_message)
 
     def _check_global_assignments(self) -> None:
@@ -912,11 +918,12 @@ class PyiVisitor(ast.NodeVisitor):
         """
         for symbol, assign_node in self.suspicious_global_assignments.items():
             if self.all_name_occurrences[symbol] == 1:
+                old_syntax = _unparse_assign_node(assign_node)
                 copy_of_node = deepcopy(assign_node)
                 copy_of_node.value = None
-                new_syntax = unparse(copy_of_node).replace("\n", "")
+                new_syntax = _unparse_assign_node(copy_of_node)
                 error_message = Y032.format(
-                    old_syntax=unparse(assign_node), new_syntax=new_syntax
+                    old_syntax=old_syntax, new_syntax=new_syntax
                 )
                 self.error(assign_node, error_message)
             elif not isinstance(assign_node.value, ast.Ellipsis):
