@@ -415,7 +415,7 @@ class PyiVisitor(ast.NodeVisitor):
                 else:
                     self.error(target, Y001.format(cls_name))
         if isinstance(node.value, (ast.Num, ast.Str, ast.Bytes)):
-            self.error(node.value, Y015)
+            self._Y015_error(node)
         # We avoid triggering Y026 for calls and = ... because there are various
         # unusual cases where assignment to the result of a call is legitimate
         # in stubs.
@@ -478,7 +478,7 @@ class PyiVisitor(ast.NodeVisitor):
         if isinstance(node.target, ast.Name):
             if self.in_class.active:
                 if node.value and not isinstance(node.value, ast.Ellipsis):
-                    self.error(node.value, Y015)
+                    self._Y015_error(node)
             else:
                 if node.value:
                     self.suspicious_global_assignments[node.target.id] = node
@@ -885,26 +885,51 @@ class PyiVisitor(ast.NodeVisitor):
             if not isinstance(default, ast.Ellipsis):
                 self.error(default, (Y014 if arg.annotation is None else Y011))
 
-    def error(self, node: ast.AST, message: str) -> None:
-        self.errors.append(Error(node.lineno, node.col_offset, message, PyiTreeChecker))
-
-    def run(self, tree: ast.AST) -> Iterable[Error]:
-        self.errors.clear()
-        self.visit(tree)
+    def _check_for_unused_typevars(self) -> None:
+        """After the PyiVisitor has visited the tree, check for unused TypeVars."""
         for (cls_name, typevar_name), def_node in self.typevarlike_defs.items():
             if self.all_name_occurrences[typevar_name] == 1:
                 self.error(
                     def_node,
                     Y018.format(typevarlike_cls=cls_name, typevar_name=typevar_name),
                 )
-        # Only raise Y032 if the name is not used anywhere within the same file,
-        # as otherwise stock flake8 raises spurious errors about the name being undefined.
-        # See https://github.com/python/typeshed/pull/6930
+
+    def _Y015_error(self, node: ast.Assign | ast.AnnAssign) -> None:
+        copy_of_node = deepcopy(node)
+        copy_of_node.value = ast.Constant(value=...)
+        old_syntax, new_syntax = unparse(node), unparse(copy_of_node)
+        error_message = Y015.format(old_syntax=old_syntax, new_syntax=new_syntax)
+        self.error(node, error_message)
+
+    def _check_global_assignments(self) -> None:
+        """After the PyiVisitor has visited the tree, check for Y032 and Y015 errors.
+
+        Only raise Y032 if the name is not used anywhere within the same file,
+        as otherwise stock flake8 raises spurious errors about the name being undefined.
+        See https://github.com/python/typeshed/pull/6930.
+
+        Only raise Y015 if Y032 is not applicable.
+        """
         for symbol, assign_node in self.suspicious_global_assignments.items():
             if self.all_name_occurrences[symbol] == 1:
-                self.error(assign_node, Y032)
+                copy_of_node = deepcopy(assign_node)
+                copy_of_node.value = None
+                old_syntax, new_syntax = unparse(assign_node), unparse(copy_of_node)
+                error_message = Y032.format(
+                    old_syntax=old_syntax, new_syntax=new_syntax
+                )
+                self.error(assign_node, error_message)
             elif not isinstance(assign_node.value, ast.Ellipsis):
-                self.error(assign_node, Y015)
+                self._Y015_error(assign_node)
+
+    def error(self, node: ast.AST, message: str) -> None:
+        self.errors.append(Error(node.lineno, node.col_offset, message, PyiTreeChecker))
+
+    def run(self, tree: ast.AST) -> Iterable[Error]:
+        self.errors.clear()
+        self.visit(tree)
+        self._check_for_unused_typevars()
+        self._check_global_assignments()
         yield from self.errors
 
 
@@ -974,7 +999,7 @@ Y011 = 'Y011 Default values for typed arguments must be "..."'
 Y012 = 'Y012 Class body must not contain "pass"'
 Y013 = 'Y013 Non-empty class body must not contain "..."'
 Y014 = 'Y014 Default values for arguments must be "..."'
-Y015 = 'Y015 Attribute must not have a default value other than "..."'
+Y015 = 'Y015 Bad default value. Use "{new_syntax}" instead of "{old_syntax}"'
 Y016 = 'Y016 Duplicate union member "{}"'
 Y017 = "Y017 Only simple assignments allowed"
 Y018 = 'Y018 {typevarlike_cls} "{typevar_name}" is not used'
@@ -994,4 +1019,4 @@ Y028 = "Y028 Use class-based syntax for NamedTuples"
 Y029 = "Y029 Defining __repr__ or __str__ in a stub is almost always redundant"
 Y030 = "Y030 Multiple Literal members in a union. {suggestion}"
 Y031 = "Y031 Use class-based syntax for TypedDicts where possible"
-Y032 = "Y032 Default value unnecessary for module-level attribute"
+Y032 = 'Y032 Default value unnecessary. Use "{new_syntax}" instead of "{old_syntax}"'
