@@ -897,8 +897,8 @@ class PyiVisitor(ast.NodeVisitor):
     def _Y015_error(self, node: ast.Assign | ast.AnnAssign) -> None:
         copy_of_node = deepcopy(node)
         copy_of_node.value = ast.Constant(value=...)
-        old_syntax, new_syntax = unparse(node), unparse(copy_of_node)
-        error_message = Y015.format(old_syntax=old_syntax, new_syntax=new_syntax)
+        new_syntax = unparse(copy_of_node).replace("\n", "")
+        error_message = Y015.format(old_syntax=unparse(node), new_syntax=new_syntax)
         self.error(node, error_message)
 
     def _check_global_assignments(self) -> None:
@@ -914,9 +914,9 @@ class PyiVisitor(ast.NodeVisitor):
             if self.all_name_occurrences[symbol] == 1:
                 copy_of_node = deepcopy(assign_node)
                 copy_of_node.value = None
-                old_syntax, new_syntax = unparse(assign_node), unparse(copy_of_node)
+                new_syntax = unparse(copy_of_node).replace("\n", "")
                 error_message = Y032.format(
-                    old_syntax=old_syntax, new_syntax=new_syntax
+                    old_syntax=unparse(assign_node), new_syntax=new_syntax
                 )
                 self.error(assign_node, error_message)
             elif not isinstance(assign_node.value, ast.Ellipsis):
