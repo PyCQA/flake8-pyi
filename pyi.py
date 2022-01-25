@@ -7,7 +7,6 @@ import logging
 import optparse
 import re
 import sys
-from collections import Counter
 from collections.abc import Iterable, Iterator, Sequence
 from contextlib import contextmanager
 from copy import deepcopy
@@ -296,11 +295,12 @@ class PyiVisitor(ast.NodeVisitor):
         self.errors: list[Error] = []
         # Mapping of all private TypeVars/ParamSpecs/TypeVarTuples to the nodes where they're defined
         self.typevarlike_defs: dict[TypeVarInfo, ast.Assign] = {}
-        # Mapping of each name in the file to the no. of occurrences
-        self.all_name_occurrences: Counter[str] = Counter()
+        self.suspicious_global_assignments: dict[str, ast.AnnAssign] = {}
+        self.all_names_in_annotations: set[str] = set()
         self.string_literals_allowed = NestingCounter()
         self.in_function = NestingCounter()
         self.in_class = NestingCounter()
+        self.visiting_function_arguments = NestingCounter()
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(filename={self.filename!r})"
@@ -423,8 +423,12 @@ class PyiVisitor(ast.NodeVisitor):
         ):
             self.error(node, Y026)
 
+    def _visit_annotation(self, annotation: ast.Name) -> None:
+        self.all_names_in_annotations.add(annotation.id)
+
     def visit_Name(self, node: ast.Name) -> None:
-        self.all_name_occurrences[node.id] += 1
+        if self.visiting_function_arguments.active:
+            self._visit_annotation(node)
 
     def visit_Call(self, node: ast.Call) -> None:
         function = node.func
@@ -472,10 +476,17 @@ class PyiVisitor(ast.NodeVisitor):
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         self.generic_visit(node)
-        if isinstance(node.annotation, ast.Name) and node.annotation.id == "TypeAlias":
-            return
-        if node.value and not isinstance(node.value, ast.Ellipsis):
-            self.error(node.value, Y015)
+        if isinstance(node.annotation, ast.Name):
+            self._visit_annotation(node.annotation)
+            if node.annotation.id == "TypeAlias":
+                return
+        if isinstance(node.target, ast.Name):
+            if self.in_class.active:
+                if node.value and not isinstance(node.value, ast.Ellipsis):
+                    self.error(node.value, Y015)
+            else:
+                if node.value:
+                    self.suspicious_global_assignments[node.target.id] = node
 
     def _check_union_members(self, members: Sequence[ast.expr]) -> None:
         members_by_dump: dict[str, list[ast.expr]] = {}
@@ -850,6 +861,8 @@ class PyiVisitor(ast.NodeVisitor):
     def _visit_function(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         with self.in_function.enabled():
             self.generic_visit(node)
+        if isinstance(node.returns, ast.Name):
+            self._visit_annotation(node.returns)
 
         for i, statement in enumerate(node.body):
             if i == 0:
@@ -869,7 +882,8 @@ class PyiVisitor(ast.NodeVisitor):
             self.check_self_typevars(node)
 
     def visit_arguments(self, node: ast.arguments) -> None:
-        self.generic_visit(node)
+        with self.visiting_function_arguments.enabled():
+            self.generic_visit(node)
         args = node.args[-len(node.defaults) :]
         for arg, default in chain(
             zip(args, node.defaults), zip(node.kwonlyargs, node.kw_defaults)
@@ -886,11 +900,19 @@ class PyiVisitor(ast.NodeVisitor):
         self.errors.clear()
         self.visit(tree)
         for (cls_name, typevar_name), def_node in self.typevarlike_defs.items():
-            if self.all_name_occurrences[typevar_name] == 1:
+            if typevar_name not in self.all_names_in_annotations:
                 self.error(
                     def_node,
                     Y018.format(typevarlike_cls=cls_name, typevar_name=typevar_name),
                 )
+        # Only raise Y032 if the name is not used anywhere within the same file,
+        # as otherwise stock flake8 raises spurious errors about the name being undefined.
+        # See https://github.com/python/typeshed/pull/6930
+        for thing_name, assign_node in self.suspicious_global_assignments.items():
+            if thing_name not in self.all_names_in_annotations:
+                self.error(assign_node, Y032)
+            elif not isinstance(assign_node.value, ast.Ellipsis):
+                self.error(assign_node, Y015)
         yield from self.errors
 
 
@@ -980,3 +1002,4 @@ Y028 = "Y028 Use class-based syntax for NamedTuples"
 Y029 = "Y029 Defining __repr__ or __str__ in a stub is almost always redundant"
 Y030 = "Y030 Multiple Literal members in a union. {suggestion}"
 Y031 = "Y031 Use class-based syntax for TypedDicts where possible"
+Y032 = "Y032 Default value unnecessary for module-level attribute"

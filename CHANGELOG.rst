@@ -1,6 +1,13 @@
 Change Log
 ----------
 
+Unreleased
+~~~~~~~~~~
+
+* introduce Y032 (disallow default values for most module-level assignments).
+  Similar to the Y092 check that was removed in 22.1.0. However, this check is
+  enabled by default, whereas Y092 was disabled by default.
+
 22.1.0
 ~~~~~~
 
