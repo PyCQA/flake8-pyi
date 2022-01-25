@@ -1,8 +1,8 @@
 from typing import TypeAlias
 
 field0: int
-field1: int = ...  # Y032 Default value unnecessary. Use "field1: int" instead of "field1: int = ..."
-field2: int = 0  # Y032 Default value unnecessary. Use "field2: int" instead of "field2: int = 0"
+field_foo: int = ...  # Y032 Default value unnecessary. Use "field_foo: int" instead of "field_foo: int = ..."
+field_bar: int = 0  # Y032 Default value unnecessary. Use "field_bar: int" instead of "field_bar: int = 0"
 field3 = ...  # type: int
 field4: int = 0  # Y015 Bad default value. Use "field4: int = ..." instead of "field4: int = 0"
 field5 = 0  # type: int  # Y015 Bad default value. Use "field5 = ..." instead of "field5 = 0"
@@ -21,6 +21,8 @@ thing_using_field5: TypeAlias = field5.to_bytes
 thing_using_field7: TypeAlias = field7.decode
 
 class Foo:
+    field1: int
+    field2: int = ...
     field3 = ...  # type: int
     field4: int = 0  # Y015 Bad default value. Use "field4: int = ..." instead of "field4: int = 0"
     field5 = 0  # type: int  # Y015 Bad default value. Use "field5 = ..." instead of "field5 = 0"
