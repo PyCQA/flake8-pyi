@@ -107,7 +107,7 @@ currently emitted:
   syntax wherever possible. (In situations where this is not possible, such as
   if a field is a Python keyword or an invalid identifier, this error will not
   be raised.)
-* Y032: Unless the object is used elswhere in the same file as an annotation,
+* Y032: Unless the object is used elsewhere in the same file,
   a module-level attribute should not have a default value.
 
 Many error codes enforce modern conventions, and some cannot yet be used in
