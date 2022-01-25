@@ -473,9 +473,8 @@ class PyiVisitor(ast.NodeVisitor):
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         self.generic_visit(node)
-        if isinstance(node.annotation, ast.Name):
-            if node.annotation.id == "TypeAlias":
-                return
+        if isinstance(node.annotation, ast.Name) and node.annotation.id == "TypeAlias":
+            return
         if isinstance(node.target, ast.Name):
             if self.in_class.active:
                 if node.value and not isinstance(node.value, ast.Ellipsis):
@@ -901,8 +900,8 @@ class PyiVisitor(ast.NodeVisitor):
         # Only raise Y032 if the name is not used anywhere within the same file,
         # as otherwise stock flake8 raises spurious errors about the name being undefined.
         # See https://github.com/python/typeshed/pull/6930
-        for thing_name, assign_node in self.suspicious_global_assignments.items():
-            if self.all_name_occurrences[thing_name] == 1:
+        for symbol, assign_node in self.suspicious_global_assignments.items():
+            if self.all_name_occurrences[symbol] == 1:
                 self.error(assign_node, Y032)
             elif not isinstance(assign_node.value, ast.Ellipsis):
                 self.error(assign_node, Y015)
