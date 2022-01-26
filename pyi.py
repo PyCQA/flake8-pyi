@@ -396,6 +396,7 @@ class PyiVisitor(ast.NodeVisitor):
         self.string_literals_allowed = NestingCounter()
         self.in_function = NestingCounter()
         self.in_class = NestingCounter()
+        self.current_class_name = ""
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(filename={self.filename!r})"
@@ -801,7 +802,10 @@ class PyiVisitor(ast.NodeVisitor):
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         with self.in_class.enabled():
+            old_class_name = self.current_class_name
+            self.current_class_name = node.name
             self.generic_visit(node)
+            self.current_class_name = old_class_name
 
         # empty class body should contain "..." not "pass"
         if len(node.body) == 1:
@@ -969,7 +973,11 @@ class PyiVisitor(ast.NodeVisitor):
             self.check_self_typevars(node)
 
         if _should_use_ParamSpec(node):
-            self.error(node, Y032.format(node.name))
+            if self.in_class.active:
+                funcname = f"{self.current_class_name}.{node.name}"
+            else:
+                funcname = node.name
+            self.error(node, Y032.format(funcname))
 
     def visit_arguments(self, node: ast.arguments) -> None:
         self.generic_visit(node)

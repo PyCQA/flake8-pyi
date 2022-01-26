@@ -24,3 +24,6 @@ def func13(arg: Callable[..., int]) -> Callable[..., str]: ...  # Y032 Consider 
 def func14(arg: Callable[..., _R]) -> Callable[..., _R]: ...  # Y032 Consider using ParamSpec to annotate function "func14"
 def func15(arg: Callable[..., _R], *args: Any, **kwargs: Any) -> _R: ...  # Y032 Consider using ParamSpec to annotate function "func15"
 def func16(arg: Callable[..., str], *args: Any, **kwargs: Any) -> int: ...  # Y032 Consider using ParamSpec to annotate function "func16"
+
+class Foo:
+    def __call__(self, func: Callable[..., _R], *args: Any, **kwargs: Any) -> _R: ...  # Y032 Consider using ParamSpec to annotate function "Foo.__call__"
