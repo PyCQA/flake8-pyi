@@ -254,12 +254,12 @@ def _annotation_is_ellipsis_callable(annotation: ast.expr | None) -> bool:
         return False
 
     # Now we know it's e.g. `Foo[..., bar]`
-        
+
     subscripted_object = annotation.value
-        
+
     if isinstance(subscripted_object, ast.Name):
         return subscripted_object.id == "Callable"
-            
+
     if not (
         isinstance(subscripted_object, ast.Attribute)
         and subscripted_object.attr == "Callable"
@@ -269,7 +269,7 @@ def _annotation_is_ellipsis_callable(annotation: ast.expr | None) -> bool:
     # Now we know it's an attribute e.g. `Foo.Callable[..., bar]`
 
     module = subscripted_object.value
-    
+
     if isinstance(module, ast.Name):
         return module.id == "typing"
 
@@ -280,26 +280,32 @@ def _annotation_is_ellipsis_callable(annotation: ast.expr | None) -> bool:
         and module.attr == "abc"
     )
 
+
 def _should_use_ParamSpec(function: ast.FunctionDef | ast.AsyncFunctionDef) -> bool:
     """Determine whether a function needs to be rewritten to use ParamSpec, if it doesn't currently."""
     arguments = function.args
 
-    non_variadic_args = chain(arguments.args, arguments.kwonlyargs, getattr(arguments, "posonlyargs", []))
+    non_variadic_args = chain(
+        arguments.args, arguments.kwonlyargs, getattr(arguments, "posonlyargs", [])
+    )
 
-    if not any(_annotation_is_ellipsis_callable(arg_node.annotation) for arg_node in non_variadic_args):
+    if not any(
+        _annotation_is_ellipsis_callable(arg_node.annotation)
+        for arg_node in non_variadic_args
+    ):
         return False
 
     # First check for functions like `def foo(func: Callable[P, R]) -> Callable[P, R]: ...`
-    
+
     if _annotation_is_ellipsis_callable(function.returns):
         return True
 
     # Now check for functions like `def foo(__func: Callable[P, R], *args: P.args, **kwargs: P.kwargs) -> R: ...`
-    
+
     vararg, kwarg = arguments.vararg, arguments.kwarg
     if not (isinstance(vararg, ast.arg) and isinstance(kwarg, ast.arg)):
         return False
-    
+
     for annotation in (vararg.annotation, kwarg.annotation):
         if isinstance(annotation, ast.Name):
             if annotation.id != "Any":
@@ -957,7 +963,7 @@ class PyiVisitor(ast.NodeVisitor):
             self.check_self_typevars(node)
 
         if _should_use_ParamSpec(node):
-            self.error(node, Y032)
+            self.error(node, Y032.format(node.name))
 
     def visit_arguments(self, node: ast.arguments) -> None:
         self.generic_visit(node)
@@ -1071,4 +1077,4 @@ Y028 = "Y028 Use class-based syntax for NamedTuples"
 Y029 = "Y029 Defining __repr__ or __str__ in a stub is almost always redundant"
 Y030 = "Y030 Multiple Literal members in a union. {suggestion}"
 Y031 = "Y031 Use class-based syntax for TypedDicts where possible"
-Y032 = "Y032 Function should use ParamSpec"
+Y032 = 'Y032 Consider using ParamSpec to annotate function "{}"'

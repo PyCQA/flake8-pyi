@@ -107,6 +107,10 @@ currently emitted:
   syntax wherever possible. (In situations where this is not possible, such as
   if a field is a Python keyword or an invalid identifier, this error will not
   be raised.)
+* Y032: Use ``ParamSpec`` to annotate certain kinds of functions. (E.g.
+  ``def foo(func: Callable[..., R], *args: Any, **kwargs: Any) -> R: ...``
+  should probably be rewritten as
+  ``def foo(func: Callable[P, R], *args: P.args, **kwargs: P.kwargs) -> R: ...``
 
 Many error codes enforce modern conventions, and some cannot yet be used in
 all cases:

@@ -1,6 +1,12 @@
 Change Log
 ----------
 
+Unreleased
+~~~~~~~~~~
+
+* introduce Y032 (detect functions that should be annotated with ``ParamSpec``,
+  but aren't).
+
 22.1.0
 ~~~~~~
 
