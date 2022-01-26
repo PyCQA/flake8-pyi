@@ -323,6 +323,11 @@ def _should_use_ParamSpec(function: ast.FunctionDef | ast.AsyncFunctionDef) -> b
     return True
 
 
+def _unparse_assign_node(node: ast.Assign | ast.AnnAssign) -> str:
+    """Unparse an Assign node, and remove any newlines in it"""
+    return unparse(node).replace("\n", "")
+
+
 def _is_list_of_str_nodes(seq: list[ast.expr | None]) -> TypeGuard[list[ast.Str]]:
     return all(isinstance(item, ast.Str) for item in seq)
 
@@ -504,7 +509,7 @@ class PyiVisitor(ast.NodeVisitor):
                 else:
                     self.error(target, Y001.format(cls_name))
         if isinstance(node.value, (ast.Num, ast.Str, ast.Bytes)):
-            self.error(node.value, Y015)
+            self._Y015_error(node)
         # We avoid triggering Y026 for calls and = ... because there are various
         # unusual cases where assignment to the result of a call is legitimate
         # in stubs.
@@ -569,7 +574,7 @@ class PyiVisitor(ast.NodeVisitor):
         if isinstance(node.annotation, ast.Name) and node.annotation.id == "TypeAlias":
             return
         if node.value and not isinstance(node.value, ast.Ellipsis):
-            self.error(node.value, Y015)
+            self._Y015_error(node)
 
     def _check_union_members(self, members: Sequence[ast.expr]) -> None:
         members_by_dump: dict[str, list[ast.expr]] = {}
@@ -659,6 +664,7 @@ class PyiVisitor(ast.NodeVisitor):
     def _visit_slice_tuple(self, node: ast.Tuple, parent: str | None) -> None:
         if parent == "Union":
             self._check_union_members(node.elts)
+            self.visit(node)
         elif parent == "Annotated":
             # Allow literals, except in the first argument
             if len(node.elts) > 1:
@@ -976,6 +982,14 @@ class PyiVisitor(ast.NodeVisitor):
             if not isinstance(default, ast.Ellipsis):
                 self.error(default, (Y014 if arg.annotation is None else Y011))
 
+    def _Y015_error(self, node: ast.Assign | ast.AnnAssign) -> None:
+        old_syntax = _unparse_assign_node(node)
+        copy_of_node = deepcopy(node)
+        copy_of_node.value = ast.Constant(value=...)
+        new_syntax = _unparse_assign_node(copy_of_node)
+        error_message = Y015.format(old_syntax=old_syntax, new_syntax=new_syntax)
+        self.error(node, error_message)
+
     def error(self, node: ast.AST, message: str) -> None:
         self.errors.append(Error(node.lineno, node.col_offset, message, PyiTreeChecker))
 
@@ -1057,7 +1071,7 @@ Y011 = 'Y011 Default values for typed arguments must be "..."'
 Y012 = 'Y012 Class body must not contain "pass"'
 Y013 = 'Y013 Non-empty class body must not contain "..."'
 Y014 = 'Y014 Default values for arguments must be "..."'
-Y015 = 'Y015 Attribute must not have a default value other than "..."'
+Y015 = 'Y015 Bad default value. Use "{new_syntax}" instead of "{old_syntax}"'
 Y016 = 'Y016 Duplicate union member "{}"'
 Y017 = "Y017 Only simple assignments allowed"
 Y018 = 'Y018 {typevarlike_cls} "{typevar_name}" is not used'
