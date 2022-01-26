@@ -1,4 +1,4 @@
-from typing import ParamSpec, TypeVar, TypeVarTuple, Union
+from typing import Annotated, ParamSpec, TypeVar, TypeVarTuple, Union
 
 from _typeshed import Self
 
@@ -21,6 +21,9 @@ class UsesATypeVar1:
 
 _UsedInClassDef = TypeVar("_UsedInClassDef", bound=bytes)
 class UsesATypeVar2(list[_UsedInClassDef]): ...
+
+_UsedInAnnotatedSubscript = TypeVar("_UsedInAnnotatedSubscript", bound=list[int])
+def func3(arg: Annotated[_UsedInAnnotatedSubscript, "Important metadata"]) -> Annotated[_UsedInAnnotatedSubscript, "More important metadata"]: ...
 
 _S = TypeVar("_S")
 
