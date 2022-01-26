@@ -883,7 +883,7 @@ class PyiVisitor(ast.NodeVisitor):
                 continue  # keyword-only arg without a default
             if not isinstance(default, ast.Ellipsis):
                 self.error(default, (Y014 if arg.annotation is None else Y011))
-                
+
     def _Y015_error(self, node: ast.Assign | ast.AnnAssign) -> None:
         old_syntax = _unparse_assign_node(node)
         copy_of_node = deepcopy(node)
