@@ -433,16 +433,20 @@ class PyiVisitor(ast.NodeVisitor):
             callable_name = function.id
             if callable_name == "NamedTuple":
                 return self.error(node, Y028)
-            elif callable_name == "TypedDict" and _is_bad_TypedDict(node):
-                return self.error(node, Y031)
+            elif callable_name == "TypedDict":
+                if _is_bad_TypedDict(node):
+                    self.error(node, Y031)
+                return
 
         elif isinstance(function, ast.Attribute):
             if isinstance(function.value, ast.Name) and function.value.id == "typing":
                 callable_name = function.attr
                 if callable_name == "NamedTuple":
                     return self.error(node, Y028)
-                elif callable_name == "TypedDict" and _is_bad_TypedDict(node):
-                    return self.error(node, Y031)
+                elif callable_name == "TypedDict":
+                    if _is_bad_TypedDict(node):
+                        self.error(node, Y031)
+                    return
 
         # String literals can appear in positional arguments for
         # TypeVar definitions.
