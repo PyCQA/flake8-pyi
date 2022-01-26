@@ -565,6 +565,7 @@ class PyiVisitor(ast.NodeVisitor):
     def _visit_slice_tuple(self, node: ast.Tuple, parent: str | None) -> None:
         if parent == "Union":
             self._check_union_members(node.elts)
+            self.visit(node)
         elif parent == "Annotated":
             # Allow literals, except in the first argument
             if len(node.elts) > 1:
