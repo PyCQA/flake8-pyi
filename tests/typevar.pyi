@@ -1,4 +1,4 @@
-from typing import ParamSpec, TypeVar, TypeVarTuple
+from typing import ParamSpec, TypeVar, TypeVarTuple, Union
 
 from _typeshed import Self
 
@@ -12,8 +12,15 @@ _Ts = TypeVarTuple("_Ts")  # Y018 TypeVarTuple "_Ts" is not used
 _UsedTypeVar = TypeVar("_UsedTypeVar")
 def func(arg: _UsedTypeVar) -> _UsedTypeVar: ...
 
-_TypeVarUsedInBinOp = TypeVar("_TypeVarUsedInBinOp", bound=str)
-def func2(arg: _TypeVarUsedInBinOp | int) -> _TypeVarUsedInBinOp | int: ...
+_UsedInBinOp = TypeVar("_UsedInBinOp", bound=str)
+def func2(arg: _UsedInBinOp | int) -> _UsedInBinOp | int: ...
+    
+_UsedInSubscript = TypeVar("_UsedInSubscript", str, int)
+class UsesATypeVar1:
+    def foo(self, arg: Union[_UsedInSubscript, list[str]]) -> Union[_UsedInSubscript, list[str]]: ...
+        
+_UsedInClassDef = TypeVar("_UsedInClassDef", bound=bytes)
+class UsesATypeVar2(list[_UsedInClassDef]): ...
 
 _S = TypeVar("_S")
 
