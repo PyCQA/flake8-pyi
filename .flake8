@@ -6,6 +6,7 @@
 # The following rules are incompatible with or enforced by black:
 #       E203 whitespace before ':' -- .py files only
 #       E501 line too long
+#       W291 trailing whitespace
 #       W293 blank line contains whitespace  -- .py files only
 #
 # Some rules are considered irrelevant to stub files:
@@ -24,6 +25,6 @@ max-line-length = 80
 max-complexity = 12
 select = B,C,E,F,W,Y,B9
 per-file-ignores =
-  *.py: E203, E501, W503
+  *.py: E203, E501, W503, W291, W293
   *.pyi: E301, E302, E305, E501, E701, E704, W503
   tests/imports.pyi: E301, E302, E305, E501, E701, E704, F401, F811, W503
