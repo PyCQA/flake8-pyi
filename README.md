@@ -129,4 +129,4 @@ Sebastian Rittau, Akuli, and Shantanu.
 ## See also
 
 * [Changelog](./CHANGELOG.rst)
-* [Information for contributors](./CONTRIBUTING.rst)
+* [Information for contributors](./CONTRIBUTING.md)
