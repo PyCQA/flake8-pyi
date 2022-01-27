@@ -128,5 +128,5 @@ Sebastian Rittau, Akuli, and Shantanu.
 
 ## See also
 
-* [Changelog](./CHANGELOG.rst)
+* [Changelog](./CHANGELOG.md)
 * [Information for contributors](./CONTRIBUTING.md)
