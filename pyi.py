@@ -419,7 +419,10 @@ class PyiVisitor(ast.NodeVisitor):
                 else:
                     self.error(target, Y001.format(cls_name))
         if (
-            isinstance(node.value, (ast.Constant, ast.NameConstant, ast.Num, ast.Str, ast.Bytes))
+            isinstance(
+                node.value,
+                (ast.Constant, ast.NameConstant, ast.Num, ast.Str, ast.Bytes),
+            )
             and not isinstance(node.value, ast.Ellipsis)
             and node.value.value is not None
         ):
