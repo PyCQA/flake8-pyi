@@ -384,7 +384,11 @@ class PyiVisitor(ast.NodeVisitor):
                 node=node, module_name=module_name, object_name=obj.name
             )
 
-    def _check_for_complex_assignments(self, node: ast.Assign) -> str | None:
+    def visit_Assign(self, node: ast.Assign) -> None:
+        if self.in_function.active:
+            # We error for unexpected things within functions separately.
+            self.generic_visit(node)
+            return
         if len(node.targets) == 1:
             target = node.targets[0]
             if isinstance(target, ast.Name):
@@ -400,14 +404,6 @@ class PyiVisitor(ast.NodeVisitor):
                 self.generic_visit(node)
         else:
             self.generic_visit(node)
-        return target_name
-
-    def visit_Assign(self, node: ast.Assign) -> None:
-        if self.in_function.active:
-            # We error for unexpected things within functions separately.
-            self.generic_visit(node)
-            return
-        target_name = self._check_for_complex_assignments(node)
         if target_name is None:
             return
         assignment = node.value
@@ -423,25 +419,21 @@ class PyiVisitor(ast.NodeVisitor):
                 else:
                     self.error(node, Y001.format(cls_name))
 
-        Y015_error = False
         if isinstance(node.value, (ast.Num, ast.Str, ast.Bytes)):
-            self._Y015_error(node)
-            Y015_error = True
-        elif isinstance(node.value, (ast.Constant, ast.NameConstant)):
-            if (
-                not isinstance(node.value, ast.Ellipsis)
-                and node.value.value is not None
-            ):
-                self._Y015_error(node)
-                Y015_error = True
+            return self._Y015_error(node)
+
+        if (
+            isinstance(node.value, (ast.Constant, ast.NameConstant))
+            and not isinstance(node.value, ast.Ellipsis)
+            and node.value.value is not None
+        ):
+            return self._Y015_error(node)
 
         # We avoid triggering Y026 for calls and = ... because there are various
         # unusual cases where assignment to the result of a call is legitimate
         # in stubs.
-        if (
-            not Y015_error
-            and target_name != "__all__"
-            and not isinstance(node.value, (ast.Ellipsis, ast.Call))
+        if target_name != "__all__" and not isinstance(
+            node.value, (ast.Ellipsis, ast.Call)
         ):
             self.error(node, Y026)
 
