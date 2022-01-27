@@ -11,7 +11,7 @@ assert sys.version_info >= (3, 7, 0), "flake8-pyi requires Python 3.7+"
 
 
 current_dir = os.path.abspath(os.path.dirname(__file__))
-with open(os.path.join(current_dir, "README.rst"), encoding="utf8") as ld_file:
+with open(os.path.join(current_dir, "README.md"), encoding="utf8") as ld_file:
     long_description = ld_file.read()
 
 
