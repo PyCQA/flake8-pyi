@@ -4,8 +4,9 @@
 #       W503 line break before binary operator
 #
 # The following rules are incompatible with or enforced by black:
-#       E203 whitespace before ':' -- scripts only
+#       E203 whitespace before ':' -- .py files only
 #       E501 line too long
+#       W293 blank line contains whitespace  -- .py files only
 #
 # Some rules are considered irrelevant to stub files:
 #       E301 expected 1 blank line
