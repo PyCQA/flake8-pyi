@@ -384,11 +384,7 @@ class PyiVisitor(ast.NodeVisitor):
                 node=node, module_name=module_name, object_name=obj.name
             )
 
-    def visit_Assign(self, node: ast.Assign) -> None:
-        if self.in_function.active:
-            # We error for unexpected things within functions separately.
-            self.generic_visit(node)
-            return
+    def _check_for_complex_assignments(self, node: ast.Assign) -> str | None:
         if len(node.targets) == 1:
             target = node.targets[0]
             if isinstance(target, ast.Name):
@@ -404,6 +400,14 @@ class PyiVisitor(ast.NodeVisitor):
                 self.generic_visit(node)
         else:
             self.generic_visit(node)
+        return target_name
+
+    def visit_Assign(self, node: ast.Assign) -> None:
+        if self.in_function.active:
+            # We error for unexpected things within functions separately.
+            self.generic_visit(node)
+            return
+        target_name = self._check_for_complex_assignments(node)
         if target_name is None:
             return
         assignment = node.value
@@ -417,7 +421,7 @@ class PyiVisitor(ast.NodeVisitor):
                     target_info = TypeVarInfo(cls_name=cls_name, name=target_name)
                     self.typevarlike_defs[target_info] = node
                 else:
-                    self.error(target, Y001.format(cls_name))
+                    self.error(node, Y001.format(cls_name))
 
         Y015_error = False
         if isinstance(node.value, (ast.Num, ast.Str, ast.Bytes)):
