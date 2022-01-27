@@ -418,11 +418,9 @@ class PyiVisitor(ast.NodeVisitor):
                     self.typevarlike_defs[target_info] = node
                 else:
                     self.error(target, Y001.format(cls_name))
+        constant_type = (ast.Constant, ast.NameConstant, ast.Num, ast.Str, ast.Bytes)
         if (
-            isinstance(
-                node.value,
-                (ast.Constant, ast.NameConstant, ast.Num, ast.Str, ast.Bytes),
-            )
+            isinstance(node.value, constant_type)
             and not isinstance(node.value, ast.Ellipsis)
             and node.value.value is not None
         ):
