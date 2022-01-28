@@ -47,7 +47,7 @@ currently emitted:
 | Y013 | Non-empty class body must not contain `...`.
 | Y014 | All default values for arguments must be `...`. A stronger version of Y011 that includes arguments without type annotations.
 | Y015 | Attribute must not have a default value other than `...`.
-| Y016 | Unions shouldn't contain duplicates, e.g. `str | str` is not allowed.
+| Y016 | Unions shouldn't contain duplicates, e.g. `str \| str` is not allowed.
 | Y017 | Stubs should not contain assignments with multiple targets or non-name targets.
 | Y018 | A private `TypeVar` should be used at least once in the file in which it is defined.
 | Y019 | Certain kinds of methods should use `_typeshed.Self` instead of defining custom `TypeVar`s for their return annotation. This check currently applies for instance methods that return `self`, class methods that return an instance of `cls`, and `__new__` methods.
@@ -61,7 +61,7 @@ currently emitted:
 | Y027 | Same as Y022. Unlike Y022, however, the imports disallowed with this error code are required if you wish to write Python 2-compatible stubs. Switch this error code off in your config file if you support Python 2.
 | Y028 | Always use class-based syntax for `typing.NamedTuple`, instead of assignment-based syntax.
 | Y029 | It is almost always redundant to define `__str__` or `__repr__` in a stub file, as the signatures are almost always identical to `object.__str__` and `object.__repr__`.
-| Y030 | Union expressions should never have more than one `Literal` member, as `Literal[1] | Literal[2]` is semantically identical to `Literal[1, 2]`.
+| Y030 | Union expressions should never have more than one `Literal` member, as `Literal[1] \| Literal[2]` is semantically identical to `Literal[1, 2]`.
 | Y031 | `TypedDict`s should use class-based syntax instead of assignment-based syntax wherever possible. (In situations where this is not possible, such as if a field is a Python keyword or an invalid identifier, this error will not be raised.)
 
 Many error codes enforce modern conventions, and some cannot yet be used in
