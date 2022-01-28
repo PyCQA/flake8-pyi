@@ -1,3 +1,5 @@
+import collections.abc
+import typing
 from typing import Any, Callable, ParamSpec, TypeVar
 
 _P = ParamSpec("_P")
@@ -18,12 +20,17 @@ def func9(func: Callable[..., _R], *args: Any, **kwargs: int) -> _R: ...
 def func10(func: Callable[..., _R], *args: str, **kwargs: Any) -> _R: ...
 def func11(func: Callable[_P, _R], *args: _P.args, **kwargs: _P.kwargs) -> _R: ...
 def func12(func: Callable[_P, str], *args: _P.args, **kwargs: _P.kwargs) -> int: ...
+def func13(func: typing.Callable[_P, str], *args: _P.args, **kwargs: _P.kwargs) -> int: ...
+def func14(func: collections.abc.Callable[_P, str], *args: _P.args, **kwargs: _P.kwargs) -> int: ...
 
 # BAD FUNCTIONS
-def func13(arg: Callable[..., int]) -> Callable[..., str]: ...  # Y032 Consider using ParamSpec to annotate function "func13"
-def func14(arg: Callable[..., _R]) -> Callable[..., _R]: ...  # Y032 Consider using ParamSpec to annotate function "func14"
-def func15(arg: Callable[..., _R], *args: Any, **kwargs: Any) -> _R: ...  # Y032 Consider using ParamSpec to annotate function "func15"
-def func16(arg: Callable[..., str], *args: Any, **kwargs: Any) -> int: ...  # Y032 Consider using ParamSpec to annotate function "func16"
+def func15(arg: Callable[..., int]) -> Callable[..., str]: ...  # Y032 Consider using ParamSpec to annotate function "func15"
+def func16(arg: Callable[..., _R]) -> Callable[..., _R]: ...  # Y032 Consider using ParamSpec to annotate function "func16"
+def func17(arg: Callable[..., _R], *args: Any, **kwargs: Any) -> _R: ...  # Y032 Consider using ParamSpec to annotate function "func17"
+def func18(arg: Callable[..., str], *args: Any, **kwargs: Any) -> int: ...  # Y032 Consider using ParamSpec to annotate function "func18"
+def func19(arg: collections.abc.Callable[..., str], *args: Any, **kwargs: Any) -> int: ...  # Y032 Consider using ParamSpec to annotate function "func19"
+def func20(arg: typing.Callable[..., str], *args: typing.Any, **kwargs: typing.Any) -> int: ...  # Y032 Consider using ParamSpec to annotate function "func20"
+def func21(arg: collections.abc.Callable[..., str], *args: typing.Any, **kwargs: typing.Any) -> int: ...  # Y032 Consider using ParamSpec to annotate function "func21"
 
 class Foo:
     def __call__(self, func: Callable[..., _R], *args: Any, **kwargs: Any) -> _R: ...  # Y032 Consider using ParamSpec to annotate function "Foo.__call__"

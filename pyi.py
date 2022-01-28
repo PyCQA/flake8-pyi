@@ -233,7 +233,23 @@ class LegacyNormalizer(ast.NodeTransformer):
             return node.value
 
 
-def _annotation_is_ellipsis_callable(annotation: ast.expr | None) -> bool:
+def _is_name(node: ast.expr | None, name: str) -> bool:
+    """Return `True` if `node` is the AST representation of `name`."""
+    return isinstance(node, ast.Name) and node.id == name
+
+
+def _is_attribute(node: ast.expr | None, attribute: str) -> bool:
+    """Determine whether `node` is the AST representation of `attribute`.
+    Only works if `attribute has a single `.` delimiter, e.g. "collection.abc".
+    """
+    return (
+        isinstance(node, ast.Attribute)
+        and isinstance(node.value, ast.Name)
+        and [node.value.id, node.attr] == attribute.split(".")
+    )
+
+
+def _is_ellipsis_callable(annotation: ast.expr | None) -> bool:
     """Evaluate whether `annotation` is an "ellipsis callable".
 
     Return `True` if `annotation` is either:
@@ -254,7 +270,6 @@ def _annotation_is_ellipsis_callable(annotation: ast.expr | None) -> bool:
         return False
 
     # Now we know it's e.g. `Foo[..., bar]`
-
     subscripted_object = annotation.value
 
     if isinstance(subscripted_object, ast.Name):
@@ -267,18 +282,13 @@ def _annotation_is_ellipsis_callable(annotation: ast.expr | None) -> bool:
         return False
 
     # Now we know it's an attribute e.g. `Foo.Callable[..., bar]`
-
     module = subscripted_object.value
+    return _is_name(module, "typing") or _is_attribute(module, "collections.abc")
 
-    if isinstance(module, ast.Name):
-        return module.id == "typing"
 
-    return (
-        isinstance(module, ast.Attribute)
-        and isinstance(module.value, ast.Name)
-        and module.value.id == "collections"
-        and module.attr == "abc"
-    )
+def _is_Any(annotation: ast.expr | None) -> bool:
+    """Return `True` if `annotation` is `Any` or `typing.Any`"""
+    return _is_name(annotation, "Any") or _is_attribute(annotation, "typing.Any")
 
 
 def _should_use_ParamSpec(function: ast.FunctionDef | ast.AsyncFunctionDef) -> bool:
@@ -290,37 +300,19 @@ def _should_use_ParamSpec(function: ast.FunctionDef | ast.AsyncFunctionDef) -> b
     )
 
     if not any(
-        _annotation_is_ellipsis_callable(arg_node.annotation)
-        for arg_node in non_variadic_args
+        _is_ellipsis_callable(arg_node.annotation) for arg_node in non_variadic_args
     ):
         return False
 
     # First check for functions like `def foo(func: Callable[P, R]) -> Callable[P, R]: ...`
-
-    if _annotation_is_ellipsis_callable(function.returns):
+    if _is_ellipsis_callable(function.returns):
         return True
 
     # Now check for functions like `def foo(__func: Callable[P, R], *args: P.args, **kwargs: P.kwargs) -> R: ...`
-
-    vararg, kwarg = arguments.vararg, arguments.kwarg
-    if not (isinstance(vararg, ast.arg) and isinstance(kwarg, ast.arg)):
-        return False
-
-    for annotation in (vararg.annotation, kwarg.annotation):
-        if isinstance(annotation, ast.Name):
-            if annotation.id != "Any":
-                return False
-        elif isinstance(annotation, ast.Attribute):
-            if not (
-                isinstance(annotation.value, ast.Name)
-                and annotation.value.id == "typing"
-                and annotation.value == "Any"
-            ):
-                return False
-        else:
-            return False
-
-    return True
+    return all(
+        (isinstance(arg, ast.arg) and _is_Any(arg.annotation))
+        for arg in (arguments.vararg, arguments.kwarg)
+    )
 
 
 def _unparse_assign_node(node: ast.Assign | ast.AnnAssign) -> str:
