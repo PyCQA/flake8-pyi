@@ -417,13 +417,22 @@ class PyiVisitor(ast.NodeVisitor):
                     target_info = TypeVarInfo(cls_name=cls_name, name=target_name)
                     self.typevarlike_defs[target_info] = node
                 else:
-                    self.error(target, Y001.format(cls_name))
+                    self.error(node, Y001.format(cls_name))
+
         if isinstance(node.value, (ast.Num, ast.Str, ast.Bytes)):
-            self._Y015_error(node)
+            return self._Y015_error(node)
+
+        if (
+            isinstance(node.value, (ast.Constant, ast.NameConstant))
+            and not isinstance(node.value, ast.Ellipsis)
+            and node.value.value is not None
+        ):
+            return self._Y015_error(node)
+
         # We avoid triggering Y026 for calls and = ... because there are various
         # unusual cases where assignment to the result of a call is legitimate
         # in stubs.
-        elif target_name != "__all__" and not isinstance(
+        if target_name != "__all__" and not isinstance(
             node.value, (ast.Ellipsis, ast.Call)
         ):
             self.error(node, Y026)
