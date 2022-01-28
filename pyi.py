@@ -261,7 +261,6 @@ def _is_ellipsis_callable(annotation: ast.expr | None) -> bool:
         return False
 
     # Now we know it's a subscript e.g. `Foo[bar]`
-
     if not (
         isinstance(annotation.slice, ast.Tuple)
         and len(annotation.slice.elts) == 2
@@ -303,10 +302,6 @@ def _should_use_ParamSpec(function: ast.FunctionDef | ast.AsyncFunctionDef) -> b
         _is_ellipsis_callable(arg_node.annotation) for arg_node in non_variadic_args
     ):
         return False
-
-    # First check for functions like `def foo(func: Callable[P, R]) -> Callable[P, R]: ...`
-    if _is_ellipsis_callable(function.returns):
-        return True
 
     # Now check for functions like `def foo(__func: Callable[P, R], *args: P.args, **kwargs: P.kwargs) -> R: ...`
     return all(
