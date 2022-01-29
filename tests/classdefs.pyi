@@ -6,8 +6,8 @@ from typing import Any
 class Bad:
     def __repr__(self) -> str: ...  # Y029 Defining __repr__ or __str__ in a stub is almost always redundant
     def __str__(self) -> str: ...  # Y029 Defining __repr__ or __str__ in a stub is almost always redundant
-    def __eq__(self, other: Any) -> bool: ...  # Y032 Prefer "object" to "Any" for the second parameter in "__eq__" and "__ne__" methods
-    def __ne__(self, other: typing.Any) -> typing.Any: ...  # Y032 Prefer "object" to "Any" for the second parameter in "__eq__" and "__ne__" methods
+    def __eq__(self, other: Any) -> bool: ...  # Y032 Prefer "object" to "Any" for the second parameter in "__eq__" methods
+    def __ne__(self, other: typing.Any) -> typing.Any: ...  # Y032 Prefer "object" to "Any" for the second parameter in "__ne__" methods
 
 class Good:
     @abstractmethod

@@ -808,7 +808,7 @@ class PyiVisitor(ast.NodeVisitor):
                 self.error(statement, Y013)
 
     def _visit_method(self, node: ast.FunctionDef) -> None:
-        function_name = node.name
+        method_name = node.name
         all_args = node.args
 
         if all_args.kwonlyargs:
@@ -822,18 +822,17 @@ class PyiVisitor(ast.NodeVisitor):
         # Raise an error for defining __str__ or __repr__ on a class, but only if:
         # 1). The method is not decorated with @abstractmethod
         # 2). The method has the exact same signature as object.__str__/object.__repr__
-        if function_name in {"__repr__", "__str__"}:
+        if method_name in {"__repr__", "__str__"}:
             if (
                 len(non_kw_only_args) == 1
-                and function_name in {"__repr__", "__str__"}
                 and _is_name(node.returns, "str")
                 and not any(_is_abstractmethod(deco) for deco in node.decorator_list)
             ):
                 self.error(node, Y029)
 
-        elif function_name in {"__eq__", "__ne__"}:
+        elif method_name in {"__eq__", "__ne__"}:
             if len(non_kw_only_args) == 2 and _is_Any(non_kw_only_args[1].annotation):
-                self.error(node, Y032)
+                self.error(node, Y032.format(method_name=method_name))
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         if self.in_class.active:
@@ -1078,6 +1077,5 @@ Y029 = "Y029 Defining __repr__ or __str__ in a stub is almost always redundant"
 Y030 = "Y030 Multiple Literal members in a union. {suggestion}"
 Y031 = "Y031 Use class-based syntax for TypedDicts where possible"
 Y032 = (
-    'Y032 Prefer "object" to "Any" for the second parameter '
-    'in "__eq__" and "__ne__" methods'
+    'Y032 Prefer "object" to "Any" for the second parameter in "{method_name}" methods'
 )
