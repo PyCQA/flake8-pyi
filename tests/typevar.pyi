@@ -1,7 +1,7 @@
 import typing
-import typing_extensions
 from typing import Annotated, ParamSpec, TypeVar, TypeVarTuple, Union
 
+import typing_extensions
 from _typeshed import Self
 
 T = TypeVar("T")  # Y001 Name of private TypeVar must start with _

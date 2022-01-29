@@ -1,6 +1,7 @@
 import typing
-import typing_extensions
 from typing import ParamSpec as _ParamSpec, TypeAlias, TypedDict, _Alias
+
+import typing_extensions
 
 X = int  # Y026 Use typing_extensions.TypeAlias for type aliases
 X: TypeAlias = int

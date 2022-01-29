@@ -1,6 +1,7 @@
 import typing
-import typing_extensions
 from typing import Annotated, Literal, TypeAlias, TypeVar
+
+import typing_extensions
 
 __all__ = ["f", "g"]
 
