@@ -451,6 +451,23 @@ class PyiVisitor(ast.NodeVisitor):
             else:
                 self.error(node, Y001.format(cls_name))
 
+    def _check_assignment_to_function(self, node: ast.Assign, function: ast.expr, object_name: str) -> None:
+        if isinstance(function, ast.Name):
+            cls_name = function.id
+        elif (
+            isinstance(function, ast.Attribute)
+            and isinstance(function.value, ast.Name)
+            and function.value.id in _TYPING_MODULES
+        ):
+            cls_name = function.attr
+        else:
+            cls_name = None
+
+        if cls_name is not None:
+            self._do_typevar_checks(
+                node=node, typevar_name=object_name, cls_name=cls_name
+            )
+
     def visit_Assign(self, node: ast.Assign) -> None:
         if self.in_function.active:
             # We error for unexpected things within functions separately.
@@ -475,30 +492,19 @@ class PyiVisitor(ast.NodeVisitor):
             return
         assignment = node.value
         if isinstance(assignment, ast.Call):
-            func = assignment.func
-            if isinstance(func, ast.Name):
-                cls_name = func.id
-            elif (
-                isinstance(func, ast.Attribute)
-                and isinstance(func.value, ast.Name)
-                and func.value.id in _TYPING_MODULES
-            ):
-                cls_name = func.attr
-            else:
-                cls_name = None
+            self._check_assignment_to_function(
+                node=node,
+                function=assignment.func,
+                object_name=target_name
+            )
 
-            if cls_name is not None:
-                self._do_typevar_checks(
-                    node=node, typevar_name=target_name, cls_name=cls_name
-                )
-
-        if isinstance(node.value, (ast.Num, ast.Str, ast.Bytes)):
+        if isinstance(assignment, (ast.Num, ast.Str, ast.Bytes)):
             return self._Y015_error(node)
 
         if (
-            isinstance(node.value, (ast.Constant, ast.NameConstant))
-            and not isinstance(node.value, ast.Ellipsis)
-            and node.value.value is not None
+            isinstance(assignment, (ast.Constant, ast.NameConstant))
+            and not isinstance(assignment, ast.Ellipsis)
+            and assignment.value is not None
         ):
             return self._Y015_error(node)
 
@@ -506,7 +512,7 @@ class PyiVisitor(ast.NodeVisitor):
         # unusual cases where assignment to the result of a call is legitimate
         # in stubs.
         if target_name != "__all__" and not isinstance(
-            node.value, (ast.Ellipsis, ast.Call)
+            assignment, (ast.Ellipsis, ast.Call)
         ):
             self.error(node, Y026)
 
