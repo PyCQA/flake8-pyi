@@ -252,8 +252,8 @@ def _is_object(node: ast.expr, name: str, *, from_: Container[str]) -> bool:
     """Determine whether `node` is an ast representation of `name`.
 
     Return True if `node` is either:
-    1). Of shape `ast.Name(id=<name>)`
-    2). Or of shape `ast.Attribute(value=ast.Name(id=<parent>), attr=<name>)`,
+    1). Of shape `ast.Name(id=<name>)`, or;
+    2). Of shape `ast.Attribute(value=ast.Name(id=<parent>), attr=<name>)`,
         where <parent> is a string that can be found within the `from_` collection of
         strings.
 
