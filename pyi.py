@@ -436,24 +436,14 @@ class PyiVisitor(ast.NodeVisitor):
                 node=node, module_name=module_name, object_name=obj.name
             )
 
-    def _do_typevar_checks(
-        self, node: ast.Assign, *, typevar_name: str, cls_name: str
-    ) -> None:
-        """Attempt to find assignments to type helpers (typevars and aliases).
-
-        Type helpers should usually be private.
-        If they are private, they should be used at least once in the file in which they are defined.
-        """
-        if cls_name in {"TypeVar", "ParamSpec", "TypeVarTuple"}:
-            if typevar_name.startswith("_"):
-                target_info = TypeVarInfo(cls_name=cls_name, name=typevar_name)
-                self.typevarlike_defs[target_info] = node
-            else:
-                self.error(node, Y001.format(cls_name))
-
     def _check_assignment_to_function(
         self, node: ast.Assign, function: ast.expr, object_name: str
     ) -> None:
+        """Attempt to find assignments to TypeVar-like objects.
+
+        TypeVars should usually be private.
+        If they are private, they should be used at least once in the file in which they are defined.
+        """
         if isinstance(function, ast.Name):
             cls_name = function.id
         elif (
@@ -463,12 +453,14 @@ class PyiVisitor(ast.NodeVisitor):
         ):
             cls_name = function.attr
         else:
-            cls_name = None
+            return
 
-        if cls_name is not None:
-            self._do_typevar_checks(
-                node=node, typevar_name=object_name, cls_name=cls_name
-            )
+        if cls_name in {"TypeVar", "ParamSpec", "TypeVarTuple"}:
+            if object_name.startswith("_"):
+                target_info = TypeVarInfo(cls_name=cls_name, name=object_name)
+                self.typevarlike_defs[target_info] = node
+            else:
+                self.error(node, Y001.format(cls_name))
 
     def visit_Assign(self, node: ast.Assign) -> None:
         if self.in_function.active:
@@ -498,7 +490,7 @@ class PyiVisitor(ast.NodeVisitor):
                 node=node, function=assignment.func, object_name=target_name
             )
 
-        if isinstance(assignment, (ast.Num, ast.Str, ast.Bytes)):
+        elif isinstance(assignment, (ast.Num, ast.Str, ast.Bytes)):
             return self._Y015_error(node)
 
         if (
