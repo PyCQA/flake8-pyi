@@ -235,7 +235,7 @@ class LegacyNormalizer(ast.NodeTransformer):
 
 
 def _is_name(node: ast.expr | None, name: str) -> bool:
-    """Return True if `node` is the AST representation of `name`
+    """Return True if `node` is an `ast.Name` node with id `name`
 
     >>> import ast
     >>> node = ast.Name(id="Any")
@@ -249,7 +249,13 @@ _TYPING_MODULES = frozenset({"typing", "typing_extensions"})
 
 
 def _is_object(node: ast.expr, name: str, *, from_: Container[str]) -> bool:
-    """Return True if `node` is the AST representation of `name` accessed as an attrbiute.
+    """Determine whether `node` is an ast representation of `name`.
+
+    Return True if `node` is either:
+    1). Of shape `ast.Name(id=<name>)`
+    2). Or of shape `ast.Attribute(value=ast.Name(id=<parent>), attr=<name>)`,
+        where <parent> is a string that can be found within the `from_` collection of
+        strings.
 
     >>> import ast
     >>> node1 = ast.Name(id="Literal")
