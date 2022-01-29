@@ -245,7 +245,10 @@ def _is_name(node: ast.expr | None, name: str) -> bool:
     return isinstance(node, ast.Name) and node.id == name
 
 
-def _is_name_or_attribute(node: ast.expr, name: str, *, from_: Container[str]) -> bool:
+_TYPING_MODULES = frozenset({"typing", "typing_extensions"})
+
+
+def _is_object(node: ast.expr, name: str, *, from_: Container[str]) -> bool:
     """Return True if `node` is the AST representation of `name` accessed as an attrbiute.
 
     >>> import ast
@@ -253,7 +256,7 @@ def _is_name_or_attribute(node: ast.expr, name: str, *, from_: Container[str]) -
     >>> node2 = ast.Attribute(value=ast.Name(id="typing"), attr="Literal")
     >>> node3 = ast.Attribute(value=ast.Name(id="typing_extensions"), attr="Literal")
     >>> from functools import partial
-    >>> _is_Literal = partial(_is_name_or_attribute, name="Literal", from_={"typing", "typing_extensions"})
+    >>> _is_Literal = partial(_is_object, name="Literal", from_=_TYPING_MODULES)
     >>> _is_Literal(node1)
     True
     >>> _is_Literal(node2)
@@ -269,19 +272,11 @@ def _is_name_or_attribute(node: ast.expr, name: str, *, from_: Container[str]) -
     )
 
 
-_is_TypeAlias = partial(
-    _is_name_or_attribute, name="TypeAlias", from_={"typing", "typing_extensions"}
-)
-_is_NamedTuple = partial(_is_name_or_attribute, name="NamedTuple", from_={"typing"})
-_is_TypedDict = partial(
-    _is_name_or_attribute, name="TypedDict", from_={"typing", "typing_extensions"}
-)
-_is_Literal = partial(
-    _is_name_or_attribute, name="Literal", from_={"typing", "typing_extensions"}
-)
-_is_abstractmethod = partial(
-    _is_name_or_attribute, name="abstractmethod", from_={"abc"}
-)
+_is_TypeAlias = partial(_is_object, name="TypeAlias", from_=_TYPING_MODULES)
+_is_NamedTuple = partial(_is_object, name="NamedTuple", from_={"typing"})
+_is_TypedDict = partial(_is_object, name="TypedDict", from_=_TYPING_MODULES)
+_is_Literal = partial(_is_object, name="Literal", from_=_TYPING_MODULES)
+_is_abstractmethod = partial(_is_object, name="abstractmethod", from_={"abc"})
 
 
 def _unparse_assign_node(node: ast.Assign | ast.AnnAssign) -> str:
@@ -480,7 +475,7 @@ class PyiVisitor(ast.NodeVisitor):
             elif (
                 isinstance(func, ast.Attribute)
                 and isinstance(func.value, ast.Name)
-                and func.value.id in {"typing", "typing_extensions"}
+                and func.value.id in _TYPING_MODULES
             ):
                 cls_name = func.attr
             else:
@@ -627,7 +622,7 @@ class PyiVisitor(ast.NodeVisitor):
         elif (
             isinstance(subscripted_object, ast.Attribute)
             and isinstance(subscripted_object.value, ast.Name)
-            and subscripted_object.value.id in {"typing", "typing_extensions"}
+            and subscripted_object.value.id in _TYPING_MODULES
         ):
             subscripted_object_name = subscripted_object.attr
         else:
