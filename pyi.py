@@ -451,7 +451,9 @@ class PyiVisitor(ast.NodeVisitor):
             else:
                 self.error(node, Y001.format(cls_name))
 
-    def _check_assignment_to_function(self, node: ast.Assign, function: ast.expr, object_name: str) -> None:
+    def _check_assignment_to_function(
+        self, node: ast.Assign, function: ast.expr, object_name: str
+    ) -> None:
         if isinstance(function, ast.Name):
             cls_name = function.id
         elif (
@@ -493,9 +495,7 @@ class PyiVisitor(ast.NodeVisitor):
         assignment = node.value
         if isinstance(assignment, ast.Call):
             self._check_assignment_to_function(
-                node=node,
-                function=assignment.func,
-                object_name=target_name
+                node=node, function=assignment.func, object_name=target_name
             )
 
         if isinstance(assignment, (ast.Num, ast.Str, ast.Bytes)):
