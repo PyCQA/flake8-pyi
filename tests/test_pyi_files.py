@@ -28,6 +28,7 @@ def test_pyi_file(path):
             ["flake8", "-j0", *flags, path],
             env={**os.environ, "PYTHONPATH": "."},
             stdout=subprocess.PIPE,
+            shell=True
         ),
         # Passing "-" as the file, and reading from stdin instead
         subprocess.run(
@@ -35,6 +36,7 @@ def test_pyi_file(path):
             env={**os.environ, "PYTHONPATH": "."},
             input=file_contents.encode("utf-8"),
             stdout=subprocess.PIPE,
+            shell=True
         ),
     ]
 
