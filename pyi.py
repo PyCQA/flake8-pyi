@@ -8,10 +8,11 @@ import optparse
 import re
 import sys
 from collections import Counter
-from collections.abc import Iterable, Iterator, Sequence
+from collections.abc import Container, Iterable, Iterator, Sequence
 from contextlib import contextmanager
 from copy import deepcopy
 from dataclasses import dataclass
+from functools import partial
 from itertools import chain
 from keyword import iskeyword
 from pathlib import Path
@@ -234,7 +235,7 @@ class LegacyNormalizer(ast.NodeTransformer):
 
 
 def _is_name(node: ast.expr | None, name: str) -> bool:
-    """Return True if `node` is the AST representation of `name`
+    """Return True if `node` is an `ast.Name` node with id `name`
 
     >>> import ast
     >>> node = ast.Name(id="Any")
@@ -242,6 +243,46 @@ def _is_name(node: ast.expr | None, name: str) -> bool:
     True
     """
     return isinstance(node, ast.Name) and node.id == name
+
+
+_TYPING_MODULES = frozenset({"typing", "typing_extensions"})
+
+
+def _is_object(node: ast.expr, name: str, *, from_: Container[str]) -> bool:
+    """Determine whether `node` is an ast representation of `name`.
+
+    Return True if `node` is either:
+    1). Of shape `ast.Name(id=<name>)`, or;
+    2). Of shape `ast.Attribute(value=ast.Name(id=<parent>), attr=<name>)`,
+        where <parent> is a string that can be found within the `from_` collection of
+        strings.
+
+    >>> import ast
+    >>> node1 = ast.Name(id="Literal")
+    >>> node2 = ast.Attribute(value=ast.Name(id="typing"), attr="Literal")
+    >>> node3 = ast.Attribute(value=ast.Name(id="typing_extensions"), attr="Literal")
+    >>> from functools import partial
+    >>> _is_Literal = partial(_is_object, name="Literal", from_=_TYPING_MODULES)
+    >>> _is_Literal(node1)
+    True
+    >>> _is_Literal(node2)
+    True
+    >>> _is_Literal(node3)
+    True
+    """
+    return _is_name(node, name) or (
+        isinstance(node, ast.Attribute)
+        and node.attr == name
+        and isinstance(node.value, ast.Name)
+        and node.value.id in from_
+    )
+
+
+_is_TypeAlias = partial(_is_object, name="TypeAlias", from_=_TYPING_MODULES)
+_is_NamedTuple = partial(_is_object, name="NamedTuple", from_={"typing"})
+_is_TypedDict = partial(_is_object, name="TypedDict", from_=_TYPING_MODULES)
+_is_Literal = partial(_is_object, name="Literal", from_=_TYPING_MODULES)
+_is_abstractmethod = partial(_is_object, name="abstractmethod", from_={"abc"})
 
 
 def _unparse_assign_node(node: ast.Assign | ast.AnnAssign) -> str:
@@ -395,6 +436,40 @@ class PyiVisitor(ast.NodeVisitor):
                 node=node, module_name=module_name, object_name=obj.name
             )
 
+    def _do_typevar_checks(
+        self, node: ast.Assign, *, typevar_name: str, cls_name: str
+    ) -> None:
+        """Attempt to find assignments to type helpers (typevars and aliases).
+
+        Type helpers should usually be private.
+        If they are private, they should be used at least once in the file in which they are defined.
+        """
+        if cls_name in {"TypeVar", "ParamSpec", "TypeVarTuple"}:
+            if typevar_name.startswith("_"):
+                target_info = TypeVarInfo(cls_name=cls_name, name=typevar_name)
+                self.typevarlike_defs[target_info] = node
+            else:
+                self.error(node, Y001.format(cls_name))
+
+    def _check_assignment_to_function(
+        self, node: ast.Assign, function: ast.expr, object_name: str
+    ) -> None:
+        if isinstance(function, ast.Name):
+            cls_name = function.id
+        elif (
+            isinstance(function, ast.Attribute)
+            and isinstance(function.value, ast.Name)
+            and function.value.id in _TYPING_MODULES
+        ):
+            cls_name = function.attr
+        else:
+            cls_name = None
+
+        if cls_name is not None:
+            self._do_typevar_checks(
+                node=node, typevar_name=object_name, cls_name=cls_name
+            )
+
     def visit_Assign(self, node: ast.Assign) -> None:
         if self.in_function.active:
             # We error for unexpected things within functions separately.
@@ -418,25 +493,18 @@ class PyiVisitor(ast.NodeVisitor):
         if target_name is None:
             return
         assignment = node.value
-        # Attempt to find assignments to type helpers (typevars and aliases),
-        # which should usually be private. If they are private,
-        # they should be used at least once in the file in which they are defined.
-        if isinstance(assignment, ast.Call) and isinstance(assignment.func, ast.Name):
-            cls_name = assignment.func.id
-            if cls_name in ("TypeVar", "ParamSpec", "TypeVarTuple"):
-                if target_name.startswith("_"):
-                    target_info = TypeVarInfo(cls_name=cls_name, name=target_name)
-                    self.typevarlike_defs[target_info] = node
-                else:
-                    self.error(node, Y001.format(cls_name))
+        if isinstance(assignment, ast.Call):
+            self._check_assignment_to_function(
+                node=node, function=assignment.func, object_name=target_name
+            )
 
-        if isinstance(node.value, (ast.Num, ast.Str, ast.Bytes)):
+        if isinstance(assignment, (ast.Num, ast.Str, ast.Bytes)):
             return self._Y015_error(node)
 
         if (
-            isinstance(node.value, (ast.Constant, ast.NameConstant))
-            and not isinstance(node.value, ast.Ellipsis)
-            and node.value.value is not None
+            isinstance(assignment, (ast.Constant, ast.NameConstant))
+            and not isinstance(assignment, ast.Ellipsis)
+            and assignment.value is not None
         ):
             return self._Y015_error(node)
 
@@ -444,7 +512,7 @@ class PyiVisitor(ast.NodeVisitor):
         # unusual cases where assignment to the result of a call is legitimate
         # in stubs.
         if target_name != "__all__" and not isinstance(
-            node.value, (ast.Ellipsis, ast.Call)
+            assignment, (ast.Ellipsis, ast.Call)
         ):
             self.error(node, Y026)
 
@@ -454,24 +522,13 @@ class PyiVisitor(ast.NodeVisitor):
     def visit_Call(self, node: ast.Call) -> None:
         function = node.func
         self.visit(function)
-        if isinstance(function, ast.Name):
-            callable_name = function.id
-            if callable_name == "NamedTuple":
-                return self.error(node, Y028)
-            elif callable_name == "TypedDict":
-                if _is_bad_TypedDict(node):
-                    self.error(node, Y031)
-                return
 
-        elif isinstance(function, ast.Attribute):
-            if _is_name(function.value, "typing"):
-                callable_name = function.attr
-                if callable_name == "NamedTuple":
-                    return self.error(node, Y028)
-                elif callable_name == "TypedDict":
-                    if _is_bad_TypedDict(node):
-                        self.error(node, Y031)
-                    return
+        if _is_NamedTuple(function):
+            return self.error(node, Y028)
+        elif _is_TypedDict(function):
+            if _is_bad_TypedDict(node):
+                self.error(node, Y031)
+            return
 
         # String literals can appear in positional arguments for
         # TypeVar definitions.
@@ -501,7 +558,7 @@ class PyiVisitor(ast.NodeVisitor):
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         self.generic_visit(node)
-        if _is_name(node.annotation, "TypeAlias"):
+        if _is_TypeAlias(node.annotation):
             return
         if node.value and not isinstance(node.value, ast.Ellipsis):
             self._Y015_error(node)
@@ -524,7 +581,7 @@ class PyiVisitor(ast.NodeVisitor):
         literals_in_union, non_literals_in_union = [], []
 
         for member in members:
-            if isinstance(member, ast.Subscript) and _is_name(member.value, "Literal"):
+            if isinstance(member, ast.Subscript) and _is_Literal(member.value):
                 literals_in_union.append(member.slice)
             else:
                 non_literals_in_union.append(member)
@@ -571,19 +628,26 @@ class PyiVisitor(ast.NodeVisitor):
         self._check_union_members(members)
 
     def visit_Subscript(self, node: ast.Subscript) -> None:
-        if isinstance(node.value, ast.Name):
-            value_id = node.value.id
+        subscripted_object = node.value
+        if isinstance(subscripted_object, ast.Name):
+            subscripted_object_name = subscripted_object.id
+        elif (
+            isinstance(subscripted_object, ast.Attribute)
+            and isinstance(subscripted_object.value, ast.Name)
+            and subscripted_object.value.id in _TYPING_MODULES
+        ):
+            subscripted_object_name = subscripted_object.attr
         else:
-            value_id = None
+            subscripted_object_name = None
 
-        self.visit(node.value)
-        if value_id == "Literal":
+        self.visit(subscripted_object)
+        if subscripted_object_name == "Literal":
             with self.string_literals_allowed.enabled():
                 self.visit(node.slice)
             return
 
         if isinstance(node.slice, ast.Tuple):
-            self._visit_slice_tuple(node.slice, value_id)
+            self._visit_slice_tuple(node.slice, subscripted_object_name)
         else:
             self.visit(node.slice)
 
@@ -758,9 +822,7 @@ class PyiVisitor(ast.NodeVisitor):
             self.in_class.active
             and node.name in {"__repr__", "__str__"}
             and _is_name(node.returns, "str")
-            and not any(
-                _is_name(deco, "abstractmethod") for deco in node.decorator_list
-            )
+            and not any(_is_abstractmethod(deco) for deco in node.decorator_list)
         ):
             all_args = node.args
             # pos-only args don't exist on 3.7

@@ -1,5 +1,15 @@
 # Change Log
 
+## Unreleased
+
+Bugfixes:
+* fix bugs in several error codes so that e.g. `_T = typing.TypeVar("_T")` is
+  recognised as a `TypeVar` definition (previously only `_T = TypeVar("_T")` was
+  recognised).
+* fix bug where `foo = False` at the module level did not trigger a Y015 error.
+* fix bug where `TypeVar`s were erroneously flagged as unused if they were only used in
+  a `typing.Union` subscript.
+
 ## 22.1.0
 
 * extend Y001 to cover `ParamSpec` and `TypeVarTuple` in addition to `TypeVar`
