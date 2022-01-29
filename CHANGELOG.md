@@ -10,6 +10,10 @@ Bugfixes:
 * fix bug where `TypeVar`s were erroneously flagged as unused if they were only used in
   a `typing.Union` subscript.
 
+Features:
+* introduce Y032 (prefer `object` to `Any` for the second argument in `__eq__` and
+  `__ne__` methods).
+
 ## 22.1.0
 
 * extend Y001 to cover `ParamSpec` and `TypeVarTuple` in addition to `TypeVar`

@@ -283,6 +283,7 @@ _is_NamedTuple = partial(_is_object, name="NamedTuple", from_={"typing"})
 _is_TypedDict = partial(_is_object, name="TypedDict", from_=_TYPING_MODULES)
 _is_Literal = partial(_is_object, name="Literal", from_=_TYPING_MODULES)
 _is_abstractmethod = partial(_is_object, name="abstractmethod", from_={"abc"})
+_is_Any = partial(_is_object, name="Any", from_={"typing"})
 
 
 def _unparse_assign_node(node: ast.Assign | ast.AnnAssign) -> str:
@@ -806,25 +807,37 @@ class PyiVisitor(ast.NodeVisitor):
             ):
                 self.error(statement, Y013)
 
-    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+    def _visit_method(self, node: ast.FunctionDef) -> None:
+        function_name = node.name
+        all_args = node.args
+
+        if all_args.kwonlyargs:
+            return
+
+        # pos-only args don't exist on 3.7
+        pos_only_args: list[ast.arg] = getattr(all_args, "posonlyargs", [])
+        pos_or_kwd_args = all_args.args
+        non_kw_only_args = pos_only_args + pos_or_kwd_args
+
         # Raise an error for defining __str__ or __repr__ on a class, but only if:
         # 1). The method is not decorated with @abstractmethod
         # 2). The method has the exact same signature as object.__str__/object.__repr__
-        if (
-            self.in_class.active
-            and node.name in {"__repr__", "__str__"}
-            and _is_name(node.returns, "str")
-            and not any(_is_abstractmethod(deco) for deco in node.decorator_list)
-        ):
-            all_args = node.args
-            # pos-only args don't exist on 3.7
-            pos_only_args: list[ast.arg] = getattr(all_args, "posonlyargs", [])
-            pos_or_kwd_args = all_args.args
-            kwd_only_args = all_args.kwonlyargs
-
-            if ((len(pos_only_args) + len(pos_or_kwd_args)) == 1) and not kwd_only_args:
+        if function_name in {"__repr__", "__str__"}:
+            if (
+                len(non_kw_only_args) == 1
+                and function_name in {"__repr__", "__str__"}
+                and _is_name(node.returns, "str")
+                and not any(_is_abstractmethod(deco) for deco in node.decorator_list)
+            ):
                 self.error(node, Y029)
 
+        elif function_name in {"__eq__", "__ne__"}:
+            if len(non_kw_only_args) == 2 and _is_Any(non_kw_only_args[1].annotation):
+                self.error(node, Y032)
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        if self.in_class.active:
+            self._visit_method(node)
         self._visit_function(node)
 
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
@@ -1064,3 +1077,7 @@ Y028 = "Y028 Use class-based syntax for NamedTuples"
 Y029 = "Y029 Defining __repr__ or __str__ in a stub is almost always redundant"
 Y030 = "Y030 Multiple Literal members in a union. {suggestion}"
 Y031 = "Y031 Use class-based syntax for TypedDicts where possible"
+Y032 = (
+    'Y032 Prefer "object" to "Any" for the second parameter '
+    'in "__eq__" and "__ne__" methods'
+)
