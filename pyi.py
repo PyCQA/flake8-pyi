@@ -235,7 +235,7 @@ class LegacyNormalizer(ast.NodeTransformer):
 
 def _is_name(node: ast.expr | None, name: str) -> bool:
     """Return True if `node` is the AST representation of `name`
-    
+
     >>> import ast
     >>> node = ast.Name(id="Any")
     >>> _is_name(node, "Any")
@@ -759,8 +759,7 @@ class PyiVisitor(ast.NodeVisitor):
             and node.name in {"__repr__", "__str__"}
             and _is_name(node.returns, "str")
             and not any(
-                _is_name(deco, "abstractmethod")
-                for deco in node.decorator_list
+                _is_name(deco, "abstractmethod") for deco in node.decorator_list
             )
         ):
             all_args = node.args
