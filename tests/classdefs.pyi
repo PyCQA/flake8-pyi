@@ -1,3 +1,4 @@
+import abc
 from abc import abstractmethod
 
 class Bad:
@@ -7,7 +8,13 @@ class Bad:
 class Good:
     @abstractmethod
     def __str__(self) -> str: ...
-    @abstractmethod
+    @abc.abstractmethod
+    def __repr__(self) -> str: ...
+
+class Fine:
+    @abc.abstractmethod
+    def __str__(self) -> str: ...
+    @abc.abstractmethod
     def __repr__(self) -> str: ...
 
 class AlsoGood(str):

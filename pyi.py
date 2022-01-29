@@ -621,23 +621,26 @@ class PyiVisitor(ast.NodeVisitor):
         self._check_union_members(members)
 
     def visit_Subscript(self, node: ast.Subscript) -> None:
-        if isinstance(node.value, ast.Name):
-            value_id = node.value.id
-        elif isinstance(node.value, ast.Attribute) and isinstance(
-            node.value.value, ast.Name
+        subscripted_object = node.value
+        if isinstance(subscripted_object, ast.Name):
+            subscripted_object_name = subscripted_object.id
+        elif (
+            isinstance(subscripted_object, ast.Attribute)
+            and isinstance(subscripted_object.value, ast.Name)
+            and subscripted_object.value.id in {"typing", "typing_extensions"}
         ):
-            value_id = node.value.value.id
+            subscripted_object_name = subscripted_object.attr
         else:
-            value_id = None
+            subscripted_object_name = None
 
-        self.visit(node.value)
-        if value_id == "Literal":
+        self.visit(subscripted_object)
+        if subscripted_object_name == "Literal":
             with self.string_literals_allowed.enabled():
                 self.visit(node.slice)
             return
 
         if isinstance(node.slice, ast.Tuple):
-            self._visit_slice_tuple(node.slice, value_id)
+            self._visit_slice_tuple(node.slice, subscripted_object_name)
         else:
             self.visit(node.slice)
 
