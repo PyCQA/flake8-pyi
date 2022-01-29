@@ -233,6 +233,17 @@ class LegacyNormalizer(ast.NodeTransformer):
             return node.value
 
 
+def _is_name(node: ast.expr | None, name: str) -> bool:
+    """Return True if `node` is the AST representation of `name`
+    
+    >>> import ast
+    >>> node = ast.Name(id="Any")
+    >>> _is_name(node, "Any")
+    True
+    """
+    return isinstance(node, ast.Name) and node.id == name
+
+
 def _unparse_assign_node(node: ast.Assign | ast.AnnAssign) -> str:
     """Unparse an Assign node, and remove any newlines in it"""
     return unparse(node).replace("\n", "")
@@ -453,7 +464,7 @@ class PyiVisitor(ast.NodeVisitor):
                 return
 
         elif isinstance(function, ast.Attribute):
-            if isinstance(function.value, ast.Name) and function.value.id == "typing":
+            if _is_name(function.value, "typing"):
                 callable_name = function.attr
                 if callable_name == "NamedTuple":
                     return self.error(node, Y028)
@@ -490,7 +501,7 @@ class PyiVisitor(ast.NodeVisitor):
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         self.generic_visit(node)
-        if isinstance(node.annotation, ast.Name) and node.annotation.id == "TypeAlias":
+        if _is_name(node.annotation, "TypeAlias"):
             return
         if node.value and not isinstance(node.value, ast.Ellipsis):
             self._Y015_error(node)
@@ -513,11 +524,7 @@ class PyiVisitor(ast.NodeVisitor):
         literals_in_union, non_literals_in_union = [], []
 
         for member in members:
-            if (
-                isinstance(member, ast.Subscript)
-                and isinstance(member.value, ast.Name)
-                and member.value.id == "Literal"
-            ):
+            if isinstance(member, ast.Subscript) and _is_name(member.value, "Literal"):
                 literals_in_union.append(member.slice)
             else:
                 non_literals_in_union.append(member)
@@ -618,7 +625,7 @@ class PyiVisitor(ast.NodeVisitor):
         if isinstance(node.left, ast.Subscript):
             self._check_subscript_version_check(node)
         elif isinstance(node.left, ast.Attribute):
-            if isinstance(node.left.value, ast.Name) and node.left.value.id == "sys":
+            if _is_name(node.left.value, "sys"):
                 if node.left.attr == "platform":
                     self._check_platform_check(node)
                 elif node.left.attr == "version_info":
@@ -750,10 +757,9 @@ class PyiVisitor(ast.NodeVisitor):
         if (
             self.in_class.active
             and node.name in {"__repr__", "__str__"}
-            and isinstance(node.returns, ast.Name)
-            and node.returns.id == "str"
+            and _is_name(node.returns, "str")
             and not any(
-                isinstance(deco, ast.Name) and deco.id == "abstractmethod"
+                _is_name(deco, "abstractmethod")
                 for deco in node.decorator_list
             )
         ):
@@ -823,9 +829,7 @@ class PyiVisitor(ast.NodeVisitor):
         else:
             return
 
-        if not isinstance(first_arg_annotation.value, ast.Name):
-            return
-        if first_arg_annotation.value.id != "type":
+        if not _is_name(first_arg_annotation.value, "type"):
             return
 
         if cls_typevar == return_annotation.id and cls_typevar.startswith("_"):
