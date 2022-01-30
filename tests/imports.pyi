@@ -99,24 +99,24 @@ from typing_extensions import (
 )
 
 # BAD IMPORTS (Y022 code)
-from typing import Dict  # Y022 Use "builtins.dict" instead of "typing.Dict"
-from typing import Counter  # Y022 Use "collections.Counter" instead of "typing.Counter"
-from typing import AsyncContextManager  # Y022 Use "contextlib.AbstractAsyncContextManager" instead of "typing.AsyncContextManager"
-from typing import ChainMap  # Y022 Use "collections.ChainMap" instead of "typing.ChainMap"
-from typing_extensions import Type  # Y022 Use "builtins.type" instead of "typing_extensions.Type"
-from typing_extensions import DefaultDict  # Y022 Use "collections.defaultdict" instead of "typing_extensions.DefaultDict"
-from typing_extensions import ChainMap  # Y022 Use "collections.ChainMap" instead of "typing_extensions.ChainMap"
-from typing_extensions import AsyncContextManager  # Y022 Use "contextlib.AbstractAsyncContextManager" instead of "typing_extensions.AsyncContextManager"
+from typing import Dict  # Y022 Use "dict[KeyType, ValueType]" instead of "typing.Dict[KeyType, ValueType]" (PEP 585 syntax)
+from typing import Counter  # Y022 Use "collections.Counter[KeyType]" instead of "typing.Counter[KeyType]" (PEP 585 syntax)
+from typing import AsyncContextManager  # Y022 Use "contextlib.AbstractAsyncContextManager[T]" instead of "typing.AsyncContextManager[T]" (PEP 585 syntax)
+from typing import ChainMap  # Y022 Use "collections.ChainMap[KeyType, ValueType]" instead of "typing.ChainMap[KeyType, ValueType]" (PEP 585 syntax)
+from typing_extensions import Type  # Y022 Use "type[MyClass]" instead of "typing_extensions.Type[MyClass]" (PEP 585 syntax)
+from typing_extensions import DefaultDict  # Y022 Use "collections.defaultdict[KeyType, ValueType]" instead of "typing_extensions.DefaultDict[KeyType, ValueType]" (PEP 585 syntax)
+from typing_extensions import ChainMap  # Y022 Use "collections.ChainMap[KeyType, ValueType]" instead of "typing_extensions.ChainMap[KeyType, ValueType]" (PEP 585 syntax)
+from typing_extensions import AsyncContextManager  # Y022 Use "contextlib.AbstractAsyncContextManager[T]" instead of "typing_extensions.AsyncContextManager[T]" (PEP 585 syntax)
 
 # BAD IMPORTS (Y023 code)
-from typing_extensions import ClassVar  # Y023 Use "typing.ClassVar" instead of "typing_extensions.ClassVar"
-from typing_extensions import Awaitable  # Y023 Use "typing.Awaitable" instead of "typing_extensions.Awaitable"
-from typing_extensions import ContextManager  # Y023 Use "contextlib.AbstractContextManager" (or "typing.ContextManager" in Python 2-compatible code) instead of "typing_extensions.ContextManager"
+from typing_extensions import ClassVar  # Y023 Use "typing.ClassVar[T]" instead of "typing_extensions.ClassVar[T]"
+from typing_extensions import Awaitable  # Y023 Use "typing.Awaitable[T]" instead of "typing_extensions.Awaitable[T]"
+from typing_extensions import ContextManager  # Y023 Use "contextlib.AbstractContextManager[T]" (or "typing.ContextManager[T]" in Python 2-compatible code) instead of "typing_extensions.ContextManager[T]" (PEP 585 syntax)
 
 # BAD IMPORTS (Y027 code)
-from typing import ContextManager  # Y027 Use "contextlib.AbstractContextManager" instead of "typing.ContextManager"
-from typing import OrderedDict  # Y027 Use "collections.OrderedDict" instead of "typing.OrderedDict"
-from typing_extensions import OrderedDict  # Y027 Use "collections.OrderedDict" instead of "typing_extensions.OrderedDict"
+from typing import ContextManager  # Y027 Use "contextlib.AbstractContextManager[T]" instead of "typing.ContextManager[T]" (PEP 585 syntax)
+from typing import OrderedDict  # Y027 Use "collections.OrderedDict[KeyType, ValueType]" instead of "typing.OrderedDict[KeyType, ValueType]" (PEP 585 syntax)
+from typing_extensions import OrderedDict  # Y027 Use "collections.OrderedDict[KeyType, ValueType]" instead of "typing_extensions.OrderedDict[KeyType, ValueType]" (PEP 585 syntax)
 
 # BAD IMPORTS: OTHER
 from collections import namedtuple  # Y024 Use "typing.NamedTuple" instead of "collections.namedtuple"
@@ -133,27 +133,27 @@ class Fish:
     def method(self, arg: typing.SupportsInt = ...) -> None: ...
 
 # BAD ATTRIBUTE ACCESS (Y022 code)
-a: typing.Dict[str, int]  # Y022 Use "builtins.dict" instead of "typing.Dict"
+a: typing.Dict[str, int]  # Y022 Use "dict[KeyType, ValueType]" instead of "typing.Dict[KeyType, ValueType]" (PEP 585 syntax)
 
-def func1() -> typing.Counter[float]: ...  # Y022 Use "collections.Counter" instead of "typing.Counter"
-def func2(c: typing.AsyncContextManager[None]) -> None: ...  # Y022 Use "contextlib.AbstractAsyncContextManager" instead of "typing.AsyncContextManager"
-def func3(d: typing.ChainMap[int, str] = ...) -> None: ...  # Y022 Use "collections.ChainMap" instead of "typing.ChainMap"
+def func1() -> typing.Counter[float]: ...  # Y022 Use "collections.Counter[KeyType]" instead of "typing.Counter[KeyType]" (PEP 585 syntax)
+def func2(c: typing.AsyncContextManager[None]) -> None: ...  # Y022 Use "contextlib.AbstractAsyncContextManager[T]" instead of "typing.AsyncContextManager[T]" (PEP 585 syntax)
+def func3(d: typing.ChainMap[int, str] = ...) -> None: ...  # Y022 Use "collections.ChainMap[KeyType, ValueType]" instead of "typing.ChainMap[KeyType, ValueType]" (PEP 585 syntax)
 
 class Spam:
-    def meth1(self) -> typing_extensions.DefaultDict[bytes, bytes]: ...  # Y022 Use "collections.defaultdict" instead of "typing_extensions.DefaultDict"
-    def meth2(self, f: typing_extensions.ChainMap[str, str]) -> None: ...  # Y022 Use "collections.ChainMap" instead of "typing_extensions.ChainMap"
-    def meth3(self, g: typing_extensions.AsyncContextManager[Any] = ...) -> None: ...  # Y022 Use "contextlib.AbstractAsyncContextManager" instead of "typing_extensions.AsyncContextManager"
+    def meth1(self) -> typing_extensions.DefaultDict[bytes, bytes]: ...  # Y022 Use "collections.defaultdict[KeyType, ValueType]" instead of "typing_extensions.DefaultDict[KeyType, ValueType]" (PEP 585 syntax)
+    def meth2(self, f: typing_extensions.ChainMap[str, str]) -> None: ...  # Y022 Use "collections.ChainMap[KeyType, ValueType]" instead of "typing_extensions.ChainMap[KeyType, ValueType]" (PEP 585 syntax)
+    def meth3(self, g: typing_extensions.AsyncContextManager[Any] = ...) -> None: ...  # Y022 Use "contextlib.AbstractAsyncContextManager[T]" instead of "typing_extensions.AsyncContextManager[T]" (PEP 585 syntax)
 
 # BAD ATTRIBUTE ACCESS (Y023 code)
 class Foo:
-    attribute: typing_extensions.ClassVar[int]  # Y023 Use "typing.ClassVar" instead of "typing_extensions.ClassVar"
+    attribute: typing_extensions.ClassVar[int]  # Y023 Use "typing.ClassVar[T]" instead of "typing_extensions.ClassVar[T]"
 
-h: typing_extensions.Awaitable[float]  # Y023 Use "typing.Awaitable" instead of "typing_extensions.Awaitable"
-i: typing_extensions.ContextManager[None]  # Y023 Use "contextlib.AbstractContextManager" (or "typing.ContextManager" in Python 2-compatible code) instead of "typing_extensions.ContextManager"
+h: typing_extensions.Awaitable[float]  # Y023 Use "typing.Awaitable[T]" instead of "typing_extensions.Awaitable[T]"
+i: typing_extensions.ContextManager[None]  # Y023 Use "contextlib.AbstractContextManager[T]" (or "typing.ContextManager[T]" in Python 2-compatible code) instead of "typing_extensions.ContextManager[T]" (PEP 585 syntax)
 
 # BAD ATTRIBUTE ACCESS (Y027 code)
-k: typing_extensions.OrderedDict[int, str]  # Y027 Use "collections.OrderedDict" instead of "typing_extensions.OrderedDict"
-l: typing.ContextManager  # Y027 Use "contextlib.AbstractContextManager" instead of "typing.ContextManager"
+k: typing_extensions.OrderedDict[int, str]  # Y027 Use "collections.OrderedDict[KeyType, ValueType]" instead of "typing_extensions.OrderedDict[KeyType, ValueType]" (PEP 585 syntax)
+l: typing.ContextManager  # Y027 Use "contextlib.AbstractContextManager[T]" instead of "typing.ContextManager[T]" (PEP 585 syntax)
 
 # BAD ATTRIBUTE ACCESS: OTHER
 j: collections.namedtuple  # Y024 Use "typing.NamedTuple" instead of "collections.namedtuple"

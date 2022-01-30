@@ -53,32 +53,40 @@ class TypeVarInfo(NamedTuple):
     name: str
 
 
+_MAPPING_SLICE = "KeyType, ValueType"
+_TYPE_SLICE = "MyClass"
+_COUNTER_SLICE = "KeyType"
+
+
 # ChainMap and AsyncContextManager do not exist in typing or typing_extensions in Python 2,
 # so we can disallow importing them from anywhere except collections and contextlib respectively.
 _BAD_Y022_IMPORTS = {
     # typing aliases for collections
-    "typing.Counter": "collections.Counter",
-    "typing.Deque": "collections.deque",
-    "typing.DefaultDict": "collections.defaultdict",
-    "typing.ChainMap": "collections.ChainMap",
+    "typing.Counter": ("collections.Counter", _COUNTER_SLICE),
+    "typing.Deque": ("collections.deque", "T"),
+    "typing.DefaultDict": ("collections.defaultdict", _MAPPING_SLICE),
+    "typing.ChainMap": ("collections.ChainMap", _MAPPING_SLICE),
     # typing aliases for builtins
-    "typing.Dict": "builtins.dict",
-    "typing.FrozenSet": "builtins.frozenset",
-    "typing.List": "builtins.list",
-    "typing.Set": "builtins.set",
-    "typing.Tuple": "builtins.tuple",
-    "typing.Type": "builtins.type",
+    "typing.Dict": ("dict", _MAPPING_SLICE),
+    "typing.FrozenSet": ("frozenset", "T"),
+    "typing.List": ("list", "T"),
+    "typing.Set": ("set", "T"),
+    "typing.Tuple": ("tuple", "Foo, Bar"),
+    "typing.Type": ("type", _TYPE_SLICE),
     # One typing alias for contextlib
-    "typing.AsyncContextManager": "contextlib.AbstractAsyncContextManager",
+    "typing.AsyncContextManager": ("contextlib.AbstractAsyncContextManager", "T"),
     # typing_extensions aliases for collections
-    "typing_extensions.Counter": "collections.Counter",
-    "typing_extensions.Deque": "collections.deque",
-    "typing_extensions.DefaultDict": "collections.defaultdict",
-    "typing_extensions.ChainMap": "collections.ChainMap",
+    "typing_extensions.Counter": ("collections.Counter", _COUNTER_SLICE),
+    "typing_extensions.Deque": ("collections.deque", "T"),
+    "typing_extensions.DefaultDict": ("collections.defaultdict", _MAPPING_SLICE),
+    "typing_extensions.ChainMap": ("collections.ChainMap", _MAPPING_SLICE),
     # One typing_extensions alias for a builtin
-    "typing_extensions.Type": "builtins.type",
+    "typing_extensions.Type": ("type", _TYPE_SLICE),
     # one typing_extensions alias for contextlib
-    "typing_extensions.AsyncContextManager": "contextlib.AbstractAsyncContextManager",
+    "typing_extensions.AsyncContextManager": (
+        "contextlib.AbstractAsyncContextManager",
+        "T",
+    ),
 }
 
 # typing_extensions.ContextManager is omitted from the Y023 and Y027 collections - special-cased
@@ -102,9 +110,9 @@ _BAD_Y023_IMPORTS = frozenset(
 )
 
 _BAD_Y027_IMPORTS = {
-    "typing.ContextManager": "contextlib.AbstractContextManager",
-    "typing.OrderedDict": "collections.OrderedDict",
-    "typing_extensions.OrderedDict": "collections.OrderedDict",
+    "typing.ContextManager": ("contextlib.AbstractContextManager", "T"),
+    "typing.OrderedDict": ("collections.OrderedDict", _MAPPING_SLICE),
+    "typing_extensions.OrderedDict": ("collections.OrderedDict", _MAPPING_SLICE),
 }
 
 
@@ -369,34 +377,37 @@ class PyiVisitor(ast.NodeVisitor):
 
         # Y022 errors
         if fullname in _BAD_Y022_IMPORTS:
+            good_cls_name, params = _BAD_Y022_IMPORTS[fullname]
             error_message = Y022.format(
-                good_cls_name=f'"{_BAD_Y022_IMPORTS[fullname]}"',
-                bad_cls_alias=fullname,
+                good_syntax=f'"{good_cls_name}[{params}]"',
+                bad_syntax=f'"{fullname}[{params}]"',
             )
 
         # Y027 errors
         elif fullname in _BAD_Y027_IMPORTS:
+            good_cls_name, params = _BAD_Y027_IMPORTS[fullname]
             error_message = Y027.format(
-                good_cls_name=f'"{_BAD_Y027_IMPORTS[fullname]}"',
-                bad_cls_alias=fullname,
+                good_syntax=f'"{good_cls_name}[{params}]"',
+                bad_syntax=f'"{fullname}[{params}]"',
             )
 
         # Y023 errors
         elif module_name == "typing_extensions":
             if object_name in _BAD_Y023_IMPORTS:
                 error_message = Y023.format(
-                    good_cls_name=f'"typing.{object_name}"',
-                    bad_cls_alias=f"typing_extensions.{object_name}",
+                    good_syntax=f'"typing.{object_name}[T]"',
+                    bad_syntax=f'"typing_extensions.{object_name}[T]"',
                 )
             elif object_name == "ContextManager":
                 suggested_syntax = (
-                    '"contextlib.AbstractContextManager" '
-                    '(or "typing.ContextManager" in Python 2-compatible code)'
+                    '"contextlib.AbstractContextManager[T]" '
+                    '(or "typing.ContextManager[T]" in Python 2-compatible code)'
                 )
                 error_message = Y023.format(
-                    good_cls_name=suggested_syntax,
-                    bad_cls_alias="typing_extensions.ContextManager",
+                    good_syntax=suggested_syntax,
+                    bad_syntax='"typing_extensions.ContextManager[T]"',
                 )
+                error_message += " (PEP 585 syntax)"
             else:
                 return
 
@@ -1051,15 +1062,15 @@ Y018 = 'Y018 {typevarlike_cls} "{typevar_name}" is not used'
 Y019 = 'Y019 Use "_typeshed.Self" instead of "{typevar_name}", e.g. "{new_syntax}"'
 Y020 = "Y020 Quoted annotations should never be used in stubs"
 Y021 = "Y021 Docstrings should not be included in stubs"
-Y022 = 'Y022 Use {good_cls_name} instead of "{bad_cls_alias}"'
-Y023 = 'Y023 Use {good_cls_name} instead of "{bad_cls_alias}"'
+Y022 = "Y022 Use {good_syntax} instead of {bad_syntax} (PEP 585 syntax)"
+Y023 = "Y023 Use {good_syntax} instead of {bad_syntax}"
 Y024 = 'Y024 Use "typing.NamedTuple" instead of "collections.namedtuple"'
 Y025 = (
     'Y025 Use "from collections.abc import Set as AbstractSet" '
     'to avoid confusion with "builtins.set"'
 )
 Y026 = "Y026 Use typing_extensions.TypeAlias for type aliases"
-Y027 = 'Y027 Use {good_cls_name} instead of "{bad_cls_alias}"'
+Y027 = "Y027 Use {good_syntax} instead of {bad_syntax} (PEP 585 syntax)"
 Y028 = "Y028 Use class-based syntax for NamedTuples"
 Y029 = "Y029 Defining __repr__ or __str__ in a stub is almost always redundant"
 Y030 = "Y030 Multiple Literal members in a union. {suggestion}"
