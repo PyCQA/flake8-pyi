@@ -77,7 +77,10 @@ _BAD_Y022_IMPORTS = {
     "typing.Tuple": ("tuple", "Foo, Bar"),
     "typing.Type": ("type", _TYPE_SLICE),
     # One typing alias for contextlib
-    "typing.AsyncContextManager": ("contextlib.AbstractAsyncContextManager", _CONTEXTLIB_SLICE),
+    "typing.AsyncContextManager": (
+        "contextlib.AbstractAsyncContextManager",
+        _CONTEXTLIB_SLICE,
+    ),
     # typing_extensions aliases for collections
     "typing_extensions.Counter": ("collections.Counter", _COUNTER_SLICE),
     "typing_extensions.Deque": ("collections.deque", _SEQUENCE_SLICE),
