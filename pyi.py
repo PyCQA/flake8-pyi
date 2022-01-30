@@ -96,24 +96,23 @@ _BAD_Y022_IMPORTS = {
 }
 
 # typing_extensions.ContextManager is omitted from the Y023 and Y027 collections - special-cased
-_BAD_Y023_IMPORTS = frozenset(
-    {
-        # collections.abc aliases
-        "Awaitable",
-        "Coroutine",
-        "AsyncIterable",
-        "AsyncIterator",
-        "AsyncGenerator",
-        # typing aliases
-        "Protocol",
-        "runtime_checkable",
-        "ClassVar",
-        "NewType",
-        "overload",
-        "Text",
-        "NoReturn",
-    }
-)
+# We use `None` to signify that the object shouldn't  be parameterised.
+_BAD_Y023_IMPORTS = {
+    # collections.abc aliases
+    "Awaitable": "T",
+    "Coroutine": "YieldType, SendType, ReturnType",
+    "AsyncIterable": "T",
+    "AsyncIterator": "T",
+    "AsyncGenerator": "YieldType, SendType",
+    # typing aliases
+    "Protocol": "T",
+    "runtime_checkable": None,
+    "ClassVar": "T",
+    "NewType": None,
+    "overload": None,
+    "Text": None,
+    "NoReturn": None,
+}
 
 _BAD_Y027_IMPORTS = {
     "typing.ContextManager": ("contextlib.AbstractContextManager", _CONTEXTLIB_SLICE),
@@ -400,9 +399,11 @@ class PyiVisitor(ast.NodeVisitor):
         # Y023 errors
         elif module_name == "typing_extensions":
             if object_name in _BAD_Y023_IMPORTS:
+                slice_contents = _BAD_Y023_IMPORTS[object_name]
+                params = "" if slice_contents is None else f"[{slice_contents}]"
                 error_message = Y023.format(
-                    good_syntax=f'"typing.{object_name}[T]"',
-                    bad_syntax=f'"typing_extensions.{object_name}[T]"',
+                    good_syntax=f'"typing.{object_name}{params}"',
+                    bad_syntax=f'"typing_extensions.{object_name}{params}"',
                 )
             elif object_name == "ContextManager":
                 suggested_syntax = (

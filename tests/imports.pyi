@@ -112,6 +112,9 @@ from typing_extensions import AsyncContextManager  # Y022 Use "contextlib.Abstra
 from typing_extensions import ClassVar  # Y023 Use "typing.ClassVar[T]" instead of "typing_extensions.ClassVar[T]"
 from typing_extensions import Awaitable  # Y023 Use "typing.Awaitable[T]" instead of "typing_extensions.Awaitable[T]"
 from typing_extensions import ContextManager  # Y023 Use "contextlib.AbstractContextManager[T]" (or "typing.ContextManager[T]" in Python 2-compatible code) instead of "typing_extensions.ContextManager[T]" (PEP 585 syntax)
+from typing_extensions import runtime_checkable  # Y023 Use "typing.runtime_checkable" instead of "typing_extensions.runtime_checkable"
+from typing_extensions import AsyncGenerator  # Y023 Use "typing.AsyncGenerator[YieldType, SendType]" instead of "typing_extensions.AsyncGenerator[YieldType, SendType]"
+from typing_extensions import Coroutine  # Y023 Use "typing.Coroutine[YieldType, SendType, ReturnType]" instead of "typing_extensions.Coroutine[YieldType, SendType, ReturnType]"
 
 # BAD IMPORTS (Y027 code)
 from typing import ContextManager  # Y027 Use "contextlib.AbstractContextManager[T]" instead of "typing.ContextManager[T]" (PEP 585 syntax)
