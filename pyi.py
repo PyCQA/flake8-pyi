@@ -56,6 +56,9 @@ class TypeVarInfo(NamedTuple):
 _MAPPING_SLICE = "KeyType, ValueType"
 _TYPE_SLICE = "MyClass"
 _COUNTER_SLICE = "KeyType"
+_CONTEXTLIB_SLICE = "T"
+_SET_SLICE = "T"
+_SEQUENCE_SLICE = "T"
 
 
 # ChainMap and AsyncContextManager do not exist in typing or typing_extensions in Python 2,
@@ -63,21 +66,21 @@ _COUNTER_SLICE = "KeyType"
 _BAD_Y022_IMPORTS = {
     # typing aliases for collections
     "typing.Counter": ("collections.Counter", _COUNTER_SLICE),
-    "typing.Deque": ("collections.deque", "T"),
+    "typing.Deque": ("collections.deque", _SEQUENCE_SLICE),
     "typing.DefaultDict": ("collections.defaultdict", _MAPPING_SLICE),
     "typing.ChainMap": ("collections.ChainMap", _MAPPING_SLICE),
     # typing aliases for builtins
     "typing.Dict": ("dict", _MAPPING_SLICE),
-    "typing.FrozenSet": ("frozenset", "T"),
-    "typing.List": ("list", "T"),
-    "typing.Set": ("set", "T"),
+    "typing.FrozenSet": ("frozenset", _SET_SLICE),
+    "typing.List": ("list", _SEQUENCE_SLICE),
+    "typing.Set": ("set", _SET_SLICE),
     "typing.Tuple": ("tuple", "Foo, Bar"),
     "typing.Type": ("type", _TYPE_SLICE),
     # One typing alias for contextlib
-    "typing.AsyncContextManager": ("contextlib.AbstractAsyncContextManager", "T"),
+    "typing.AsyncContextManager": ("contextlib.AbstractAsyncContextManager", _CONTEXTLIB_SLICE),
     # typing_extensions aliases for collections
     "typing_extensions.Counter": ("collections.Counter", _COUNTER_SLICE),
-    "typing_extensions.Deque": ("collections.deque", "T"),
+    "typing_extensions.Deque": ("collections.deque", _SEQUENCE_SLICE),
     "typing_extensions.DefaultDict": ("collections.defaultdict", _MAPPING_SLICE),
     "typing_extensions.ChainMap": ("collections.ChainMap", _MAPPING_SLICE),
     # One typing_extensions alias for a builtin
@@ -85,7 +88,7 @@ _BAD_Y022_IMPORTS = {
     # one typing_extensions alias for contextlib
     "typing_extensions.AsyncContextManager": (
         "contextlib.AbstractAsyncContextManager",
-        "T",
+        _CONTEXTLIB_SLICE,
     ),
 }
 
@@ -110,7 +113,7 @@ _BAD_Y023_IMPORTS = frozenset(
 )
 
 _BAD_Y027_IMPORTS = {
-    "typing.ContextManager": ("contextlib.AbstractContextManager", "T"),
+    "typing.ContextManager": ("contextlib.AbstractContextManager", _CONTEXTLIB_SLICE),
     "typing.OrderedDict": ("collections.OrderedDict", _MAPPING_SLICE),
     "typing_extensions.OrderedDict": ("collections.OrderedDict", _MAPPING_SLICE),
 }
