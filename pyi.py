@@ -105,7 +105,7 @@ _BAD_Y023_IMPORTS = {
     "AsyncIterator": "T",
     "AsyncGenerator": "YieldType, SendType",
     # typing aliases
-    "Protocol": "T",
+    "Protocol": None,
     "runtime_checkable": None,
     "ClassVar": "T",
     "NewType": None,
