@@ -9,6 +9,7 @@ Bugfixes:
 * fix bug where `foo = False` at the module level did not trigger a Y015 error.
 * fix bug where `TypeVar`s were erroneously flagged as unused if they were only used in
   a `typing.Union` subscript.
+* improve unclear error messages for Y022, Y023 and Y027 error codes.
 
 Features:
 * introduce Y032 (prefer `object` to `Any` for the second argument in `__eq__` and
