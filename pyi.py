@@ -866,7 +866,7 @@ class PyiVisitor(ast.NodeVisitor):
         cleaned_method = deepcopy(node)
         cleaned_method.decorator_list.clear()
         new_syntax = unparse(cleaned_method)
-        new_syntax = re.sub(fr"\b{typevar_name}\b", "Self", new_syntax)
+        new_syntax = re.sub(rf"\b{typevar_name}\b", "Self", new_syntax)
         new_syntax = re.sub(r"\s+", " ", new_syntax).strip()
 
         self.error(
