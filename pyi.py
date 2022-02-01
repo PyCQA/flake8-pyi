@@ -1008,13 +1008,13 @@ class PyiVisitor(ast.NodeVisitor):
         yield from self.errors
 
 
-_TYPE_COMMENT_REGEX = re.compile(r'# type: (?!ignore)([^#]+)( ?#.*?)?$')
+_TYPE_COMMENT_REGEX = re.compile(r"# type: (?!ignore)([^#]+)( ?#.*?)?$")
 
 
 def _check_for_type_comments(path: Path) -> Iterator[Error]:
     stublines = path.read_text().splitlines()
     for lineno, line in enumerate(stublines, start=1):
-        if line.startswith('#'):
+        if line.startswith("#"):
             continue
 
         match = _TYPE_COMMENT_REGEX.search(line)
@@ -1121,6 +1121,4 @@ Y031 = "Y031 Use class-based syntax for TypedDicts where possible"
 Y032 = (
     'Y032 Prefer "object" to "Any" for the second parameter in "{method_name}" methods'
 )
-Y033 = (
-    'Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")'
-)
+Y033 = 'Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")'
