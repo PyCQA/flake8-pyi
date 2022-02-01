@@ -64,6 +64,7 @@ currently emitted:
 | Y030 | Union expressions should never have more than one `Literal` member, as `Literal[1] \| Literal[2]` is semantically identical to `Literal[1, 2]`.
 | Y031 | `TypedDict`s should use class-based syntax instead of assignment-based syntax wherever possible. (In situations where this is not possible, such as if a field is a Python keyword or an invalid identifier, this error will not be raised.)
 | Y032 | The second argument of an `__eq__` or `__ne__` method should usually be annotated with `object` rather than `Any`.
+| Y033 | Do not use type comments (e.g. `x = ... # type: int`) in stubs, even if the stub supports Python 2. Always use annotations instead (e.g. `x: int`).
 
 Many error codes enforce modern conventions, and some cannot yet be used in
 all cases:

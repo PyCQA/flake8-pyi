@@ -14,6 +14,7 @@ Bugfixes:
 Features:
 * introduce Y032 (prefer `object` to `Any` for the second argument in `__eq__` and
   `__ne__` methods).
+* introduce Y033 (always use annotations in stubs, rather than type comments).
 
 ## 22.1.0
 
