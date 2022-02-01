@@ -20,7 +20,7 @@
 #       F401 module imported but unused
 #       F811 redefinition of unused name
 #
-# tests/type_comments.pyi adds the following ignore code for that specific file:
+# tests/type_comments.pyi adds the following ignore codes for that specific file:
 #       F723 syntax error in type comment
 #       E261 at least two spaces before inline comment
 #       E262 inline comment should start with '# '
