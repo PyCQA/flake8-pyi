@@ -1121,4 +1121,6 @@ Y031 = "Y031 Use class-based syntax for TypedDicts where possible"
 Y032 = (
     'Y032 Prefer "object" to "Any" for the second parameter in "{method_name}" methods'
 )
-Y033 = "Y033 Do not use type comments in stubs"
+Y033 = (
+    'Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")'
+)

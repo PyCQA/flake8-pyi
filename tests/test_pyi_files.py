@@ -2,6 +2,7 @@ import glob
 import os
 import re
 import subprocess
+from itertools import zip_longest
 
 import pytest
 
@@ -19,8 +20,12 @@ def test_pyi_file(path):
             flags.extend(line.split()[2:])
             continue
 
-        for match in re.finditer("# ([A-Z][0-9][0-9][0-9][^#]*)", line):
-            expected_output += f"{path}:{lineno}: {match.group(1).strip()}\n"
+        error_codes = list(re.finditer(r"# ([A-Z]\d\d\d )", line))
+
+        for match, next_match in zip_longest(error_codes, error_codes[1:]):
+            end_pos = len(line) if next_match is None else next_match.start()
+            message = line[match.end() : end_pos].strip()
+            expected_output += f"{path}:{lineno}: {match.group(1)}{message}\n"
 
     run_results = [
         # Passing a file on command line
