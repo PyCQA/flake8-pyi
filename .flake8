@@ -19,6 +19,9 @@
 # tests/imports.pyi adds the following ignore codes for that specific file:
 #       F401 module imported but unused
 #       F811 redefinition of unused name
+#
+# tests/type_comments.pyi adds the following ignore code for that specific file:
+#       F723 syntax error in type comment
 
 [flake8]
 max-line-length = 80
@@ -28,3 +31,4 @@ per-file-ignores =
   *.py: E203, E501, W503, W291, W293
   *.pyi: E301, E302, E305, E501, E701, E704, W503
   tests/imports.pyi: E301, E302, E305, E501, E701, E704, F401, F811, W503
+  tests/type_comments.pyi: E301, E302, E305, E501, E701, E704, F723, W503

@@ -2,8 +2,8 @@ from typing import Optional, TypeAlias, Union
 
 MaybeCStr: TypeAlias = Optional[CStr]
 CStr: TypeAlias = Union[C, str]
-__version__ = ...  # type: str
-__author__ = ...  # type: str
+__version__: str = ...
+__author__: str = ...
 
 def make_default_c() -> C: ...
 
