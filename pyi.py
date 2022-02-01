@@ -1008,6 +1008,26 @@ class PyiVisitor(ast.NodeVisitor):
         yield from self.errors
 
 
+_TYPE_COMMENT_REGEX = re.compile(r'# type: (?!ignore)([^#]+)( ?#.*?)?$')
+
+
+def _check_for_type_comments(path: Path) -> Iterator[Error]:
+    stublines = path.read_text().splitlines()
+    for lineno, line in enumerate(stublines, start=1):
+        match = _TYPE_COMMENT_REGEX.search(line)
+        if not match:
+            continue
+
+        type_comment = match.group(1).strip()
+
+        try:
+            ast.parse(type_comment)
+        except SyntaxError:
+            continue
+
+        yield Error(lineno, 0, Y033, PyiTreeChecker)
+
+
 @dataclass
 class PyiTreeChecker:
     name: ClassVar[str] = "flake8-pyi"
@@ -1021,6 +1041,7 @@ class PyiTreeChecker:
         assert self.tree is not None
         path = Path(self.filename)
         if path.suffix == ".pyi":
+            yield from _check_for_type_comments(path)
             visitor = PyiVisitor(filename=path)
             for error in visitor.run(LegacyNormalizer().visit(self.tree)):
                 yield error
@@ -1097,3 +1118,4 @@ Y031 = "Y031 Use class-based syntax for TypedDicts where possible"
 Y032 = (
     'Y032 Prefer "object" to "Any" for the second parameter in "{method_name}" methods'
 )
+Y033 = "Y033 Do not use type comments in stubs"
