@@ -1008,7 +1008,7 @@ class PyiVisitor(ast.NodeVisitor):
         yield from self.errors
 
 
-_TYPE_COMMENT_REGEX = re.compile(r'# type: (?!ignore)([^#]+)( ?#.*?)?$')
+_TYPE_COMMENT_REGEX = re.compile(r'#\s*type:\s*(?!\s?ignore)([^#]+)(\s*#.*?)?$')
 
 
 def _check_for_type_comments(path: Path) -> Iterator[Error]:

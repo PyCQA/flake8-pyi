@@ -22,6 +22,8 @@
 #
 # tests/type_comments.pyi adds the following ignore code for that specific file:
 #       F723 syntax error in type comment
+#       E261 at least two spaces before inline comment
+#       E262 inline comment should start with '# '
 
 [flake8]
 max-line-length = 80
@@ -31,4 +33,4 @@ per-file-ignores =
   *.py: E203, E501, W503, W291, W293
   *.pyi: E301, E302, E305, E501, E701, E704, W503
   tests/imports.pyi: E301, E302, E305, E501, E701, E704, F401, F811, W503
-  tests/type_comments.pyi: E301, E302, E305, E501, E701, E704, F723, W503
+  tests/type_comments.pyi: E261, E262, E301, E302, E305, E501, E701, E704, F723, W503
