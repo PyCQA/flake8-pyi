@@ -1014,10 +1014,12 @@ _TYPE_COMMENT_REGEX = re.compile(r"#\s*type:\s*(?!\s?ignore)([^#]+)(\s*#.*?)?$")
 def _check_for_type_comments(path: Path) -> Iterator[Error]:
     stublines = path.read_text().splitlines()
     for lineno, line in enumerate(stublines, start=1):
-        if line.startswith("#"):
+        cleaned_line = line.strip()
+
+        if cleaned_line.startswith("#"):
             continue
 
-        match = _TYPE_COMMENT_REGEX.search(line)
+        match = _TYPE_COMMENT_REGEX.search(cleaned_line)
         if not match:
             continue
 
