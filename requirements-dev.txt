@@ -2,3 +2,4 @@ black==22.1.0
 pytest==6.2.5
 mypy==0.931
 isort==5.10.1
+flake8-bugbear==22.1.11
