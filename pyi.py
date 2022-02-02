@@ -362,8 +362,8 @@ class NestingCounter:
 
 
 class PyiVisitor(ast.NodeVisitor):
-    def __init__(self, filename: Path = Path("none")) -> None:
-        self.filename = filename
+    def __init__(self, filename: Path | None = None) -> None:
+        self.filename = Path("(none)") if filename is None else filename
         self.errors: list[Error] = []
         # Mapping of all private TypeVars/ParamSpecs/TypeVarTuples to the nodes where they're defined
         self.typevarlike_defs: dict[TypeVarInfo, ast.Assign] = {}
