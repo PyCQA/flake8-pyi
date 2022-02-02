@@ -24,3 +24,7 @@ l: TypeAlias = None#type:ignore
 
 # Whole line commented out  # type: int
 m: TypeAlias = None  # type: can't parse me!
+
+class Bar:
+    n: TypeAlias = None  # type: can't parse me either!
+    # This whole line is commented out and indented # type: str
