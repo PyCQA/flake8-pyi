@@ -8,13 +8,13 @@ import typing_extensions
 from _typeshed import Self
 
 class Bad:
-    def __new__(cls, *args: Any, **kwargs: Any) -> Bad: ...  # Y034 Function "Bad.__new__" should return "_typeshed.Self"
+    def __new__(cls, *args: Any, **kwargs: Any) -> Bad: ...  # Y034 "__new__" methods usually return "self" at runtime. Consider using "_typeshed.Self" in "Bad.__new__", e.g. "def __new__(cls: type[Self], *args: Any, **kwargs: Any) -> Self: ..."
     def __repr__(self) -> str: ...  # Y029 Defining __repr__ or __str__ in a stub is almost always redundant
     def __str__(self) -> str: ...  # Y029 Defining __repr__ or __str__ in a stub is almost always redundant
     def __eq__(self, other: Any) -> bool: ...  # Y032 Prefer "object" to "Any" for the second parameter in "__eq__" methods
     def __ne__(self, other: typing.Any) -> typing.Any: ...  # Y032 Prefer "object" to "Any" for the second parameter in "__ne__" methods
-    def __enter__(self) -> Bad: ...  # Y034 Function "Bad.__enter__" should return "_typeshed.Self"
-    async def __aenter__(self) -> Bad: ...  # Y034 Function "Bad.__aenter__" should return "_typeshed.Self"
+    def __enter__(self) -> Bad: ...  # Y034 "__enter__" methods in classes like "Bad" usually return "self" at runtime. Consider using "_typeshed.Self" in "Bad.__enter__", e.g. "def __enter__(self: Self) -> Self: ..."
+    async def __aenter__(self) -> Bad: ...  # Y034 "__aenter__" methods in classes like "Bad" usually return "self" at runtime. Consider using "_typeshed.Self" in "Bad.__aenter__", e.g. "async def __aenter__(self: Self) -> Self: ..."
 
 class Good:
     def __new__(cls: type[Self], *args: Any, **kwargs: Any) -> Self: ...
@@ -46,16 +46,16 @@ class FineAndDandy:
     def __repr__(self, weird_extra_arg_with_default=...) -> str: ...
 
 class BadIterator1(Iterator[int]):
-    def __iter__(self) -> Iterator[int]: ...  # Y034 Function "BadIterator1.__iter__" should return "_typeshed.Self"
+    def __iter__(self) -> Iterator[int]: ...  # Y034 "__iter__" methods in classes like "BadIterator1" usually return "self" at runtime. Consider using "_typeshed.Self" in "BadIterator1.__iter__", e.g. "def __iter__(self: Self) -> Self: ..."
 
 class BadIterator2(typing.Iterator[int]):
-    def __iter__(self) -> Iterator[int]: ...  # Y034 Function "BadIterator2.__iter__" should return "_typeshed.Self"
+    def __iter__(self) -> Iterator[int]: ...  # Y034 "__iter__" methods in classes like "BadIterator2" usually return "self" at runtime. Consider using "_typeshed.Self" in "BadIterator2.__iter__", e.g. "def __iter__(self: Self) -> Self: ..."
 
 class BadIterator3(typing_extensions.Iterator[int]):
-    def __iter__(self) -> collections.abc.Iterator[int]: ...  # Y034 Function "BadIterator3.__iter__" should return "_typeshed.Self"
+    def __iter__(self) -> collections.abc.Iterator[int]: ...  # Y034 "__iter__" methods in classes like "BadIterator3" usually return "self" at runtime. Consider using "_typeshed.Self" in "BadIterator3.__iter__", e.g. "def __iter__(self: Self) -> Self: ..."
 
 class BadAsyncIterator(collections.abc.AsyncIterator[str]):
-    def __aiter__(self) -> typing.AsyncIterator[str]: ...  # Y034 Function "BadAsyncIterator.__aiter__" should return "_typeshed.Self"
+    def __aiter__(self) -> typing.AsyncIterator[str]: ...  # Y034 "__aiter__" methods in classes like "BadAsyncIterator" usually return "self" at runtime. Consider using "_typeshed.Self" in "BadAsyncIterator.__aiter__", e.g. "def __aiter__(self: Self) -> Self: ..."
 
 class GoodIterator(Iterator[str]):
     def __iter__(self: Self) -> Self: ...

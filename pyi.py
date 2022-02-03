@@ -346,14 +346,15 @@ _ITER_METHODS = frozenset({("Iterator", "__iter__"), ("AsyncIterator", "__aiter_
 
 
 def _has_bad_hardcoded_returns(
-    node: ast.FunctionDef, cls_name: str, cls_bases: Sequence[ast.expr]
+    function: ast.FunctionDef, cls_name: str, cls_bases: Sequence[ast.expr]
 ) -> bool:
-    method_name, returns = node.name, node.returns
+    """Return `True` if `function` should be rewritten using `_typeshed.Self`."""
+    method_name, returns = function.name, function.returns
 
     if _is_name(returns, cls_name):
         return method_name == "__enter__" or (
             method_name == "__new__"
-            and not any(_is_overload(deco) for deco in node.decorator_list)
+            and not any(_is_overload(deco) for deco in function.decorator_list)
         )
     else:
         return_obj_name = _get_collections_abc_obj_id(returns)
@@ -403,6 +404,11 @@ def _is_bad_TypedDict(node: ast.Call) -> bool:
         fieldname.isidentifier() and not iskeyword(fieldname)
         for fieldname in fieldnames
     )
+
+
+def non_kw_only_args_of(args: ast.arguments) -> list[ast.arg]:
+    pos_only_args: list[ast.arg] = getattr(args, "posonlyargs", [])
+    return pos_only_args + args.args
 
 
 @dataclass
@@ -898,27 +904,38 @@ class PyiVisitor(ast.NodeVisitor):
             ):
                 self.error(statement, Y013)
 
-    def _Y034_error(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
-        self.error(
-            node, Y034.format(cls_name=self.current_class_name, func_name=node.name)
-        )
+    def _Y034_error(self, node: ast.FunctionDef | ast.AsyncFunctionDef, cls_name: str) -> None:
+        method_name = node.name
+        copied_node = deepcopy(node)
+        copied_node.decorator_list.clear()
+        copied_node.returns = ast.Name(id="Self")
+        first_arg = non_kw_only_args_of(copied_node.args)[0]
+        if method_name == "__new__":
+            first_arg.annotation = ast.Subscript(value=ast.Name(id="type"), slice=ast.Name(id="Self"))
+            referrer = '"__new__" methods'
+        else:
+            first_arg.annotation = ast.Name(id="Self")
+            referrer = f'"{method_name}" methods in classes like "{cls_name}"'
+        method_name = f"{cls_name}.{method_name}"
+        new_syntax = re.sub(r"\s+", " ", unparse(copied_node)).strip()
+        error_message = Y034.format(methods=referrer, method_name=method_name, suggested_syntax=new_syntax)
+        self.error(node, error_message)
 
     def _visit_synchronous_method(self, node: ast.FunctionDef) -> None:
         method_name = node.name
         all_args = node.args
+        cls_name = self.current_class_name
 
         if _has_bad_hardcoded_returns(
-            node, cls_name=self.current_class_name, cls_bases=self.current_class_bases
+            node, cls_name=cls_name, cls_bases=self.current_class_bases
         ):
-            return self._Y034_error(node)
+            return self._Y034_error(node=node, cls_name=cls_name)
 
         if all_args.kwonlyargs:
             return
 
         # pos-only args don't exist on 3.7
-        pos_only_args: list[ast.arg] = getattr(all_args, "posonlyargs", [])
-        pos_or_kwd_args = all_args.args
-        non_kw_only_args = pos_only_args + pos_or_kwd_args
+        non_kw_only_args = non_kw_only_args_of(all_args)
 
         # Raise an error for defining __str__ or __repr__ on a class, but only if:
         # 1). The method is not decorated with @abstractmethod
@@ -941,12 +958,13 @@ class PyiVisitor(ast.NodeVisitor):
         self._visit_function(node)
 
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+        cls_name = self.current_class_name
         if (
             self.in_class.active
             and node.name == "__aenter__"
-            and _is_name(node.returns, self.current_class_name)
+            and _is_name(node.returns, cls_name)
         ):
-            self._Y034_error(node)
+            self._Y034_error(node=node, cls_name=cls_name)
         self._visit_function(node)
 
     def _Y019_error(
@@ -1213,4 +1231,4 @@ Y032 = (
     'Y032 Prefer "object" to "Any" for the second parameter in "{method_name}" methods'
 )
 Y033 = 'Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")'
-Y034 = 'Y034 Function "{cls_name}.{func_name}" should return "_typeshed.Self"'
+Y034 = 'Y034 {methods} usually return "self" at runtime. Consider using "_typeshed.Self" in "{method_name}", e.g. "{suggested_syntax}"'
