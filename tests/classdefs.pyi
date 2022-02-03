@@ -1,9 +1,10 @@
 import abc
 import collections.abc
 import typing
-from _typeshed import Self
 from abc import abstractmethod
 from typing import Any, AsyncIterator, Iterator
+
+from _typeshed import Self
 
 class Bad:
     def __new__(cls, *args: Any, **kwargs: Any) -> Bad: ...  # Y034 Function "Bad.__new__" should return "_typeshed.Self"
