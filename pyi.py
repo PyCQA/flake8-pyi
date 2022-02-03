@@ -904,21 +904,27 @@ class PyiVisitor(ast.NodeVisitor):
             ):
                 self.error(statement, Y013)
 
-    def _Y034_error(self, node: ast.FunctionDef | ast.AsyncFunctionDef, cls_name: str) -> None:
+    def _Y034_error(
+        self, node: ast.FunctionDef | ast.AsyncFunctionDef, cls_name: str
+    ) -> None:
         method_name = node.name
         copied_node = deepcopy(node)
         copied_node.decorator_list.clear()
         copied_node.returns = ast.Name(id="Self")
         first_arg = non_kw_only_args_of(copied_node.args)[0]
         if method_name == "__new__":
-            first_arg.annotation = ast.Subscript(value=ast.Name(id="type"), slice=ast.Name(id="Self"))
+            first_arg.annotation = ast.Subscript(
+                value=ast.Name(id="type"), slice=ast.Name(id="Self")
+            )
             referrer = '"__new__" methods'
         else:
             first_arg.annotation = ast.Name(id="Self")
             referrer = f'"{method_name}" methods in classes like "{cls_name}"'
         method_name = f"{cls_name}.{method_name}"
         new_syntax = re.sub(r"\s+", " ", unparse(copied_node)).strip()
-        error_message = Y034.format(methods=referrer, method_name=method_name, suggested_syntax=new_syntax)
+        error_message = Y034.format(
+            methods=referrer, method_name=method_name, suggested_syntax=new_syntax
+        )
         self.error(node, error_message)
 
     def _visit_synchronous_method(self, node: ast.FunctionDef) -> None:
