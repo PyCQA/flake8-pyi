@@ -369,6 +369,11 @@ def _unparse_assign_node(node: ast.Assign | ast.AnnAssign) -> str:
     return unparse(node).replace("\n", "")
 
 
+def _unparse_func_node(node: ast.FunctionDef | ast.AsyncFunctionDef) -> str:
+    """Unparse a function node, and reformat it to fit on one line."""
+    return re.sub(r"\s+", " ", unparse(node)).strip()
+
+
 def _is_list_of_str_nodes(seq: list[ast.expr | None]) -> TypeGuard[list[ast.Str]]:
     return all(isinstance(item, ast.Str) for item in seq)
 
@@ -921,10 +926,10 @@ class PyiVisitor(ast.NodeVisitor):
         else:
             first_arg.annotation = ast.Name(id="Self")
             referrer = f'"{method_name}" methods in classes like "{cls_name}"'
-        method_name = f"{cls_name}.{method_name}"
-        new_syntax = re.sub(r"\s+", " ", unparse(copied_node)).strip()
         error_message = Y034.format(
-            methods=referrer, method_name=method_name, suggested_syntax=new_syntax
+            methods=referrer,
+            method_name=f"{cls_name}.{method_name}",
+            suggested_syntax=_unparse_func_node(copied_node)
         )
         self.error(node, error_message)
 
@@ -979,10 +984,8 @@ class PyiVisitor(ast.NodeVisitor):
     ) -> None:
         cleaned_method = deepcopy(node)
         cleaned_method.decorator_list.clear()
-        new_syntax = unparse(cleaned_method)
+        new_syntax = _unparse_func_node(cleaned_method)
         new_syntax = re.sub(rf"\b{typevar_name}\b", "Self", new_syntax)
-        new_syntax = re.sub(r"\s+", " ", new_syntax).strip()
-
         self.error(
             # pass the node for the first argument to `self.error`,
             # rather than the function node,
