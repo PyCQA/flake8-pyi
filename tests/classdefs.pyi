@@ -1,10 +1,10 @@
 import abc
 import collections.abc
 import typing
-import typing_extensions
 from abc import abstractmethod
 from typing import Any, AsyncIterator, Iterator
 
+import typing_extensions
 from _typeshed import Self
 
 class Bad:
