@@ -297,6 +297,32 @@ _is_TypedDict = partial(_is_object, name="TypedDict", from_=_TYPING_MODULES)
 _is_Literal = partial(_is_object, name="Literal", from_=_TYPING_MODULES)
 _is_abstractmethod = partial(_is_object, name="abstractmethod", from_={"abc"})
 _is_Any = partial(_is_object, name="Any", from_={"typing"})
+_is_overload = partial(_is_object, name="overload", from_={"typing"})
+
+
+def _get_collections_abc_obj_id(node: ast.expr | None) -> str | None:
+    """
+    If the node represents a subscripted object from collections.abc or typing,
+    return the name of the object.
+    Else, return None.
+    """
+    if not isinstance(node, ast.Subscript):
+        return None
+    subscripted_obj = node.value
+    if isinstance(subscripted_obj, ast.Name):
+        return subscripted_obj.id
+    if not isinstance(subscripted_obj, ast.Attribute):
+        return None
+    obj_value, obj_attr = subscripted_obj.value, subscripted_obj.attr
+    if isinstance(obj_value, ast.Name) and obj_value.id in _TYPING_MODULES:
+        return obj_attr
+    if (
+        isinstance(obj_value, ast.Attribute)
+        and _is_name(obj_value.value, "collections")
+        and obj_value.attr == "abc"
+    ):
+        return obj_attr
+    return None
 
 
 def _unparse_assign_node(node: ast.Assign | ast.AnnAssign) -> str:
@@ -372,6 +398,9 @@ class PyiVisitor(ast.NodeVisitor):
         self.string_literals_allowed = NestingCounter()
         self.in_function = NestingCounter()
         self.in_class = NestingCounter()
+        # These two are only relevant for visiting classes
+        self.current_class_name = ""
+        self.current_class_bases: tuple[ast.expr, ...] = ()
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(filename={self.filename!r})"
@@ -801,8 +830,14 @@ class PyiVisitor(ast.NodeVisitor):
             self.error(node, Y007)
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        old_cls_name = self.current_class_name
+        old_cls_bases = self.current_class_bases
+        self.current_class_name = node.name
+        self.current_class_bases = tuple(node.bases)
         with self.in_class.enabled():
             self.generic_visit(node)
+        self.current_class_name = old_cls_name
+        self.current_class_bases = old_cls_bases
 
         # empty class body should contain "..." not "pass"
         if len(node.body) == 1:
@@ -825,9 +860,48 @@ class PyiVisitor(ast.NodeVisitor):
             ):
                 self.error(statement, Y013)
 
-    def _visit_method(self, node: ast.FunctionDef) -> None:
+    def _Y034_error(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
+        self.error(
+            node, Y034.format(cls_name=self.current_class_name, func_name=node.name)
+        )
+
+    def _has_bad_hardcoded_returns(self, node: ast.FunctionDef) -> bool:
+        method_name = node.name
+        returns = node.returns
+        cls_name = self.current_class_name
+
+        if _is_name(returns, cls_name):
+            if method_name == "__enter__":
+                self._Y034_error(node)
+                return True
+            elif method_name == "__new__" and not any(
+                _is_overload(deco) for deco in node.decorator_list
+            ):
+                self._Y034_error(node)
+                return True
+            else:
+                return False
+        return_obj_name = _get_collections_abc_obj_id(node.returns)
+        if return_obj_name == "Iterator" and method_name == "__iter__":
+            base_to_look_for = "Iterator"
+        elif return_obj_name == "AsyncIterator" and method_name == "__aiter__":
+            base_to_look_for = "AsyncIterator"
+        else:
+            return False
+        if any(
+            _get_collections_abc_obj_id(base) == base_to_look_for
+            for base in self.current_class_bases
+        ):
+            self._Y034_error(node)
+            return True
+        return False
+
+    def _visit_synchronous_method(self, node: ast.FunctionDef) -> None:
         method_name = node.name
         all_args = node.args
+
+        if self._has_bad_hardcoded_returns(node):
+            return
 
         if all_args.kwonlyargs:
             return
@@ -854,10 +928,16 @@ class PyiVisitor(ast.NodeVisitor):
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         if self.in_class.active:
-            self._visit_method(node)
+            self._visit_synchronous_method(node)
         self._visit_function(node)
 
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+        if (
+            self.in_class.active
+            and node.name == "__aenter__"
+            and _is_name(node.returns, self.current_class_name)
+        ):
+            self._Y034_error(node)
         self._visit_function(node)
 
     def _Y019_error(
@@ -1124,3 +1204,4 @@ Y032 = (
     'Y032 Prefer "object" to "Any" for the second parameter in "{method_name}" methods'
 )
 Y033 = 'Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")'
+Y034 = 'Y034 Function "{cls_name}.{func_name}" should return "_typeshed.Self"'

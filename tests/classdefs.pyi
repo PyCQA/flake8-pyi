@@ -1,21 +1,29 @@
 import abc
+import collections.abc
 import typing
+from _typeshed import Self
 from abc import abstractmethod
-from typing import Any
+from typing import Any, AsyncIterator, Iterator
 
 class Bad:
+    def __new__(cls, *args: Any, **kwargs: Any) -> Bad: ...  # Y034 Function "Bad.__new__" should return "_typeshed.Self"
     def __repr__(self) -> str: ...  # Y029 Defining __repr__ or __str__ in a stub is almost always redundant
     def __str__(self) -> str: ...  # Y029 Defining __repr__ or __str__ in a stub is almost always redundant
     def __eq__(self, other: Any) -> bool: ...  # Y032 Prefer "object" to "Any" for the second parameter in "__eq__" methods
     def __ne__(self, other: typing.Any) -> typing.Any: ...  # Y032 Prefer "object" to "Any" for the second parameter in "__ne__" methods
+    def __enter__(self) -> Bad: ...  # Y034 Function "Bad.__enter__" should return "_typeshed.Self"
+    async def __aenter__(self) -> Bad: ...  # Y034 Function "Bad.__aenter__" should return "_typeshed.Self"
 
 class Good:
+    def __new__(cls: type[Self], *args: Any, **kwargs: Any) -> Self: ...
     @abstractmethod
     def __str__(self) -> str: ...
     @abc.abstractmethod
     def __repr__(self) -> str: ...
     def __eq__(self, other: object) -> bool: ...
     def __ne__(self, obj: object) -> int: ...
+    def __enter__(self: Self) -> Self: ...
+    async def __aenter__(self: Self) -> Self: ...
 
 class Fine:
     @abc.abstractmethod
@@ -32,6 +40,24 @@ class AlsoGood(str):
 class FineAndDandy:
     def __str__(self, weird_extra_arg) -> str: ...
     def __repr__(self, weird_extra_arg_with_default=...) -> str: ...
+
+class BadIterator1(Iterator[int]):
+    def __iter__(self) -> Iterator[int]: ...  # Y034 Function "BadIterator1.__iter__" should return "_typeshed.Self"
+
+class BadIterator2(typing.Iterator[int]):
+    def __iter__(self) -> Iterator[int]: ...  # Y034 Function "BadIterator2.__iter__" should return "_typeshed.Self"
+
+class BadIterator3(typing.Iterator[int]):
+    def __iter__(self) -> collections.abc.Iterator[int]: ...  # Y034 Function "BadIterator3.__iter__" should return "_typeshed.Self"
+
+class BadAsyncIterator(collections.abc.AsyncIterator[str]):
+    def __aiter__(self) -> typing.AsyncIterator[str]: ...  # Y034 Function "BadAsyncIterator.__aiter__" should return "_typeshed.Self"
+
+class GoodIterator(Iterator[str]):
+    def __iter__(self: Self) -> Self: ...
+
+class GoodAsyncIterator(AsyncIterator[int]):
+    def __aiter__(self: Self) -> Self: ...
 
 def __repr__(self) -> str: ...
 def __str__(self) -> str: ...
