@@ -2,7 +2,7 @@ import abc
 import collections.abc
 import typing
 from abc import abstractmethod
-from typing import Any, AsyncIterator, Iterator
+from typing import Any, AsyncIterator, Iterator, overload
 
 import typing_extensions
 from _typeshed import Self
@@ -28,6 +28,10 @@ class Good:
     async def __aenter__(self: Self) -> Self: ...
 
 class Fine:
+    @overload
+    def __new__(cls, foo: int) -> FineSubclass: ...
+    @overload
+    def __new__(cls, *args: Any, **kwargs: Any) -> Fine: ...
     @abc.abstractmethod
     def __str__(self) -> str: ...
     @abc.abstractmethod
@@ -36,6 +40,8 @@ class Fine:
     def __ne__(self, *, kw_only_other: Any) -> bool: ...
     def __enter__(self) -> None: ...
     def __aenter__(self) -> bool: ...
+
+class FineSubclass(Fine): ...
 
 class AlsoGood(str):
     def __str__(self) -> AlsoGood: ...
@@ -56,6 +62,14 @@ class BadIterator3(typing_extensions.Iterator[int]):
 
 class BadAsyncIterator(collections.abc.AsyncIterator[str]):
     def __aiter__(self) -> typing.AsyncIterator[str]: ...  # Y034 "__aiter__" methods in classes like "BadAsyncIterator" usually return "self" at runtime. Consider using "_typeshed.Self" in "BadAsyncIterator.__aiter__", e.g. "def __aiter__(self: Self) -> Self: ..."
+
+class Abstract(Iterator[str]):
+    @abstractmethod
+    def __iter__(self) -> Iterator[str]: ...
+    @abstractmethod
+    def __enter__(self) -> Abstract: ...
+    @abstractmethod
+    async def __aenter__(self) -> Abstract: ...
 
 class GoodIterator(Iterator[str]):
     def __iter__(self: Self) -> Self: ...

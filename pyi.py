@@ -349,13 +349,17 @@ def _has_bad_hardcoded_returns(
     function: ast.FunctionDef, cls_name: str, cls_bases: Sequence[ast.expr]
 ) -> bool:
     """Return `True` if `function` should be rewritten using `_typeshed.Self`."""
+    # Much too complex for our purposes to worry about overloaded functions or abstractmethods
+    if any(
+        _is_overload(deco) or _is_abstractmethod(deco)
+        for deco in function.decorator_list
+    ):
+        return False
+
     method_name, returns = function.name, function.returns
 
     if _is_name(returns, cls_name):
-        return method_name == "__enter__" or (
-            method_name == "__new__"
-            and not any(_is_overload(deco) for deco in function.decorator_list)
-        )
+        return method_name in {"__enter__", "__new__"}
     else:
         return_obj_name = _get_collections_abc_obj_id(returns)
         return (return_obj_name, method_name) in _ITER_METHODS and any(
@@ -973,6 +977,10 @@ class PyiVisitor(ast.NodeVisitor):
         cls_name = self.current_class_name
         if (
             self.in_class.active
+            and not any(
+                _is_overload(deco) or _is_abstractmethod(deco)
+                for deco in node.decorator_list
+            )
             and node.name == "__aenter__"
             and _is_name(node.returns, cls_name)
         ):
