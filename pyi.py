@@ -929,7 +929,7 @@ class PyiVisitor(ast.NodeVisitor):
         error_message = Y034.format(
             methods=referrer,
             method_name=f"{cls_name}.{method_name}",
-            suggested_syntax=_unparse_func_node(copied_node)
+            suggested_syntax=_unparse_func_node(copied_node),
         )
         self.error(node, error_message)
 
