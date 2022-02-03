@@ -342,6 +342,27 @@ def _get_collections_abc_obj_id(node: ast.expr | None) -> str | None:
     return None
 
 
+_ITER_METHODS = frozenset({("Iterator", "__iter__"), ("AsyncIterator", "__aiter__")})
+
+
+def _has_bad_hardcoded_returns(
+    node: ast.FunctionDef, cls_name: str, cls_bases: Sequence[ast.expr]
+) -> bool:
+    method_name, returns = node.name, node.returns
+
+    if _is_name(returns, cls_name):
+        return method_name == "__enter__" or (
+            method_name == "__new__"
+            and not any(_is_overload(deco) for deco in node.decorator_list)
+        )
+    else:
+        return_obj_name = _get_collections_abc_obj_id(returns)
+        return (return_obj_name, method_name) in _ITER_METHODS and any(
+            _get_collections_abc_obj_id(base_node) == return_obj_name
+            for base_node in cls_bases
+        )
+
+
 def _unparse_assign_node(node: ast.Assign | ast.AnnAssign) -> str:
     """Unparse an Assign node, and remove any newlines in it"""
     return unparse(node).replace("\n", "")
@@ -882,42 +903,14 @@ class PyiVisitor(ast.NodeVisitor):
             node, Y034.format(cls_name=self.current_class_name, func_name=node.name)
         )
 
-    def _has_bad_hardcoded_returns(self, node: ast.FunctionDef) -> bool:
-        method_name = node.name
-        returns = node.returns
-        cls_name = self.current_class_name
-
-        if _is_name(returns, cls_name):
-            if method_name == "__enter__":
-                self._Y034_error(node)
-                return True
-            elif method_name == "__new__" and not any(
-                _is_overload(deco) for deco in node.decorator_list
-            ):
-                self._Y034_error(node)
-                return True
-            else:
-                return False
-        return_obj_name = _get_collections_abc_obj_id(node.returns)
-        if (return_obj_name, method_name) not in {
-            ("Iterator", "__iter__"),
-            ("AsyncIterator", "__aiter__"),
-        }:
-            return False
-        if any(
-            _get_collections_abc_obj_id(base) == return_obj_name
-            for base in self.current_class_bases
-        ):
-            self._Y034_error(node)
-            return True
-        return False
-
     def _visit_synchronous_method(self, node: ast.FunctionDef) -> None:
         method_name = node.name
         all_args = node.args
 
-        if self._has_bad_hardcoded_returns(node):
-            return
+        if _has_bad_hardcoded_returns(
+            node, cls_name=self.current_class_name, cls_bases=self.current_class_bases
+        ):
+            return self._Y034_error(node)
 
         if all_args.kwonlyargs:
             return
