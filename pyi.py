@@ -305,6 +305,23 @@ def _get_collections_abc_obj_id(node: ast.expr | None) -> str | None:
     If the node represents a subscripted object from collections.abc or typing,
     return the name of the object.
     Else, return None.
+
+    >>> import ast
+    >>> node1 = ast.parse('AsyncIterator[str]').body[0].value
+    >>> node2 = ast.parse('typing.AsyncIterator[str]').body[0].value
+    >>> node3 = ast.parse('typing_extensions.AsyncIterator[str]').body[0].value
+    >>> node4 = ast.parse('collections.abc.AsyncIterator[str]').body[0].value
+    >>> node5 = ast.parse('collections.OrderedDict[str, int]').body[0].value
+    >>> _get_collections_abc_obj_id(node1)
+    'AsyncIterator'
+    >>> _get_collections_abc_obj_id(node2)
+    'AsyncIterator'
+    >>> _get_collections_abc_obj_id(node3)
+    'AsyncIterator'
+    >>> _get_collections_abc_obj_id(node4)
+    'AsyncIterator'
+    >>> _get_collections_abc_obj_id(node5) is None
+    True
     """
     if not isinstance(node, ast.Subscript):
         return None
@@ -882,14 +899,13 @@ class PyiVisitor(ast.NodeVisitor):
             else:
                 return False
         return_obj_name = _get_collections_abc_obj_id(node.returns)
-        if return_obj_name == "Iterator" and method_name == "__iter__":
-            base_to_look_for = "Iterator"
-        elif return_obj_name == "AsyncIterator" and method_name == "__aiter__":
-            base_to_look_for = "AsyncIterator"
-        else:
+        if (return_obj_name, method_name) not in {
+            ("Iterator", "__iter__"),
+            ("AsyncIterator", "__aiter__"),
+        }:
             return False
         if any(
-            _get_collections_abc_obj_id(base) == base_to_look_for
+            _get_collections_abc_obj_id(base) == return_obj_name
             for base in self.current_class_bases
         ):
             self._Y034_error(node)
