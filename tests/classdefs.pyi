@@ -1,6 +1,7 @@
 import abc
 import collections.abc
 import typing
+import typing_extensions
 from abc import abstractmethod
 from typing import Any, AsyncIterator, Iterator
 
@@ -33,6 +34,8 @@ class Fine:
     def __repr__(self) -> str: ...
     def __eq__(self, other: Any, strange_extra_arg: list[str]) -> Any: ...
     def __ne__(self, *, kw_only_other: Any) -> bool: ...
+    def __enter__(self) -> None: ...
+    def __aenter__(self) -> bool: ...
 
 class AlsoGood(str):
     def __str__(self) -> AlsoGood: ...
@@ -48,7 +51,7 @@ class BadIterator1(Iterator[int]):
 class BadIterator2(typing.Iterator[int]):
     def __iter__(self) -> Iterator[int]: ...  # Y034 Function "BadIterator2.__iter__" should return "_typeshed.Self"
 
-class BadIterator3(typing.Iterator[int]):
+class BadIterator3(typing_extensions.Iterator[int]):
     def __iter__(self) -> collections.abc.Iterator[int]: ...  # Y034 Function "BadIterator3.__iter__" should return "_typeshed.Self"
 
 class BadAsyncIterator(collections.abc.AsyncIterator[str]):
@@ -59,6 +62,9 @@ class GoodIterator(Iterator[str]):
 
 class GoodAsyncIterator(AsyncIterator[int]):
     def __aiter__(self: Self) -> Self: ...
+
+class DoesNotInheritFromIterator:
+    def __iter__(self) -> DoesNotInheritFromIterator: ...
 
 def __repr__(self) -> str: ...
 def __str__(self) -> str: ...
