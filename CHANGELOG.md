@@ -15,6 +15,8 @@ Features:
 * introduce Y032 (prefer `object` to `Any` for the second argument in `__eq__` and
   `__ne__` methods).
 * introduce Y033 (always use annotations in stubs, rather than type comments).
+* introduce Y034 (detect common errors where return-types are hardcoded, but they
+  should use `TypeVar`s instead).
 
 ## 22.1.0
 

@@ -407,6 +407,7 @@ def _is_bad_TypedDict(node: ast.Call) -> bool:
 
 
 def non_kw_only_args_of(args: ast.arguments) -> list[ast.arg]:
+    """Return a list containing the pos-only args and pos-or-kwd args of `args`"""
     pos_only_args: list[ast.arg] = getattr(args, "posonlyargs", [])
     return pos_only_args + args.args
 
