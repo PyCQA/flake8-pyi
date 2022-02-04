@@ -298,6 +298,7 @@ _is_Literal = partial(_is_object, name="Literal", from_=_TYPING_MODULES)
 _is_abstractmethod = partial(_is_object, name="abstractmethod", from_={"abc"})
 _is_Any = partial(_is_object, name="Any", from_={"typing"})
 _is_overload = partial(_is_object, name="overload", from_={"typing"})
+_is_final = partial(_is_object, name="final", from_=_TYPING_MODULES)
 
 
 def _get_collections_abc_obj_id(node: ast.expr | None) -> str | None:
@@ -346,7 +347,7 @@ _ITER_METHODS = frozenset({("Iterator", "__iter__"), ("AsyncIterator", "__aiter_
 
 
 def _has_bad_hardcoded_returns(
-    function: ast.FunctionDef, cls_name: str, cls_bases: Sequence[ast.expr]
+    function: ast.FunctionDef, classdef: ast.ClassDef
 ) -> bool:
     """Return `True` if `function` should be rewritten using `_typeshed.Self`."""
     # Much too complex for our purposes to worry about overloaded functions or abstractmethods
@@ -361,13 +362,16 @@ def _has_bad_hardcoded_returns(
 
     method_name, returns = function.name, function.returns
 
-    if _is_name(returns, cls_name):
-        return method_name in {"__enter__", "__new__"}
+    if _is_name(returns, classdef.name):
+        return (
+            method_name == "__enter__"
+            or (method_name == "__new__" and not any(_is_final(deco) for deco in classdef.decorator_list))
+        )
     else:
         return_obj_name = _get_collections_abc_obj_id(returns)
         return (return_obj_name, method_name) in _ITER_METHODS and any(
             _get_collections_abc_obj_id(base_node) == return_obj_name
-            for base_node in cls_bases
+            for base_node in classdef.bases
         )
 
 
@@ -455,9 +459,8 @@ class PyiVisitor(ast.NodeVisitor):
         self.string_literals_allowed = NestingCounter()
         self.in_function = NestingCounter()
         self.in_class = NestingCounter()
-        # These two are only relevant for visiting classes
-        self.current_class_name = ""
-        self.current_class_bases: tuple[ast.expr, ...] = ()
+        # This is only relevant for visiting classes
+        self.current_class_node: ast.ClassDef | None = None
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(filename={self.filename!r})"
@@ -887,14 +890,11 @@ class PyiVisitor(ast.NodeVisitor):
             self.error(node, Y007)
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
-        old_cls_name = self.current_class_name
-        old_cls_bases = self.current_class_bases
-        self.current_class_name = node.name
-        self.current_class_bases = tuple(node.bases)
+        old_cls_node = self.current_class_node
+        self.current_class_node = node
         with self.in_class.enabled():
             self.generic_visit(node)
-        self.current_class_name = old_cls_name
-        self.current_class_bases = old_cls_bases
+        self.current_class_node = old_cls_node
 
         # empty class body should contain "..." not "pass"
         if len(node.body) == 1:
@@ -943,12 +943,11 @@ class PyiVisitor(ast.NodeVisitor):
     def _visit_synchronous_method(self, node: ast.FunctionDef) -> None:
         method_name = node.name
         all_args = node.args
-        cls_name = self.current_class_name
+        classdef = self.current_class_node
+        assert classdef is not None
 
-        if _has_bad_hardcoded_returns(
-            node, cls_name=cls_name, cls_bases=self.current_class_bases
-        ):
-            return self._Y034_error(node=node, cls_name=cls_name)
+        if _has_bad_hardcoded_returns(node, classdef=classdef):
+            return self._Y034_error(node=node, cls_name=classdef.name)
 
         if all_args.kwonlyargs:
             return
@@ -977,18 +976,19 @@ class PyiVisitor(ast.NodeVisitor):
         self._visit_function(node)
 
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
-        cls_name = self.current_class_name
-        if (
-            self.in_class.active
-            and not any(
-                _is_overload(deco) or _is_abstractmethod(deco)
-                for deco in node.decorator_list
-            )
-            and node.name == "__aenter__"
-            and _is_name(node.returns, cls_name)
-            and non_kw_only_args_of(node.args)  # weird, but theoretically possible
-        ):
-            self._Y034_error(node=node, cls_name=cls_name)
+        if self.in_class.active:
+            classdef = self.current_class_node
+            assert classdef is not None
+            if (
+                not any(
+                    _is_overload(deco) or _is_abstractmethod(deco)
+                    for deco in node.decorator_list
+                )
+                and node.name == "__aenter__"
+                and _is_name(node.returns, cls_name)
+                and non_kw_only_args_of(node.args)  # weird, but theoretically possible
+            ):
+                self._Y034_error(node=node, cls_name=classdef.name)
         self._visit_function(node)
 
     def _Y019_error(
