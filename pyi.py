@@ -355,6 +355,9 @@ def _has_bad_hardcoded_returns(
         for deco in function.decorator_list
     ):
         return False
+    
+    if not non_kw_only_args_of(function.args):  # weird, but theoretically possible
+        return False
 
     method_name, returns = function.name, function.returns
 
@@ -983,6 +986,7 @@ class PyiVisitor(ast.NodeVisitor):
             )
             and node.name == "__aenter__"
             and _is_name(node.returns, cls_name)
+            and non_kw_only_args_of(node.args)  # weird, but theoretically possible
         ):
             self._Y034_error(node=node, cls_name=cls_name)
         self._visit_function(node)
