@@ -301,6 +301,10 @@ _is_overload = partial(_is_object, name="overload", from_={"typing"})
 _is_final = partial(_is_object, name="final", from_=_TYPING_MODULES)
 
 
+def _is_decorated_with_final(node: ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef) -> bool:
+    return any(_is_final(decorator) for decorator in node.decorator_list)
+
+
 def _get_collections_abc_obj_id(node: ast.expr | None) -> str | None:
     """
     If the node represents a subscripted object from collections.abc or typing,
@@ -360,9 +364,7 @@ def _has_bad_hardcoded_returns(method: ast.FunctionDef, classdef: ast.ClassDef) 
     method_name, returns = method.name, method.returns
 
     if _is_name(returns, classdef.name):
-        return method_name in {"__enter__", "__new__"} and not any(
-            _is_final(deco) for deco in classdef.decorator_list
-        )
+        return method_name in {"__enter__", "__new__"} and not _is_decorated_with_final(classdef)
     else:
         return_obj_name = _get_collections_abc_obj_id(returns)
         return (return_obj_name, method_name) in _ITER_METHODS and any(
@@ -984,7 +986,7 @@ class PyiVisitor(ast.NodeVisitor):
                 and _is_name(node.returns, classdef.name)
                 # weird, but theoretically possible for there to be 0 non-kw-only args
                 and _non_kw_only_args_of(node.args)
-                and not any(_is_final(deco) for deco in classdef.decorator_list)
+                and not _is_decorated_with_final(classdef)
             ):
                 self._Y034_error(node=node, cls_name=classdef.name)
         self._visit_function(node)
