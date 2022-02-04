@@ -346,21 +346,18 @@ def _get_collections_abc_obj_id(node: ast.expr | None) -> str | None:
 _ITER_METHODS = frozenset({("Iterator", "__iter__"), ("AsyncIterator", "__aiter__")})
 
 
-def _has_bad_hardcoded_returns(
-    function: ast.FunctionDef, classdef: ast.ClassDef
-) -> bool:
+def _has_bad_hardcoded_returns(method: ast.FunctionDef, classdef: ast.ClassDef) -> bool:
     """Return `True` if `function` should be rewritten using `_typeshed.Self`."""
     # Much too complex for our purposes to worry about overloaded functions or abstractmethods
     if any(
-        _is_overload(deco) or _is_abstractmethod(deco)
-        for deco in function.decorator_list
+        _is_overload(deco) or _is_abstractmethod(deco) for deco in method.decorator_list
     ):
         return False
 
-    if not non_kw_only_args_of(function.args):  # weird, but theoretically possible
+    if not non_kw_only_args_of(method.args):  # weird, but theoretically possible
         return False
 
-    method_name, returns = function.name, function.returns
+    method_name, returns = method.name, method.returns
 
     if _is_name(returns, classdef.name):
         return method_name in {"__enter__", "__new__"} and not any(
@@ -985,9 +982,8 @@ class PyiVisitor(ast.NodeVisitor):
                 )
                 and node.name == "__aenter__"
                 and _is_name(node.returns, classdef.name)
-                and non_kw_only_args_of(
-                    node.args
-                )  # weird, but theoretically possible for this to be an empty list
+                # weird, but theoretically possible for there to be 0 non-kw-only args
+                and non_kw_only_args_of(node.args)
                 and not any(_is_final(deco) for deco in classdef.decorator_list)
             ):
                 self._Y034_error(node=node, cls_name=classdef.name)
