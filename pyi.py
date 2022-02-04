@@ -887,11 +887,11 @@ class PyiVisitor(ast.NodeVisitor):
             self.error(node, Y007)
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
-        old_cls_node = self.current_class_node
+        old_class_node = self.current_class_node
         self.current_class_node = node
         with self.in_class.enabled():
             self.generic_visit(node)
-        self.current_class_node = old_cls_node
+        self.current_class_node = old_class_node
 
         # empty class body should contain "..." not "pass"
         if len(node.body) == 1:
