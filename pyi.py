@@ -985,7 +985,7 @@ class PyiVisitor(ast.NodeVisitor):
                     for deco in node.decorator_list
                 )
                 and node.name == "__aenter__"
-                and _is_name(node.returns, cls_name)
+                and _is_name(node.returns, classdef.name)
                 and non_kw_only_args_of(node.args)  # weird, but theoretically possible
             ):
                 self._Y034_error(node=node, cls_name=classdef.name)
