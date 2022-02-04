@@ -5,8 +5,8 @@ from abc import abstractmethod
 from typing import Any, AsyncIterator, Iterator, overload
 
 import typing_extensions
-from typing_extensions import final
 from _typeshed import Self
+from typing_extensions import final
 
 class Bad:
     def __new__(cls, *args: Any, **kwargs: Any) -> Bad: ...  # Y034 "__new__" methods usually return "self" at runtime. Consider using "_typeshed.Self" in "Bad.__new__", e.g. "def __new__(cls: type[Self], *args: Any, **kwargs: Any) -> Self: ..."
