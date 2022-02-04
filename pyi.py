@@ -420,6 +420,7 @@ def _is_bad_TypedDict(node: ast.Call) -> bool:
 
 def non_kw_only_args_of(args: ast.arguments) -> list[ast.arg]:
     """Return a list containing the pos-only args and pos-or-kwd args of `args`"""
+    # pos-only args don't exist on 3.7
     pos_only_args: list[ast.arg] = getattr(args, "posonlyargs", [])
     return pos_only_args + args.args
 
@@ -948,7 +949,6 @@ class PyiVisitor(ast.NodeVisitor):
         if all_args.kwonlyargs:
             return
 
-        # pos-only args don't exist on 3.7
         non_kw_only_args = non_kw_only_args_of(all_args)
 
         # Raise an error for defining __str__ or __repr__ on a class, but only if:
