@@ -363,7 +363,9 @@ def _has_bad_hardcoded_returns(
     method_name, returns = function.name, function.returns
 
     if _is_name(returns, classdef.name):
-        return method_name in {"__enter__", "__new__"} and not any(_is_final(deco) for deco in classdef.decorator_list)
+        return method_name in {"__enter__", "__new__"} and not any(
+            _is_final(deco) for deco in classdef.decorator_list
+        )
     else:
         return_obj_name = _get_collections_abc_obj_id(returns)
         return (return_obj_name, method_name) in _ITER_METHODS and any(
