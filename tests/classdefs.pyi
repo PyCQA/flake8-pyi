@@ -5,6 +5,7 @@ from abc import abstractmethod
 from typing import Any, AsyncIterator, Iterator, overload
 
 import typing_extensions
+from typing_extensions import final
 from _typeshed import Self
 
 class Bad:
@@ -50,6 +51,17 @@ class AlsoGood(str):
 class FineAndDandy:
     def __str__(self, weird_extra_arg) -> str: ...
     def __repr__(self, weird_extra_arg_with_default=...) -> str: ...
+
+@final
+class WillNotBeSubclassed:
+    def __new__(cls, *args: Any, **kwargs: Any) -> WillNotBeSubclassed: ...
+    def __enter__(self) -> WillNotBeSubclassed: ...
+    async def __aenter__(self) -> WillNotBeSubclassed: ...
+
+class InvalidButPluginDoesNotCrash:
+    def __new__() -> InvalidButPluginDoesNotCrash: ...  # Y034 "__new__" methods usually return "self" at runtime. Consider using "_typeshed.Self" in "InvalidButPluginDoesNotCrash.__new__".
+    def __enter__() -> InvalidButPluginDoesNotCrash: ...  # Y034 "__enter__" methods in classes like "InvalidButPluginDoesNotCrash" usually return "self" at runtime. Consider using "_typeshed.Self" in "InvalidButPluginDoesNotCrash.__enter__".
+    async def __aenter__() -> InvalidButPluginDoesNotCrash: ...  # Y034 "__aenter__" methods in classes like "InvalidButPluginDoesNotCrash" usually return "self" at runtime. Consider using "_typeshed.Self" in "InvalidButPluginDoesNotCrash.__aenter__".
 
 class BadIterator1(Iterator[int]):
     def __iter__(self) -> Iterator[int]: ...  # Y034 "__iter__" methods in classes like "BadIterator1" usually return "self" at runtime. Consider using "_typeshed.Self" in "BadIterator1.__iter__", e.g. "def __iter__(self: Self) -> Self: ..."
