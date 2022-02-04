@@ -355,7 +355,7 @@ def _has_bad_hardcoded_returns(
         for deco in function.decorator_list
     ):
         return False
-    
+
     if not non_kw_only_args_of(function.args):  # weird, but theoretically possible
         return False
 
