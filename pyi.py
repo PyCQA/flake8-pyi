@@ -354,7 +354,7 @@ def _has_bad_hardcoded_returns(method: ast.FunctionDef, classdef: ast.ClassDef) 
     ):
         return False
 
-    if not non_kw_only_args_of(method.args):  # weird, but theoretically possible
+    if not _non_kw_only_args_of(method.args):  # weird, but theoretically possible
         return False
 
     method_name, returns = method.name, method.returns
@@ -418,7 +418,7 @@ def _is_bad_TypedDict(node: ast.Call) -> bool:
     )
 
 
-def non_kw_only_args_of(args: ast.arguments) -> list[ast.arg]:
+def _non_kw_only_args_of(args: ast.arguments) -> list[ast.arg]:
     """Return a list containing the pos-only args and pos-or-kwd args of `args`"""
     # pos-only args don't exist on 3.7
     pos_only_args: list[ast.arg] = getattr(args, "posonlyargs", [])
@@ -921,7 +921,7 @@ class PyiVisitor(ast.NodeVisitor):
         copied_node = deepcopy(node)
         copied_node.decorator_list.clear()
         copied_node.returns = ast.Name(id="Self")
-        first_arg = non_kw_only_args_of(copied_node.args)[0]
+        first_arg = _non_kw_only_args_of(copied_node.args)[0]
         if method_name == "__new__":
             first_arg.annotation = ast.Subscript(
                 value=ast.Name(id="type"), slice=ast.Name(id="Self")
@@ -949,7 +949,7 @@ class PyiVisitor(ast.NodeVisitor):
         if all_args.kwonlyargs:
             return
 
-        non_kw_only_args = non_kw_only_args_of(all_args)
+        non_kw_only_args = _non_kw_only_args_of(all_args)
 
         # Raise an error for defining __str__ or __repr__ on a class, but only if:
         # 1). The method is not decorated with @abstractmethod
@@ -983,7 +983,7 @@ class PyiVisitor(ast.NodeVisitor):
                 and node.name == "__aenter__"
                 and _is_name(node.returns, classdef.name)
                 # weird, but theoretically possible for there to be 0 non-kw-only args
-                and non_kw_only_args_of(node.args)
+                and _non_kw_only_args_of(node.args)
                 and not any(_is_final(deco) for deco in classdef.decorator_list)
             ):
                 self._Y034_error(node=node, cls_name=classdef.name)
