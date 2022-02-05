@@ -65,6 +65,7 @@ currently emitted:
 | Y031 | `TypedDict`s should use class-based syntax instead of assignment-based syntax wherever possible. (In situations where this is not possible, such as if a field is a Python keyword or an invalid identifier, this error will not be raised.)
 | Y032 | The second argument of an `__eq__` or `__ne__` method should usually be annotated with `object` rather than `Any`.
 | Y033 | Do not use type comments (e.g. `x = ... # type: int`) in stubs, even if the stub supports Python 2. Always use annotations instead (e.g. `x: int`).
+| Y035 | The value of `__all__` in a stub file should be identical to the value of `__all__` at runtime, as `__all__` has identical semantics in `.pyi` files. E.g. write `__all__ = ["foo", "bar"]` instead of `__all__: list[str]`.
 
 Many error codes enforce modern conventions, and some cannot yet be used in
 all cases:
