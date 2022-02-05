@@ -297,11 +297,94 @@ _is_TypedDict = partial(_is_object, name="TypedDict", from_=_TYPING_MODULES)
 _is_Literal = partial(_is_object, name="Literal", from_=_TYPING_MODULES)
 _is_abstractmethod = partial(_is_object, name="abstractmethod", from_={"abc"})
 _is_Any = partial(_is_object, name="Any", from_={"typing"})
+_is_overload = partial(_is_object, name="overload", from_={"typing"})
+_is_final = partial(_is_object, name="final", from_=_TYPING_MODULES)
+
+
+def _is_decorated_with_final(
+    node: ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef,
+) -> bool:
+    return any(_is_final(decorator) for decorator in node.decorator_list)
+
+
+def _get_collections_abc_obj_id(node: ast.expr | None) -> str | None:
+    """
+    If the node represents a subscripted object from collections.abc or typing,
+    return the name of the object.
+    Else, return None.
+
+    >>> import ast
+    >>> node1 = ast.parse('AsyncIterator[str]').body[0].value
+    >>> node2 = ast.parse('typing.AsyncIterator[str]').body[0].value
+    >>> node3 = ast.parse('typing_extensions.AsyncIterator[str]').body[0].value
+    >>> node4 = ast.parse('collections.abc.AsyncIterator[str]').body[0].value
+    >>> node5 = ast.parse('collections.OrderedDict[str, int]').body[0].value
+    >>> _get_collections_abc_obj_id(node1)
+    'AsyncIterator'
+    >>> _get_collections_abc_obj_id(node2)
+    'AsyncIterator'
+    >>> _get_collections_abc_obj_id(node3)
+    'AsyncIterator'
+    >>> _get_collections_abc_obj_id(node4)
+    'AsyncIterator'
+    >>> _get_collections_abc_obj_id(node5) is None
+    True
+    """
+    if not isinstance(node, ast.Subscript):
+        return None
+    subscripted_obj = node.value
+    if isinstance(subscripted_obj, ast.Name):
+        return subscripted_obj.id
+    if not isinstance(subscripted_obj, ast.Attribute):
+        return None
+    obj_value, obj_attr = subscripted_obj.value, subscripted_obj.attr
+    if isinstance(obj_value, ast.Name) and obj_value.id in _TYPING_MODULES:
+        return obj_attr
+    if (
+        isinstance(obj_value, ast.Attribute)
+        and _is_name(obj_value.value, "collections")
+        and obj_value.attr == "abc"
+    ):
+        return obj_attr
+    return None
+
+
+_ITER_METHODS = frozenset({("Iterator", "__iter__"), ("AsyncIterator", "__aiter__")})
+
+
+def _has_bad_hardcoded_returns(method: ast.FunctionDef, classdef: ast.ClassDef) -> bool:
+    """Return `True` if `function` should be rewritten using `_typeshed.Self`."""
+    # Much too complex for our purposes to worry about overloaded functions or abstractmethods
+    if any(
+        _is_overload(deco) or _is_abstractmethod(deco) for deco in method.decorator_list
+    ):
+        return False
+
+    if not _non_kw_only_args_of(method.args):  # weird, but theoretically possible
+        return False
+
+    method_name, returns = method.name, method.returns
+
+    if _is_name(returns, classdef.name):
+        return method_name in {"__enter__", "__new__"} and not _is_decorated_with_final(
+            classdef
+        )
+    else:
+        return_obj_name = _get_collections_abc_obj_id(returns)
+        return (return_obj_name, method_name) in _ITER_METHODS and any(
+            _get_collections_abc_obj_id(base_node) == return_obj_name
+            for base_node in classdef.bases
+        )
 
 
 def _unparse_assign_node(node: ast.Assign | ast.AnnAssign) -> str:
     """Unparse an Assign node, and remove any newlines in it"""
     return unparse(node).replace("\n", "")
+
+
+def _unparse_func_node(node: ast.FunctionDef | ast.AsyncFunctionDef) -> str:
+    """Unparse a function node, and reformat it to fit on one line."""
+    return re.sub(r"\s+", " ", unparse(node)).strip()
 
 
 def _is_list_of_str_nodes(seq: list[ast.expr | None]) -> TypeGuard[list[ast.Str]]:
@@ -341,6 +424,13 @@ def _is_bad_TypedDict(node: ast.Call) -> bool:
     )
 
 
+def _non_kw_only_args_of(args: ast.arguments) -> list[ast.arg]:
+    """Return a list containing the pos-only args and pos-or-kwd args of `args`"""
+    # pos-only args don't exist on 3.7
+    pos_only_args: list[ast.arg] = getattr(args, "posonlyargs", [])
+    return pos_only_args + args.args
+
+
 @dataclass
 class NestingCounter:
     """Class to help the PyiVisitor keep track of internal state"""
@@ -372,6 +462,8 @@ class PyiVisitor(ast.NodeVisitor):
         self.string_literals_allowed = NestingCounter()
         self.in_function = NestingCounter()
         self.in_class = NestingCounter()
+        # This is only relevant for visiting classes
+        self.current_class_node: ast.ClassDef | None = None
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(filename={self.filename!r})"
@@ -807,8 +899,11 @@ class PyiVisitor(ast.NodeVisitor):
             self.error(node, Y007)
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        old_class_node = self.current_class_node
+        self.current_class_node = node
         with self.in_class.enabled():
             self.generic_visit(node)
+        self.current_class_node = old_class_node
 
         # empty class body should contain "..." not "pass"
         if len(node.body) == 1:
@@ -831,17 +926,42 @@ class PyiVisitor(ast.NodeVisitor):
             ):
                 self.error(statement, Y013)
 
-    def _visit_method(self, node: ast.FunctionDef) -> None:
+    def _Y034_error(
+        self, node: ast.FunctionDef | ast.AsyncFunctionDef, cls_name: str
+    ) -> None:
+        method_name = node.name
+        copied_node = deepcopy(node)
+        copied_node.decorator_list.clear()
+        copied_node.returns = ast.Name(id="Self")
+        first_arg = _non_kw_only_args_of(copied_node.args)[0]
+        if method_name == "__new__":
+            first_arg.annotation = ast.Subscript(
+                value=ast.Name(id="type"), slice=ast.Name(id="Self")
+            )
+            referrer = '"__new__" methods'
+        else:
+            first_arg.annotation = ast.Name(id="Self")
+            referrer = f'"{method_name}" methods in classes like "{cls_name}"'
+        error_message = Y034.format(
+            methods=referrer,
+            method_name=f"{cls_name}.{method_name}",
+            suggested_syntax=_unparse_func_node(copied_node),
+        )
+        self.error(node, error_message)
+
+    def _visit_synchronous_method(self, node: ast.FunctionDef) -> None:
         method_name = node.name
         all_args = node.args
+        classdef = self.current_class_node
+        assert classdef is not None
+
+        if _has_bad_hardcoded_returns(node, classdef=classdef):
+            return self._Y034_error(node=node, cls_name=classdef.name)
 
         if all_args.kwonlyargs:
             return
 
-        # pos-only args don't exist on 3.7
-        pos_only_args: list[ast.arg] = getattr(all_args, "posonlyargs", [])
-        pos_or_kwd_args = all_args.args
-        non_kw_only_args = pos_only_args + pos_or_kwd_args
+        non_kw_only_args = _non_kw_only_args_of(all_args)
 
         # Raise an error for defining __str__ or __repr__ on a class, but only if:
         # 1). The method is not decorated with @abstractmethod
@@ -860,10 +980,25 @@ class PyiVisitor(ast.NodeVisitor):
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         if self.in_class.active:
-            self._visit_method(node)
+            self._visit_synchronous_method(node)
         self._visit_function(node)
 
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+        if self.in_class.active:
+            classdef = self.current_class_node
+            assert classdef is not None
+            if (
+                not any(
+                    _is_overload(deco) or _is_abstractmethod(deco)
+                    for deco in node.decorator_list
+                )
+                and node.name == "__aenter__"
+                and _is_name(node.returns, classdef.name)
+                # weird, but theoretically possible for there to be 0 non-kw-only args
+                and _non_kw_only_args_of(node.args)
+                and not _is_decorated_with_final(classdef)
+            ):
+                self._Y034_error(node=node, cls_name=classdef.name)
         self._visit_function(node)
 
     def _Y019_error(
@@ -871,10 +1006,8 @@ class PyiVisitor(ast.NodeVisitor):
     ) -> None:
         cleaned_method = deepcopy(node)
         cleaned_method.decorator_list.clear()
-        new_syntax = unparse(cleaned_method)
+        new_syntax = _unparse_func_node(cleaned_method)
         new_syntax = re.sub(rf"\b{typevar_name}\b", "Self", new_syntax)
-        new_syntax = re.sub(r"\s+", " ", new_syntax).strip()
-
         self.error(
             # pass the node for the first argument to `self.error`,
             # rather than the function node,
@@ -1130,4 +1263,5 @@ Y032 = (
     'Y032 Prefer "object" to "Any" for the second parameter in "{method_name}" methods'
 )
 Y033 = 'Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")'
+Y034 = 'Y034 {methods} usually return "self" at runtime. Consider using "_typeshed.Self" in "{method_name}", e.g. "{suggested_syntax}"'
 Y035 = 'Y035 "__all__" in a stub file should be identical to "__all__" at runtime'
