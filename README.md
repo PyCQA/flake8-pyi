@@ -66,6 +66,7 @@ currently emitted:
 | Y032 | The second argument of an `__eq__` or `__ne__` method should usually be annotated with `object` rather than `Any`.
 | Y033 | Do not use type comments (e.g. `x = ... # type: int`) in stubs, even if the stub supports Python 2. Always use annotations instead (e.g. `x: int`).
 | Y034 | Y034 detects common errors where certain methods are annotated as having a fixed return type, despite returning `self` at runtime. Such methods should be annotated with `_typeshed.Self`.<br><br>This check looks for `__new__`, `__enter__` and `__aenter__` methods that return the class's name unparameterised. It also looks for `__iter__` methods that return `Iterator`, even if the class inherits directly from `Iterator`, and for `__aiter__` methods that return `AsyncIterator`, even if the class inherits directly from `AsyncIterator`. The check excludes methods decorated with `@overload` or `@abstractmethod`.
+| Y035 | `__all__` in a stub file should always have a value, as `__all__` in a `.pyi` file has identical semantics to `__all__` in a `.py` file. E.g. write `__all__ = ["foo", "bar"]` instead of `__all__: list[str]`.
 
 Many error codes enforce modern conventions, and some cannot yet be used in
 all cases:

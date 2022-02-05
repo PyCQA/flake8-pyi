@@ -660,6 +660,12 @@ class PyiVisitor(ast.NodeVisitor):
             self.generic_visit(node)
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
+        if _is_name(node.target, "__all__") and not self.in_class.active:
+            with self.string_literals_allowed.enabled():
+                self.generic_visit(node)
+            if node.value is None:
+                self.error(node, Y035)
+            return
         self.generic_visit(node)
         if _is_TypeAlias(node.annotation):
             return
@@ -1258,3 +1264,4 @@ Y032 = (
 )
 Y033 = 'Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")'
 Y034 = 'Y034 {methods} usually return "self" at runtime. Consider using "_typeshed.Self" in "{method_name}", e.g. "{suggested_syntax}"'
+Y035 = 'Y035 "__all__" in a stub file must have a value, as it has the same semantics as "__all__" at runtime.'

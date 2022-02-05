@@ -17,6 +17,7 @@ Features:
 * introduce Y033 (always use annotations in stubs, rather than type comments).
 * introduce Y034 (detect common errors where return types are hardcoded, but they
   should use `TypeVar`s instead).
+* introduce Y035 (`__all__` in a stub has the same semantics as at runtime).
 
 ## 22.1.0
 
