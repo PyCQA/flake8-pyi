@@ -352,7 +352,9 @@ def _get_collections_abc_obj_id(node: ast.expr | None) -> str | None:
 _ITER_METHODS = frozenset({("Iterator", "__iter__"), ("AsyncIterator", "__aiter__")})
 
 
-def _has_bad_hardcoded_returns(method: ast.FunctionDef, classdef: ast.ClassDef) -> bool:
+def _has_bad_hardcoded_returns(
+    method: ast.FunctionDef | ast.AsyncFunctionDef, *, classdef: ast.ClassDef
+) -> bool:
     """Return `True` if `function` should be rewritten using `_typeshed.Self`."""
     # Much too complex for our purposes to worry about overloaded functions or abstractmethods
     if any(
@@ -365,16 +367,23 @@ def _has_bad_hardcoded_returns(method: ast.FunctionDef, classdef: ast.ClassDef) 
 
     method_name, returns = method.name, method.returns
 
+    if isinstance(method, ast.AsyncFunctionDef):
+        return (
+            method_name == "__aenter__"
+            and _is_name(returns, classdef.name)
+            and not _is_decorated_with_final(classdef)
+        )
+
     if _is_name(returns, classdef.name):
         return method_name in {"__enter__", "__new__"} and not _is_decorated_with_final(
             classdef
         )
-    else:
-        return_obj_name = _get_collections_abc_obj_id(returns)
-        return (return_obj_name, method_name) in _ITER_METHODS and any(
-            _get_collections_abc_obj_id(base_node) == return_obj_name
-            for base_node in classdef.bases
-        )
+
+    return_obj_name = _get_collections_abc_obj_id(returns)
+    return (return_obj_name, method_name) in _ITER_METHODS and any(
+        _get_collections_abc_obj_id(base_node) == return_obj_name
+        for base_node in classdef.bases
+    )
 
 
 def _unparse_assign_node(node: ast.Assign | ast.AnnAssign) -> str:
@@ -987,17 +996,7 @@ class PyiVisitor(ast.NodeVisitor):
         if self.in_class.active:
             classdef = self.current_class_node
             assert classdef is not None
-            if (
-                not any(
-                    _is_overload(deco) or _is_abstractmethod(deco)
-                    for deco in node.decorator_list
-                )
-                and node.name == "__aenter__"
-                and _is_name(node.returns, classdef.name)
-                # weird, but theoretically possible for there to be 0 non-kw-only args
-                and _non_kw_only_args_of(node.args)
-                and not _is_decorated_with_final(classdef)
-            ):
+            if _has_bad_hardcoded_returns(node, classdef=classdef):
                 self._Y034_error(node=node, cls_name=classdef.name)
         self._visit_function(node)
 
