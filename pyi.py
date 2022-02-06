@@ -18,8 +18,9 @@ from keyword import iskeyword
 from pathlib import Path
 from typing import TYPE_CHECKING, ClassVar, NamedTuple
 
-from flake8 import checker  # type: ignore
-from flake8.plugins.pyflakes import FlakesChecker  # type: ignore
+from flake8 import checker  # type: ignore[import]
+from flake8.plugins.pyflakes import FlakesChecker  # type: ignore[import]
+from pyflakes import messages  # type: ignore[import]
 from pyflakes.checker import (  # type: ignore[import]
     PY2,
     ClassDefinition,
@@ -149,21 +150,16 @@ class PyiAwareFlakesChecker(FlakesChecker):
         version, we defer evaluation of the annotations (and values on
         module level).
         """
-        if node.value:
-            # Only bind the *target* if the assignment has value.
-            # Otherwise it's not really ast.Store and shouldn't silence
-            # UndefinedLocal warnings.
-            self.handleNode(node.target, node)
+        self.handleNode(node.target, node)
         if not isinstance(self.scope, FunctionScope):
             self.deferHandleNode(node.annotation, node)
-        if node.value:
-            # If the assignment has value, handle the *value*...
-            if isinstance(self.scope, ModuleScope):
-                # ...later (if module scope).
-                self.deferHandleNode(node.value, node)
-            else:
-                # ...now.
-                self.handleNode(node.value, node)
+        # Handle the *value*...
+        if isinstance(self.scope, ModuleScope):
+            # ...later (if module scope).
+            self.deferHandleNode(node.value, node)
+        else:
+            # ...now.
+            self.handleNode(node.value, node)
 
     def LAMBDA(self, node) -> None:
         """This is likely very brittle, currently works for pyflakes 1.3.0.
@@ -212,6 +208,16 @@ class PyiAwareFlakesChecker(FlakesChecker):
         Lets users use `del` in stubs to denote private names.
         """
         return
+
+    def report(self, messageClass, *args, **kwargs) -> None:
+        """Block pyflakes/flake8 from reporting undefined-name errors (F821).
+
+        F821 doesn't doesn't work well in stub files,
+        where names should be considered "defined" if they are annotated,
+        even if they are not assigned to a value.
+        """
+        if messageClass is not messages.UndefinedName:
+            super().report(messageClass, *args, **kwargs)
 
 
 class PyiAwareFileChecker(checker.FileChecker):

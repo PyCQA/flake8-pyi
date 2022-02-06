@@ -18,6 +18,11 @@ Features:
 * introduce Y034 (detect common errors where return types are hardcoded, but they
   should use `TypeVar`s instead).
 * introduce Y035 (`__all__` in a stub has the same semantics as at runtime).
+* the plugin now blocks all F821 errors from being reported by
+  flake8/pyflakes. This check does not make sense for `.pyi` files, where names are
+  considered defined if they are annotated, even if they are not actually assigned to.
+  The plugin also now patches flake8 so that it reports F822 in fewer situations, for
+  similar reasons.
 
 ## 22.1.0
 
