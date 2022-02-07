@@ -509,12 +509,13 @@ class PyiVisitor(ast.NodeVisitor):
                 )
             elif object_name == "ContextManager":
                 suggested_syntax = (
-                    '"contextlib.AbstractContextManager[T]" '
-                    '(or "typing.ContextManager[T]" in Python 2-compatible code)'
+                    f'"contextlib.AbstractContextManager[{_CONTEXTLIB_SLICE}]" '
+                    f'(or "typing.ContextManager[{_CONTEXTLIB_SLICE}]" '
+                    f"in Python 2-compatible code)"
                 )
                 error_message = Y023.format(
                     good_syntax=suggested_syntax,
-                    bad_syntax='"typing_extensions.ContextManager[T]"',
+                    bad_syntax=f'"typing_extensions.ContextManager[{_CONTEXTLIB_SLICE}]"',
                 )
                 error_message += " (PEP 585 syntax)"
             else:
