@@ -511,7 +511,7 @@ class PyiVisitor(ast.NodeVisitor):
                 suggested_syntax = (
                     f'"contextlib.AbstractContextManager[{_CONTEXTLIB_SLICE}]" '
                     f'(or "typing.ContextManager[{_CONTEXTLIB_SLICE}]" '
-                    f'in Python 2-compatible code)'
+                    f"in Python 2-compatible code)"
                 )
                 error_message = Y023.format(
                     good_syntax=suggested_syntax,
