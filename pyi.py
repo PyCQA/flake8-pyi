@@ -381,9 +381,7 @@ def _has_bad_hardcoded_returns(
     ):
         return False
 
-    non_kw_only_args = _non_kw_only_args_of(method.args)
-
-    if not non_kw_only_args:  # weird, but theoretically possible
+    if not _non_kw_only_args_of(method.args):  # weird, but theoretically possible
         return False
 
     method_name, returns = method.name, method.returns
