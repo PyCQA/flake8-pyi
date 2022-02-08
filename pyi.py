@@ -299,6 +299,7 @@ _is_abstractmethod = partial(_is_object, name="abstractmethod", from_={"abc"})
 _is_Any = partial(_is_object, name="Any", from_={"typing"})
 _is_overload = partial(_is_object, name="overload", from_={"typing"})
 _is_final = partial(_is_object, name="final", from_=_TYPING_MODULES)
+_is_Self = partial(_is_object, name="Self", from_=({"_typeshed"} | _TYPING_MODULES))
 
 
 def _is_decorated_with_final(
@@ -351,6 +352,24 @@ def _get_collections_abc_obj_id(node: ast.expr | None) -> str | None:
 
 _ITER_METHODS = frozenset({("Iterator", "__iter__"), ("AsyncIterator", "__aiter__")})
 
+INPLACE_BINOP_METHODS = frozenset(
+    {
+        "__iadd__",
+        "__isub__",
+        "__imul__",
+        "__imatmul__",
+        "__itruediv__",
+        "__ifloordiv__",
+        "__imod__",
+        "__ipow__",
+        "__ilshift__",
+        "__irshift__",
+        "__iand__",
+        "__ixor__",
+        "__ior__",
+    }
+)
+
 
 def _has_bad_hardcoded_returns(
     method: ast.FunctionDef | ast.AsyncFunctionDef, *, classdef: ast.ClassDef
@@ -373,6 +392,9 @@ def _has_bad_hardcoded_returns(
             and _is_name(returns, classdef.name)
             and not _is_decorated_with_final(classdef)
         )
+
+    if method_name in INPLACE_BINOP_METHODS:
+        return returns is not None and not _is_Self(returns)
 
     if _is_name(returns, classdef.name):
         return method_name in {"__enter__", "__new__"} and not _is_decorated_with_final(
