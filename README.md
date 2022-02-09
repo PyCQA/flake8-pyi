@@ -16,7 +16,13 @@ especially interesting for linting
    expressions after the entire file has been read.  This enables support for
    first-class forward references that stub files use.
 
-3. Provides a number of `.pyi`-specific warnings that enforce typeshed's
+3. Entirely suppresses the F821 flake8 error code ("Undefined name `name`"),
+   and reduces instances in which the F822 flake8 error code ("undefined name
+   `name` in `__all__`") is reported. These error codes often result in false
+   positives for `.pyi` files, in which a name is considered "defined" if it is
+   annotated, even if no value is assigned to the name.
+
+4. Provides a number of `.pyi`-specific warnings that enforce typeshed's
    style guide.
 
 Note: Be careful when using this plugin in the same environment as other flake8
