@@ -2,7 +2,6 @@ import glob
 import os
 import re
 import subprocess
-import tempfile
 from itertools import chain, zip_longest
 
 import pytest
