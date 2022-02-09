@@ -34,7 +34,7 @@ jobs:
     - run: pip install -e .
     - run: pip install -r requirements-dev.txt
     - run: |
-        flake8 $(git ls-files | grep 'py$' -- ':(exclude)py_file_definitions.py')
+        flake8 $(git ls-files | grep 'py$' -- ':(exclude)tests/py_file_definitions.py')
   tests:
     name: pytest suite
     timeout-minutes: 10
