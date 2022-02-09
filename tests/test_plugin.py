@@ -2,13 +2,18 @@ import glob
 import os
 import re
 import subprocess
-from itertools import zip_longest
+import tempfile
+from itertools import chain, zip_longest
 
 import pytest
 
 
-@pytest.mark.parametrize("path", glob.glob("tests/*.pyi"))
-def test_pyi_file(path):
+PY_FILE_TESTS = ("py_file_definitions.py",)
+PY_FILE_TESTS = [os.path.join("tests", filename) for filename in PY_FILE_TESTS]
+
+
+@pytest.mark.parametrize("path", chain(PY_FILE_TESTS, glob.glob("tests/*.pyi")))
+def test_plugin(path):
     flags = []
     expected_output = ""
 
