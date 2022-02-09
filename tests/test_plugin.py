@@ -7,7 +7,6 @@ from itertools import chain, zip_longest
 
 import pytest
 
-
 PY_FILE_TESTS = ("py_file_definitions.py",)
 PY_FILE_TESTS = [os.path.join("tests", filename) for filename in PY_FILE_TESTS]
 

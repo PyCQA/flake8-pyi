@@ -13,7 +13,8 @@ def a_sample():
         ...
 
     class WorkingSet:
-        def require(self) -> None: ...
+        def require(self) -> None:
+            ...
 
     working_set: WorkingSet
     require = working_set.require  # F821 undefined name 'working_set'
