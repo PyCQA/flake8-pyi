@@ -352,7 +352,7 @@ def _get_collections_abc_obj_id(node: ast.expr | None) -> str | None:
 
 _ITER_METHODS = frozenset({("Iterator", "__iter__"), ("AsyncIterator", "__aiter__")})
 
-INPLACE_BINOP_METHODS = frozenset(
+_INPLACE_BINOP_METHODS = frozenset(
     {
         "__iadd__",
         "__isub__",
@@ -393,7 +393,7 @@ def _has_bad_hardcoded_returns(
             and not _is_decorated_with_final(classdef)
         )
 
-    if method_name in INPLACE_BINOP_METHODS:
+    if method_name in _INPLACE_BINOP_METHODS:
         return returns is not None and not _is_Self(returns)
 
     if _is_name(returns, classdef.name):
