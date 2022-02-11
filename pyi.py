@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple
 
 from flake8 import checker  # type: ignore[import]
 from flake8.options.manager import OptionManager  # type: ignore[import]
-from flake8.plugins.finder import LoadedPlugin  # type: ignore[import]
+from flake8.plugins.manager import Plugin  # type: ignore[import]
 from flake8.plugins.pyflakes import FlakesChecker  # type: ignore[import]
 from pyflakes.checker import (
     PY2,
@@ -217,7 +217,7 @@ class PyiAwareFlakesChecker(FlakesChecker):
 
 
 class PyiAwareFileChecker(checker.FileChecker):
-    def run_check(self, plugin: LoadedPlugin, **kwargs: Any) -> Any:
+    def run_check(self, plugin: Plugin, **kwargs: Any) -> Any:
         if self.filename == "-":
             filename = self.options.stdin_display_name
         else:
