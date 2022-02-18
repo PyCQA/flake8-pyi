@@ -1,3 +1,4 @@
+# flags: --extend-ignore=Y036
 import typing
 from typing import Union
 
