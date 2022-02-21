@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## 22.2.0
 
 Bugfixes:
 * fix bugs in several error codes so that e.g. `_T = typing.TypeVar("_T")` is
