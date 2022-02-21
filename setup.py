@@ -28,6 +28,7 @@ setup(
     version=version,
     description="A plugin for flake8 to enable linting .pyi files.",
     long_description=long_description,
+    long_description_content_type="text/markdown",
     keywords="flake8 pyi bugs pyflakes pylint linter qa",
     author="Łukasz Langa",
     author_email="lukasz@langa.pl",
