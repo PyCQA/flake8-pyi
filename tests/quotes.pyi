@@ -26,3 +26,7 @@ class Child(list["int"]):  # Y020 Quoted annotations should never be used in stu
 
 if sys.platform == "linux":
     f: "int"  # Y020 Quoted annotations should never be used in stubs
+elif sys.platform == "win32":
+    f: "str"  # Y020 Quoted annotations should never be used in stubs
+else:
+    f: "bytes"  # Y020 Quoted annotations should never be used in stubs

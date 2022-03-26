@@ -47,3 +47,7 @@ class Foo:
     field16 = "x"  # Y015 Bad default value. Use "field16 = ..." instead of "field16 = 'x'"  # Y020 Quoted annotations should never be used in stubs
     if sys.platform == "linux":
         field17 = "y"  # Y015 Bad default value. Use "field17 = ..." instead of "field17 = 'y'"  # Y020 Quoted annotations should never be used in stubs
+    elif sys.platform == "win32":
+        field18 = "z"  # Y015 Bad default value. Use "field18 = ..." instead of "field18 = 'z'"  # Y020 Quoted annotations should never be used in stubs
+    else:
+        field19 = "w"  # Y015 Bad default value. Use "field19 = ..." instead of "field19 = 'w'"  # Y020 Quoted annotations should never be used in stubs
