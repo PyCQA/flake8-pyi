@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## 22.3.0
 
 Bugfixes:
 * fix bug where incorrect quoted annotations were not detected within `if` blocks
