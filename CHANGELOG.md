@@ -1,5 +1,10 @@
 # Change Log
 
+## Unreleased
+
+Bugfixes:
+* fix bug where incorrect quoted annotations were not detected within `if` blocks
+
 ## 22.2.0
 
 Bugfixes:

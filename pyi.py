@@ -811,15 +811,19 @@ class PyiVisitor(ast.NodeVisitor):
             self.visit(node)
 
     def visit_If(self, node: ast.If) -> None:
+        test = node.test
         # No types can appear in if conditions, so avoid confusing additional errors.
         with self.string_literals_allowed.enabled():
-            self.generic_visit(node)
-        test = node.test
+            self.visit(test)
         if isinstance(test, ast.BoolOp):
             for expression in test.values:
                 self._check_if_expression(expression)
         else:
             self._check_if_expression(test)
+        for line in node.body:
+            self.visit(line)
+        for line in node.orelse:
+            self.visit(line)
 
     def _check_if_expression(self, node: ast.expr) -> None:
         if not isinstance(node, ast.Compare):

@@ -1,3 +1,4 @@
+import sys
 from typing import TypeAlias
 
 field1: int
@@ -22,3 +23,6 @@ class Foo:
     field6 = 0  # Y015 Bad default value. Use "field6 = ..." instead of "field6 = 0"
     field7 = b""  # Y015 Bad default value. Use "field7 = ..." instead of "field7 = b''"
     field8 = False  # Y015 Bad default value. Use "field8 = ..." instead of "field8 = False"
+    field9 = "x"  # Y015 Bad default value. Use "field9 = ..." instead of "field9 = 'x'"  # Y020 Quoted annotations should never be used in stubs
+    if sys.platform == "linux":
+        field10 = "y"  # Y015 Bad default value. Use "field10 = ..." instead of "field10 = 'y'"  # Y020 Quoted annotations should never be used in stubs
