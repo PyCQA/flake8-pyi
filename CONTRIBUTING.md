@@ -23,6 +23,7 @@ however, we advise setting up a virtual environment first:
     $ python3 -m venv env
     $ source env/bin/activate
     $ pip install -r requirements-dev.txt
+    $ pip install -e .
 
 To format your code with `isort` and `black`, run:
 
@@ -33,7 +34,12 @@ If you want, you can also run locally the commands that GitHub Actions runs.
 Look in `.github/workflows/` to find the commands.
 For example, to run tests:
 
-    $ python3 -m pytest
+    $ python3 -m pytest -vv
+
+To run the tests in a single test file, use the `-k` option. For example, to
+run all tests in `tests/quotes.pyi`:
+
+    $ python3 -m pytest -vv -k quotes.pyi
 
 
 ## Making a release
