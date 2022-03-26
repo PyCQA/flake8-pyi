@@ -1,6 +1,7 @@
 import typing
-import typing_extensions
 from typing import Final, TypeAlias
+
+import typing_extensions
 
 field1: int
 field2: int = ...
