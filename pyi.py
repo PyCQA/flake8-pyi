@@ -301,6 +301,7 @@ _is_abstractmethod = partial(_is_object, name="abstractmethod", from_={"abc"})
 _is_Any = partial(_is_object, name="Any", from_={"typing"})
 _is_overload = partial(_is_object, name="overload", from_={"typing"})
 _is_final = partial(_is_object, name="final", from_=_TYPING_MODULES)
+_is_Final = partial(_is_object, name="Final", from_=_TYPING_MODULES)
 _is_Self = partial(_is_object, name="Self", from_=({"_typeshed"} | _TYPING_MODULES))
 
 
@@ -622,7 +623,10 @@ class PyiVisitor(ast.NodeVisitor):
         else:
             self.error(node, Y017)
             target_name = None
-        if target_name == "__all__":
+        is_special_assignment = (
+            target_name == "__match_args__" and self.in_class.active
+        ) or (target_name == "__all__" and not self.in_class.active)
+        if is_special_assignment:
             with self.string_literals_allowed.enabled():
                 self.generic_visit(node)
         else:
@@ -648,7 +652,7 @@ class PyiVisitor(ast.NodeVisitor):
         # We avoid triggering Y026 for calls and = ... because there are various
         # unusual cases where assignment to the result of a call is legitimate
         # in stubs.
-        if target_name != "__all__" and not isinstance(
+        if not is_special_assignment and not isinstance(
             assignment, (ast.Ellipsis, ast.Call)
         ):
             self.error(node, Y026)
@@ -694,6 +698,10 @@ class PyiVisitor(ast.NodeVisitor):
             self.generic_visit(node)
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
+        if _is_Final(node.annotation):
+            with self.string_literals_allowed.enabled():
+                self.generic_visit(node)
+            return
         if _is_name(node.target, "__all__") and not self.in_class.active:
             with self.string_literals_allowed.enabled():
                 self.generic_visit(node)
