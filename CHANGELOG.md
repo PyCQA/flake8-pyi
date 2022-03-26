@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+Bugfixes:
+* fix bug where incorrect quoted annotations were not detected within `if` blocks
+
 Behaviour changes:
 * Add special-casing so that string literals are allowed in the context of
   `__match_args__` assignments inside a class definition.
