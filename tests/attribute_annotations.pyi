@@ -1,4 +1,7 @@
-from typing import TypeAlias
+import typing
+from typing import Final, TypeAlias
+
+import typing_extensions
 
 field1: int
 field2: int = ...
@@ -13,6 +16,15 @@ field8 = False  # Y015 Bad default value. Use "field8 = ..." instead of "field8 
 field9 = None    # Y026 Use typing_extensions.TypeAlias for type aliases
 field10: TypeAlias = None
 
+# Tests for Final
+field11: Final = 1
+field12: Final = "foo"
+field13: Final = b"foo"
+field14: Final = True
+field15: Final = ('a', 'b', 'c')
+field16: typing.Final = "foo"
+field17: typing_extensions.Final = "foo"
+
 class Foo:
     field1: int
     field2: int = ...
@@ -22,3 +34,11 @@ class Foo:
     field6 = 0  # Y015 Bad default value. Use "field6 = ..." instead of "field6 = 0"
     field7 = b""  # Y015 Bad default value. Use "field7 = ..." instead of "field7 = b''"
     field8 = False  # Y015 Bad default value. Use "field8 = ..." instead of "field8 = False"
+    # Tests for Final
+    field9: Final = 1
+    field10: Final = "foo"
+    field11: Final = b"foo"
+    field12: Final = True
+    field13: Final = ('a', 'b', 'c')
+    field14: typing.Final = "foo"
+    field15: typing_extensions.Final = "foo"
