@@ -1,5 +1,10 @@
 # Change Log
 
+## Unreleased
+
+Features:
+* Introduce Y036 (check for badly defined `__exit__` and `__aexit__` methods).
+
 ## 22.3.0
 
 Bugfixes:
