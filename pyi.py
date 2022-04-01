@@ -366,8 +366,7 @@ class ExitArgAnalysis(NamedTuple):
 def _analyse_exit_method_arg(node: ast.BinOp) -> ExitArgAnalysis:
     """Return a two-item tuple providing analysis of the annotation of an exit-method arg.
 
-    This function is only called if we already know
-    that `node` is a `BoolOp` and node.op is a `BitOr`.
+    Do not call this function unless `node.op` is already known to be an ast.BitOr().
 
     >>> import ast
     >>> ast_node_for = lambda string: ast.parse(string).body[0].value
@@ -378,6 +377,7 @@ def _analyse_exit_method_arg(node: ast.BinOp) -> ExitArgAnalysis:
     >>> _analyse_exit_method_arg(ast_node_for('None | str'))
     ExitArgAnalysis(is_union_with_None=True, non_None_part=Name(id='str', ctx=Load()))
     """
+    assert isinstance(node.op, ast.BitOr)
     if _is_None(node.left):
         return ExitArgAnalysis(is_union_with_None=True, non_None_part=node.right)
     if _is_None(node.right):
