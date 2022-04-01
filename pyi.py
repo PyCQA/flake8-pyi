@@ -341,7 +341,10 @@ def _is_PEP_604_union(node: ast.expr | None) -> TypeGuard[ast.BinOp]:
 
 
 def _is_None(node: ast.expr) -> bool:
-    return isinstance(node, ast.Constant) and node.value is None
+    # <=3.7: `BaseException | None` parses as BinOp(left=Name(id='BaseException'), op=BitOr(), right=NameConstant(value=None))`
+    # >=3.8: `BaseException | None` parses as BinOp(left=Name(id='BaseException'), op=BitOr(), right=Constant(value=None))`
+    # ast.NameConstant is deprecated in 3.8+, but doesn't raise a DeprecationWarning (and the isinstance() check still works)
+    return isinstance(node, ast.NameConstant) and node.value is None
 
 
 _sentinel = ast.expr()
