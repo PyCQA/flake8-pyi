@@ -368,7 +368,7 @@ class ExitArgAnalysis(NamedTuple):
 def _analyse_exit_method_arg(node: ast.BinOp) -> ExitArgAnalysis:
     """Return a two-item tuple providing analysis of the annotation of an exit-method arg.
 
-    Do not call this function unless `node.op` is already known to be an ast.BitOr().
+    The `node` represents a union type written as `X | Y`.
 
     >>> import ast
     >>> ast_node_for = lambda string: ast.parse(string).body[0].value
