@@ -1086,7 +1086,7 @@ class PyiVisitor(ast.NodeVisitor):
                 f"must have a default value"
             )
 
-        if any(obj is None for obj in all_args.kw_defaults):
+        if None in all_args.kw_defaults:
             error_for_bad_exit_method(
                 f"All keyword-only arguments in an {method_name} method "
                 f"must have a default value"
