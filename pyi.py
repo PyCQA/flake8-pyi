@@ -347,18 +347,20 @@ def _is_None(node: ast.expr) -> bool:
     return isinstance(node, ast.NameConstant) and node.value is None
 
 
-_sentinel = ast.expr()
-
-
 class ExitArgAnalysis(NamedTuple):
     is_union_with_None: bool
-    non_None_part: ast.expr = _sentinel
+    non_None_part: ast.expr | None
 
     def __repr__(self) -> str:
+        if self.non_None_part is None:
+            none_part_repr = 'None'
+        else:
+            none_part_repr = ast.dump(self.non_None_part)
+
         return (
             f"ExitArgAnalysis("
             f"is_union_with_None={self.is_union_with_None}, "
-            f"non_None_part={ast.dump(self.non_None_part)}"
+            f"non_None_part={none_part_repr}"
             f")"
         )
 
@@ -371,7 +373,7 @@ def _analyse_exit_method_arg(node: ast.BinOp) -> ExitArgAnalysis:
     >>> import ast
     >>> ast_node_for = lambda string: ast.parse(string).body[0].value
     >>> _analyse_exit_method_arg(ast_node_for('int | str'))
-    ExitArgAnalysis(is_union_with_None=False, non_None_part=expr())
+    ExitArgAnalysis(is_union_with_None=False, non_None_part=None)
     >>> _analyse_exit_method_arg(ast_node_for('int | None'))
     ExitArgAnalysis(is_union_with_None=True, non_None_part=Name(id='int', ctx=Load()))
     >>> _analyse_exit_method_arg(ast_node_for('None | str'))
@@ -382,7 +384,7 @@ def _analyse_exit_method_arg(node: ast.BinOp) -> ExitArgAnalysis:
         return ExitArgAnalysis(is_union_with_None=True, non_None_part=node.right)
     if _is_None(node.right):
         return ExitArgAnalysis(is_union_with_None=True, non_None_part=node.left)
-    return ExitArgAnalysis(is_union_with_None=False)
+    return ExitArgAnalysis(is_union_with_None=False, non_None_part=None)
 
 
 def _is_decorated_with_final(
