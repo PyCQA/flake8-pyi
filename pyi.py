@@ -1181,7 +1181,7 @@ class PyiVisitor(ast.NodeVisitor):
         if _has_bad_hardcoded_returns(node, classdef=classdef):
             return self._Y034_error(node=node, cls_name=classdef.name)
 
-        if method_name == "__exit__":
+        if method_name in {"__exit__", "__aexit__"}:
             return self._check_exit_method(node=node, method_name=method_name)
 
         if all_args.kwonlyargs:

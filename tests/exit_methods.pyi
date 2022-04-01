@@ -3,6 +3,7 @@ import typing
 from types import TracebackType
 from typing import (  # Y022 Use "type[MyClass]" instead of "typing.Type[MyClass]" (PEP 585 syntax)
     Any,
+    Awaitable,
     Type,
 )
 
@@ -27,6 +28,7 @@ class Four:
 
 class Five:
     def __exit__(self, typ: type[BaseException] | None, exc: BaseException | None, tb: TracebackType | None, weird_extra_arg: int = ..., *args: int, **kwargs: str) -> None: ...
+    def __aexit__(self, typ: type[BaseException] | None, exc: BaseException | None, tb: TracebackType | None) -> Awaitable[None]: ...
 
 # Bad __(a)exit__ methods
 class Six:
@@ -43,3 +45,4 @@ class Eight:
 
 class Nine:
     def __exit__(self, typ: BaseException | None, *args: list[str]) -> bool: ...  # Y036 Badly defined __exit__ method: Star-args in an __exit__ method should be annotated with "object", not "list[str]"  # Y036 Badly defined __exit__ method: The first arg in an __exit__ method should be annotated with "type[BaseException] | None", not "BaseException | None"
+    def __aexit__(self, *args: Any) -> Awaitable[None]: ...  # Y036 Badly defined __aexit__ method: Star-args in an __aexit__ method should be annotated with "object", not "Any"
