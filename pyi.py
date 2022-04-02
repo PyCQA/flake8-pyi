@@ -903,9 +903,7 @@ class PyiVisitor(ast.NodeVisitor):
                 self._check_if_expression(expression)
         else:
             self._check_if_expression(test)
-        for line in node.body:
-            self.visit(line)
-        for line in node.orelse:
+        for line in chain(node.body, node.orelse):
             self.visit(line)
 
     def _check_if_expression(self, node: ast.expr) -> None:
