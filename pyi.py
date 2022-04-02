@@ -354,14 +354,14 @@ class ExitArgAnalysis(NamedTuple):
 
     def __repr__(self) -> str:
         if self.non_None_part is None:
-            none_part_repr = "None"
+            non_None_part_repr = "None"
         else:
-            none_part_repr = ast.dump(self.non_None_part)
+            non_None_part_repr = ast.dump(self.non_None_part)
 
         return (
             f"ExitArgAnalysis("
             f"is_union_with_None={self.is_union_with_None}, "
-            f"non_None_part={none_part_repr}"
+            f"non_None_part={non_None_part_repr}"
             f")"
         )
 
