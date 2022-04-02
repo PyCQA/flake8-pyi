@@ -249,7 +249,7 @@ class LegacyNormalizer(ast.NodeTransformer):
             return node.value
 
 
-def _ast_node_for(string: str, /) -> ast.AST:
+def _ast_node_for(string: str) -> ast.AST:
     """Helper function for doctests"""
     expr = ast.parse(string).body[0]
     assert isinstance(expr, ast.Expr)
