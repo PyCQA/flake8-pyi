@@ -249,6 +249,13 @@ class LegacyNormalizer(ast.NodeTransformer):
             return node.value
 
 
+def _ast_node_for(string: str, /) -> ast.AST:
+    """Helper function for doctests"""
+    expr = ast.parse(string).body[0]
+    assert isinstance(expr, ast.Expr)
+    return expr.value
+
+
 def _is_name(node: ast.expr | None, name: str) -> bool:
     """Return True if `node` is an `ast.Name` node with id `name`
 
@@ -273,17 +280,13 @@ def _is_object(node: ast.expr, name: str, *, from_: Container[str]) -> bool:
         where <parent> is a string that can be found within the `from_` collection of
         strings.
 
-    >>> import ast
-    >>> node1 = ast.Name(id="Literal")
-    >>> node2 = ast.Attribute(value=ast.Name(id="typing"), attr="Literal")
-    >>> node3 = ast.Attribute(value=ast.Name(id="typing_extensions"), attr="Literal")
     >>> from functools import partial
     >>> _is_Literal = partial(_is_object, name="Literal", from_=_TYPING_MODULES)
-    >>> _is_Literal(node1)
+    >>> _is_Literal(_ast_node_for("Literal"))
     True
-    >>> _is_Literal(node2)
+    >>> _is_Literal(_ast_node_for("typing.Literal"))
     True
-    >>> _is_Literal(node3)
+    >>> _is_Literal(_ast_node_for("typing_extensions.Literal"))
     True
     """
     return _is_name(node, name) or (
@@ -309,17 +312,15 @@ _is_TracebackType = partial(_is_object, name="TracebackType", from_={"types"})
 
 def _is_type_or_Type(node: ast.expr) -> bool:
     """
-    >>> import ast
-    >>> ast_node_for = lambda string: ast.parse(string).body[0].value
-    >>> _is_type_or_Type(ast_node_for('type'))
+    >>> _is_type_or_Type(_ast_node_for('type'))
     True
-    >>> _is_type_or_Type(ast_node_for('Type'))
+    >>> _is_type_or_Type(_ast_node_for('Type'))
     True
-    >>> _is_type_or_Type(ast_node_for('builtins.type'))
+    >>> _is_type_or_Type(_ast_node_for('builtins.type'))
     True
-    >>> _is_type_or_Type(ast_node_for('typing_extensions.Type'))
+    >>> _is_type_or_Type(_ast_node_for('typing_extensions.Type'))
     True
-    >>> _is_type_or_Type(ast_node_for('typing.Type'))
+    >>> _is_type_or_Type(_ast_node_for('typing.Type'))
     True
     """
     if isinstance(node, ast.Name):
@@ -370,13 +371,11 @@ def _analyse_exit_method_arg(node: ast.BinOp) -> ExitArgAnalysis:
 
     The `node` represents a union type written as `X | Y`.
 
-    >>> import ast
-    >>> ast_node_for = lambda string: ast.parse(string).body[0].value
-    >>> _analyse_exit_method_arg(ast_node_for('int | str'))
+    >>> _analyse_exit_method_arg(_ast_node_for('int | str'))
     ExitArgAnalysis(is_union_with_None=False, non_None_part=None)
-    >>> _analyse_exit_method_arg(ast_node_for('int | None'))
+    >>> _analyse_exit_method_arg(_ast_node_for('int | None'))
     ExitArgAnalysis(is_union_with_None=True, non_None_part=Name(id='int', ctx=Load()))
-    >>> _analyse_exit_method_arg(ast_node_for('None | str'))
+    >>> _analyse_exit_method_arg(_ast_node_for('None | str'))
     ExitArgAnalysis(is_union_with_None=True, non_None_part=Name(id='str', ctx=Load()))
     """
     assert isinstance(node.op, ast.BitOr)
@@ -399,21 +398,15 @@ def _get_collections_abc_obj_id(node: ast.expr | None) -> str | None:
     return the name of the object.
     Else, return None.
 
-    >>> import ast
-    >>> node1 = ast.parse('AsyncIterator[str]').body[0].value
-    >>> node2 = ast.parse('typing.AsyncIterator[str]').body[0].value
-    >>> node3 = ast.parse('typing_extensions.AsyncIterator[str]').body[0].value
-    >>> node4 = ast.parse('collections.abc.AsyncIterator[str]').body[0].value
-    >>> node5 = ast.parse('collections.OrderedDict[str, int]').body[0].value
-    >>> _get_collections_abc_obj_id(node1)
+    >>> _get_collections_abc_obj_id(_ast_node_for('AsyncIterator[str]'))
     'AsyncIterator'
-    >>> _get_collections_abc_obj_id(node2)
+    >>> _get_collections_abc_obj_id(_ast_node_for('typing.AsyncIterator[str]'))
     'AsyncIterator'
-    >>> _get_collections_abc_obj_id(node3)
+    >>> _get_collections_abc_obj_id(_ast_node_for('typing_extensions.AsyncIterator[str]'))
     'AsyncIterator'
-    >>> _get_collections_abc_obj_id(node4)
+    >>> _get_collections_abc_obj_id(_ast_node_for('collections.abc.AsyncIterator[str]'))
     'AsyncIterator'
-    >>> _get_collections_abc_obj_id(node5) is None
+    >>> _get_collections_abc_obj_id(_ast_node_for('collections.OrderedDict[str, int]')) is None
     True
     """
     if not isinstance(node, ast.Subscript):
