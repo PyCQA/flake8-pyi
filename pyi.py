@@ -802,6 +802,15 @@ class PyiVisitor(ast.NodeVisitor):
 
         if not dupes_in_union:
             self._check_for_multiple_literals(members)
+            self._check_for_bytestring_members(members)
+
+    def _check_for_bytestring_members(self, members: Sequence[ast.expr]) -> None:
+        union_names = {member.id for member in members if isinstance(member, ast.Name)}
+
+        if "bytes" in union_names:
+            for cls in ("memoryview", "bytearray"):
+                if cls in union_names:
+                    self.error(members[0], Y037.format(cls=cls))
 
     def _check_for_multiple_literals(self, members: Sequence[ast.expr]) -> None:
         literals_in_union, non_literals_in_union = [], []
@@ -1480,3 +1489,4 @@ Y033 = 'Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x 
 Y034 = 'Y034 {methods} usually return "self" at runtime. Consider using "_typeshed.Self" in "{method_name}", e.g. "{suggested_syntax}"'
 Y035 = 'Y035 "__all__" in a stub file must have a value, as it has the same semantics as "__all__" at runtime.'
 Y036 = "Y036 Badly defined {method_name} method: {details}"
+Y037 = 'Y037 "{cls}" is redundant in a union with "bytes"'

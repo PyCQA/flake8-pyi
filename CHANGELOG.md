@@ -4,6 +4,7 @@
 
 Features:
 * Introduce Y036 (check for badly defined `__exit__` and `__aexit__` methods).
+* Introduce Y037 (`bytearray` and `memoryview` are redundant in unions with `bytes`)
 
 ## 22.3.0
 

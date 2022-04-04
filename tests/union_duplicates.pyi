@@ -21,3 +21,7 @@ mixed_subscript_union: Union[str, Literal['foo'], typing_extensions.Literal['bar
 just_literals_pipe_union: TypeAlias = Literal[True] | Literal['idk']  # Y030 Multiple Literal members in a union. Use a single Literal, e.g. "Literal[True, 'idk']".
 mixed_pipe_union: TypeAlias = Union[Literal[966], int, Literal['baz']]  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal[966, 'baz']".
 many_literal_members_but_needs_combining: TypeAlias = int | Literal['a', 'b'] | Literal['baz']  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal['a', 'b', 'baz']".
+
+foo: bytes | bytearray  # Y037 "bytearray" is redundant in a union with "bytes"
+bar: bytes | memoryview  # Y037 "memoryview" is redundant in a union with "bytes"
+baz: Union[bytes, bytearray, memoryview]  # Y037 "memoryview" is redundant in a union with "bytes"  # Y037 "bytearray" is redundant in a union with "bytes"

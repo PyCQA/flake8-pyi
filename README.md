@@ -68,6 +68,7 @@ currently emitted:
 | Y034 | Y034 detects common errors where certain methods are annotated as having a fixed return type, despite returning `self` at runtime. Such methods should be annotated with `_typeshed.Self`. This check looks for:<br><br>&nbsp;&nbsp;**1.**&nbsp;&nbsp;Any in-place BinOp dunder methods (`__iadd__`, `__ior__`, etc.) that do not return `Self`.<br>&nbsp;&nbsp;**2.**&nbsp;&nbsp;`__new__`, `__enter__` and `__aenter__` methods that return the class's name unparameterised.<br>&nbsp;&nbsp;**3.**&nbsp;&nbsp;`__iter__` methods that return `Iterator`, even if the class inherits directly from `Iterator`.<br>&nbsp;&nbsp;**4.**&nbsp;&nbsp;`__aiter__` methods that return `AsyncIterator`, even if the class inherits directly from `AsyncIterator`.<br><br>This check excludes methods decorated with `@overload` or `@abstractmethod`.
 | Y035 | `__all__` in a stub file should always have a value, as `__all__` in a `.pyi` file has identical semantics to `__all__` in a `.py` file. E.g. write `__all__ = ["foo", "bar"]` instead of `__all__: list[str]`.
 | Y036 | Y036 detects common errors in `__exit__` and `__aexit__` methods. For example, the first argument in an `__exit__` method should always be annotated with `type[Exception] | None`.
+| Y037 | `bytearray` and `memoryview` are treated as subtypes of `bytes` by type-checkers. This means that it is redundant to annotate variables with unions such as `bytes \| bytearray \| memoryview` (just use `bytes` instead).
 
 Many error codes enforce modern conventions, and some cannot yet be used in
 all cases:
