@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+Features:
+* Introduce Y036 (check for badly defined `__exit__` and `__aexit__` methods).
+
+## 22.3.0
+
+Bugfixes:
+* fix bug where incorrect quoted annotations were not detected within `if` blocks
+
+Behaviour changes:
+* Add special-casing so that string literals are allowed in the context of
+  `__match_args__` assignments inside a class definition.
+* Add special-casing so that arbitrary values can be assigned to a variable in
+  a stub file if the variable is annotated with `Final`.
+
+## 22.2.0
+
 Bugfixes:
 * fix bugs in several error codes so that e.g. `_T = typing.TypeVar("_T")` is
   recognised as a `TypeVar` definition (previously only `_T = TypeVar("_T")` was

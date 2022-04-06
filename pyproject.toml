@@ -8,12 +8,12 @@ force-exclude = ".*\\.pyi"
 
 [tool.mypy]
 show_error_codes = true
-check_untyped_defs = true
-disallow_any_generics = true
-warn_redundant_casts = true
-warn_return_any = true
+strict = true
+enable_error_code = "ignore-without-code"
 warn_unreachable = true
-warn_unused_ignores = true
+allow_subclassing_any = true
+allow_untyped_defs = true
+allow_incomplete_defs = true
 
 [tool.pytest.ini_options]
 addopts = "--doctest-modules"

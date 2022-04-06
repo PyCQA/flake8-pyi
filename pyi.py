@@ -36,9 +36,9 @@ else:
     from ast_decompiler import decompile as unparse
 
 if TYPE_CHECKING:
-    from typing import TypeGuard
+    from typing import Literal, TypeGuard
 
-__version__ = "22.1.0"
+__version__ = "22.3.0"
 
 LOG = logging.getLogger("flake8.pyi")
 
@@ -249,6 +249,13 @@ class LegacyNormalizer(ast.NodeTransformer):
             return node.value
 
 
+def _ast_node_for(string: str) -> ast.AST:
+    """Helper function for doctests"""
+    expr = ast.parse(string).body[0]
+    assert isinstance(expr, ast.Expr)
+    return expr.value
+
+
 def _is_name(node: ast.expr | None, name: str) -> bool:
     """Return True if `node` is an `ast.Name` node with id `name`
 
@@ -260,6 +267,7 @@ def _is_name(node: ast.expr | None, name: str) -> bool:
     return isinstance(node, ast.Name) and node.id == name
 
 
+_is_BaseException = partial(_is_name, name="BaseException")
 _TYPING_MODULES = frozenset({"typing", "typing_extensions"})
 
 
@@ -272,17 +280,13 @@ def _is_object(node: ast.expr, name: str, *, from_: Container[str]) -> bool:
         where <parent> is a string that can be found within the `from_` collection of
         strings.
 
-    >>> import ast
-    >>> node1 = ast.Name(id="Literal")
-    >>> node2 = ast.Attribute(value=ast.Name(id="typing"), attr="Literal")
-    >>> node3 = ast.Attribute(value=ast.Name(id="typing_extensions"), attr="Literal")
     >>> from functools import partial
     >>> _is_Literal = partial(_is_object, name="Literal", from_=_TYPING_MODULES)
-    >>> _is_Literal(node1)
+    >>> _is_Literal(_ast_node_for("Literal"))
     True
-    >>> _is_Literal(node2)
+    >>> _is_Literal(_ast_node_for("typing.Literal"))
     True
-    >>> _is_Literal(node3)
+    >>> _is_Literal(_ast_node_for("typing_extensions.Literal"))
     True
     """
     return _is_name(node, name) or (
@@ -301,7 +305,85 @@ _is_abstractmethod = partial(_is_object, name="abstractmethod", from_={"abc"})
 _is_Any = partial(_is_object, name="Any", from_={"typing"})
 _is_overload = partial(_is_object, name="overload", from_={"typing"})
 _is_final = partial(_is_object, name="final", from_=_TYPING_MODULES)
+_is_Final = partial(_is_object, name="Final", from_=_TYPING_MODULES)
 _is_Self = partial(_is_object, name="Self", from_=({"_typeshed"} | _TYPING_MODULES))
+_is_TracebackType = partial(_is_object, name="TracebackType", from_={"types"})
+
+
+def _is_type_or_Type(node: ast.expr) -> bool:
+    """
+    >>> _is_type_or_Type(_ast_node_for('type'))
+    True
+    >>> _is_type_or_Type(_ast_node_for('Type'))
+    True
+    >>> _is_type_or_Type(_ast_node_for('builtins.type'))
+    True
+    >>> _is_type_or_Type(_ast_node_for('typing_extensions.Type'))
+    True
+    >>> _is_type_or_Type(_ast_node_for('typing.Type'))
+    True
+    """
+    if isinstance(node, ast.Name):
+        return node.id in {"type", "Type"}
+    if isinstance(node, ast.Attribute):
+        node_value = node.value
+        if not isinstance(node_value, ast.Name):
+            return False
+        node_value_id = node_value.id
+        attr = node.attr
+        return (node_value_id == "builtins" and attr == "type") or (
+            node_value_id in _TYPING_MODULES and attr == "Type"
+        )
+    return False
+
+
+def _is_PEP_604_union(node: ast.expr | None) -> TypeGuard[ast.BinOp]:
+    return isinstance(node, ast.BinOp) and isinstance(node.op, ast.BitOr)
+
+
+def _is_None(node: ast.expr) -> bool:
+    # <=3.7: `BaseException | None` parses as BinOp(left=Name(id='BaseException'), op=BitOr(), right=NameConstant(value=None))`
+    # >=3.8: `BaseException | None` parses as BinOp(left=Name(id='BaseException'), op=BitOr(), right=Constant(value=None))`
+    # ast.NameConstant is deprecated in 3.8+, but doesn't raise a DeprecationWarning (and the isinstance() check still works)
+    return isinstance(node, ast.NameConstant) and node.value is None
+
+
+class ExitArgAnalysis(NamedTuple):
+    is_union_with_None: bool
+    non_None_part: ast.expr | None
+
+    def __repr__(self) -> str:
+        if self.non_None_part is None:
+            non_None_part_repr = "None"
+        else:
+            non_None_part_repr = ast.dump(self.non_None_part)
+
+        return (
+            f"ExitArgAnalysis("
+            f"is_union_with_None={self.is_union_with_None}, "
+            f"non_None_part={non_None_part_repr}"
+            f")"
+        )
+
+
+def _analyse_exit_method_arg(node: ast.BinOp) -> ExitArgAnalysis:
+    """Return a two-item tuple providing analysis of the annotation of an exit-method arg.
+
+    The `node` represents a union type written as `X | Y`.
+
+    >>> _analyse_exit_method_arg(_ast_node_for('int | str'))
+    ExitArgAnalysis(is_union_with_None=False, non_None_part=None)
+    >>> _analyse_exit_method_arg(_ast_node_for('int | None'))
+    ExitArgAnalysis(is_union_with_None=True, non_None_part=Name(id='int', ctx=Load()))
+    >>> _analyse_exit_method_arg(_ast_node_for('None | str'))
+    ExitArgAnalysis(is_union_with_None=True, non_None_part=Name(id='str', ctx=Load()))
+    """
+    assert isinstance(node.op, ast.BitOr)
+    if _is_None(node.left):
+        return ExitArgAnalysis(is_union_with_None=True, non_None_part=node.right)
+    if _is_None(node.right):
+        return ExitArgAnalysis(is_union_with_None=True, non_None_part=node.left)
+    return ExitArgAnalysis(is_union_with_None=False, non_None_part=None)
 
 
 def _is_decorated_with_final(
@@ -316,21 +398,15 @@ def _get_collections_abc_obj_id(node: ast.expr | None) -> str | None:
     return the name of the object.
     Else, return None.
 
-    >>> import ast
-    >>> node1 = ast.parse('AsyncIterator[str]').body[0].value
-    >>> node2 = ast.parse('typing.AsyncIterator[str]').body[0].value
-    >>> node3 = ast.parse('typing_extensions.AsyncIterator[str]').body[0].value
-    >>> node4 = ast.parse('collections.abc.AsyncIterator[str]').body[0].value
-    >>> node5 = ast.parse('collections.OrderedDict[str, int]').body[0].value
-    >>> _get_collections_abc_obj_id(node1)
+    >>> _get_collections_abc_obj_id(_ast_node_for('AsyncIterator[str]'))
     'AsyncIterator'
-    >>> _get_collections_abc_obj_id(node2)
+    >>> _get_collections_abc_obj_id(_ast_node_for('typing.AsyncIterator[str]'))
     'AsyncIterator'
-    >>> _get_collections_abc_obj_id(node3)
+    >>> _get_collections_abc_obj_id(_ast_node_for('typing_extensions.AsyncIterator[str]'))
     'AsyncIterator'
-    >>> _get_collections_abc_obj_id(node4)
+    >>> _get_collections_abc_obj_id(_ast_node_for('collections.abc.AsyncIterator[str]'))
     'AsyncIterator'
-    >>> _get_collections_abc_obj_id(node5) is None
+    >>> _get_collections_abc_obj_id(_ast_node_for('collections.OrderedDict[str, int]')) is None
     True
     """
     if not isinstance(node, ast.Subscript):
@@ -626,7 +702,10 @@ class PyiVisitor(ast.NodeVisitor):
         else:
             self.error(node, Y017)
             target_name = None
-        if target_name == "__all__":
+        is_special_assignment = (
+            target_name == "__match_args__" and self.in_class.active
+        ) or (target_name == "__all__" and not self.in_class.active)
+        if is_special_assignment:
             with self.string_literals_allowed.enabled():
                 self.generic_visit(node)
         else:
@@ -652,7 +731,7 @@ class PyiVisitor(ast.NodeVisitor):
         # We avoid triggering Y026 for calls and = ... because there are various
         # unusual cases where assignment to the result of a call is legitimate
         # in stubs.
-        if target_name != "__all__" and not isinstance(
+        if not is_special_assignment and not isinstance(
             assignment, (ast.Ellipsis, ast.Call)
         ):
             self.error(node, Y026)
@@ -698,6 +777,10 @@ class PyiVisitor(ast.NodeVisitor):
             self.generic_visit(node)
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
+        if _is_Final(node.annotation):
+            with self.string_literals_allowed.enabled():
+                self.generic_visit(node)
+            return
         if _is_name(node.target, "__all__") and not self.in_class.active:
             with self.string_literals_allowed.enabled():
                 self.generic_visit(node)
@@ -815,15 +898,17 @@ class PyiVisitor(ast.NodeVisitor):
             self.visit(node)
 
     def visit_If(self, node: ast.If) -> None:
+        test = node.test
         # No types can appear in if conditions, so avoid confusing additional errors.
         with self.string_literals_allowed.enabled():
-            self.generic_visit(node)
-        test = node.test
+            self.visit(test)
         if isinstance(test, ast.BoolOp):
             for expression in test.values:
                 self._check_if_expression(expression)
         else:
             self._check_if_expression(test)
+        for line in chain(node.body, node.orelse):
+            self.visit(line)
 
     def _check_if_expression(self, node: ast.expr) -> None:
         if not isinstance(node, ast.Compare):
@@ -964,6 +1049,103 @@ class PyiVisitor(ast.NodeVisitor):
             ):
                 self.error(statement, Y013)
 
+    def _check_exit_method(  # noqa: C901
+        self, node: ast.FunctionDef | ast.AsyncFunctionDef, method_name: str
+    ) -> None:
+        all_args = node.args
+        non_kw_only_args = _non_kw_only_args_of(all_args)
+        num_args = len(non_kw_only_args)
+        varargs = all_args.vararg
+
+        def error_for_bad_exit_method(details: str) -> None:
+            self.error(node, Y036.format(method_name=method_name, details=details))
+
+        if num_args < 4:
+            if varargs:
+                varargs_annotation = varargs.annotation
+                if not (
+                    varargs_annotation is None or _is_name(varargs_annotation, "object")
+                ):
+                    error_for_bad_exit_method(
+                        f'Star-args in an {method_name} method should be annotated with "object", '
+                        f'not "{unparse(varargs_annotation)}"'
+                    )
+            else:
+                error_for_bad_exit_method(
+                    f"If there are no star-args, "
+                    f"there should be at least 3 non-keyword-only args "
+                    f'in an {method_name} method (excluding "self")'
+                )
+
+        if len(all_args.defaults) < (num_args - 4):
+            error_for_bad_exit_method(
+                f"All arguments after the first 4 in an {method_name} method "
+                f"must have a default value"
+            )
+
+        if None in all_args.kw_defaults:
+            error_for_bad_exit_method(
+                f"All keyword-only arguments in an {method_name} method "
+                f"must have a default value"
+            )
+
+        def error_for_bad_annotation(
+            annotation_node: ast.expr, *, arg_number: Literal[1, 2, 3]
+        ) -> None:
+            exit_arg_descriptions = [
+                ("first", "type[BaseException] | None"),
+                ("second", "BaseException | None"),
+                ("third", "types.TracebackType | None"),
+            ]
+
+            arg_name, correct_annotation = exit_arg_descriptions[arg_number - 1]
+
+            error_msg_details = (
+                f"The {arg_name} arg in an {method_name} method "
+                f'should be annotated with "{correct_annotation}", '
+                f'not "{unparse(annotation_node)}"'
+            )
+
+            error_for_bad_exit_method(details=error_msg_details)
+
+        if num_args >= 2:
+            first_arg_annotation = non_kw_only_args[1].annotation
+            if _is_PEP_604_union(first_arg_annotation):
+                is_union_with_None, non_None_part = _analyse_exit_method_arg(
+                    first_arg_annotation
+                )
+                if not (
+                    is_union_with_None
+                    and isinstance(non_None_part, ast.Subscript)
+                    and _is_type_or_Type(non_None_part.value)
+                    and _is_BaseException(non_None_part.slice)
+                ):
+                    error_for_bad_annotation(first_arg_annotation, arg_number=1)
+            elif first_arg_annotation is not None:
+                error_for_bad_annotation(first_arg_annotation, arg_number=1)
+
+        if num_args >= 3:
+            second_arg_annotation = non_kw_only_args[2].annotation
+            if _is_PEP_604_union(second_arg_annotation):
+                is_union_with_None, non_None_part = _analyse_exit_method_arg(
+                    second_arg_annotation
+                )
+                if not (is_union_with_None and _is_BaseException(non_None_part)):
+                    error_for_bad_annotation(second_arg_annotation, arg_number=2)
+            elif second_arg_annotation is not None:
+                error_for_bad_annotation(second_arg_annotation, arg_number=2)
+
+        if num_args >= 4:
+            third_arg_annotation = non_kw_only_args[3].annotation
+            if _is_PEP_604_union(third_arg_annotation):
+                is_union_with_None, non_None_part = _analyse_exit_method_arg(
+                    third_arg_annotation
+                )
+                if not (is_union_with_None and _is_TracebackType(non_None_part)):
+                    error_for_bad_annotation(third_arg_annotation, arg_number=3)
+            elif third_arg_annotation is not None:
+                error_for_bad_annotation(third_arg_annotation, arg_number=3)
+
     def _Y034_error(
         self, node: ast.FunctionDef | ast.AsyncFunctionDef, cls_name: str
     ) -> None:
@@ -996,6 +1178,9 @@ class PyiVisitor(ast.NodeVisitor):
         if _has_bad_hardcoded_returns(node, classdef=classdef):
             return self._Y034_error(node=node, cls_name=classdef.name)
 
+        if method_name in {"__exit__", "__aexit__"}:
+            return self._check_exit_method(node=node, method_name=method_name)
+
         if all_args.kwonlyargs:
             return
 
@@ -1025,8 +1210,11 @@ class PyiVisitor(ast.NodeVisitor):
         if self.in_class.active:
             classdef = self.current_class_node
             assert classdef is not None
+            method_name = node.name
             if _has_bad_hardcoded_returns(node, classdef=classdef):
                 self._Y034_error(node=node, cls_name=classdef.name)
+            elif method_name == "__aexit__":
+                self._check_exit_method(node=node, method_name=method_name)
         self._visit_function(node)
 
     def _Y019_error(
@@ -1295,4 +1483,5 @@ Y032 = (
 Y033 = 'Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")'
 Y034 = 'Y034 {methods} usually return "self" at runtime. Consider using "_typeshed.Self" in "{method_name}", e.g. "{suggested_syntax}"'
 Y035 = 'Y035 "__all__" in a stub file must have a value, as it has the same semantics as "__all__" at runtime.'
+Y036 = "Y036 Badly defined {method_name} method: {details}"
 Y037 = "Y037 Use PEP 604 union types instead of {old_syntax}."
