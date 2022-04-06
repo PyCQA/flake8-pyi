@@ -549,9 +549,9 @@ class PyiVisitor(ast.NodeVisitor):
         elif fullname == "collections.namedtuple":
             error_message = Y024
 
-        # Y036 errors
+        # Y037 errors
         elif fullname in ("typing.Optional", "typing.Union"):
-            error_message = Y036.format(old_syntax=fullname)
+            error_message = Y037.format(old_syntax=fullname)
 
         else:
             return
@@ -1295,4 +1295,4 @@ Y032 = (
 Y033 = 'Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")'
 Y034 = 'Y034 {methods} usually return "self" at runtime. Consider using "_typeshed.Self" in "{method_name}", e.g. "{suggested_syntax}"'
 Y035 = 'Y035 "__all__" in a stub file must have a value, as it has the same semantics as "__all__" at runtime.'
-Y036 = "Y036 Use PEP 604 union types instead of {old_syntax}."
+Y037 = "Y037 Use PEP 604 union types instead of {old_syntax}."
