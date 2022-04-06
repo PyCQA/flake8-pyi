@@ -626,8 +626,15 @@ class PyiVisitor(ast.NodeVisitor):
             error_message = Y024
 
         # Y037 errors
-        elif fullname in ("typing.Optional", "typing.Union"):
-            error_message = Y037.format(old_syntax=fullname)
+        elif fullname == "typing.Optional":
+            error_message = Y037.format(
+                old_syntax=fullname, example='"int | None" instead of "Optional[int]"'
+            )
+
+        elif fullname == "typing.Union":
+            error_message = Y037.format(
+                old_syntax=fullname, example='"int | str" instead of "Union[int, str]"'
+            )
 
         else:
             return
@@ -1484,4 +1491,4 @@ Y033 = 'Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x 
 Y034 = 'Y034 {methods} usually return "self" at runtime. Consider using "_typeshed.Self" in "{method_name}", e.g. "{suggested_syntax}"'
 Y035 = 'Y035 "__all__" in a stub file must have a value, as it has the same semantics as "__all__" at runtime.'
 Y036 = "Y036 Badly defined {method_name} method: {details}"
-Y037 = "Y037 Use PEP 604 union types instead of {old_syntax}."
+Y037 = "Y037 Use PEP 604 union types instead of {old_syntax} (e.g. {example})."
