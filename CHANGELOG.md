@@ -4,6 +4,8 @@
 
 Features:
 * Introduce Y036 (check for badly defined `__exit__` and `__aexit__` methods).
+* Introduce Y037 (Use PEP 604 syntax instead of `typing.Union` and `typing.Optional`).
+  Contributed by Oleg Höfling.
 
 ## 22.3.0
 
