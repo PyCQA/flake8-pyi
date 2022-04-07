@@ -1,3 +1,4 @@
+# flags: --extend-ignore=Y037
 # NOTE: F401 & F811 are ignored in this file in the .flake8 config file
 
 # GOOD IMPORTS

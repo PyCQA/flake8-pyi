@@ -1,3 +1,4 @@
+# flags: --ignore=Y037
 from typing import Optional, TypeAlias, Union
 
 MaybeCStr: TypeAlias = Optional[CStr]
