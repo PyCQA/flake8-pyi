@@ -7,6 +7,10 @@ Features:
 * Introduce Y037 (Use PEP 604 syntax instead of `typing.Union` and `typing.Optional`).
   Contributed by Oleg Höfling.
 
+Behaviour changes:
+* Expand Y035 to cover `__match_args__` inside class definitions, as well as `__all__`
+  in the global scope.
+
 ## 22.3.0
 
 Bugfixes:

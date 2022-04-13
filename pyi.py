@@ -540,6 +540,14 @@ def _non_kw_only_args_of(args: ast.arguments) -> list[ast.arg]:
     return pos_only_args + args.args
 
 
+def _is_assignment_which_must_have_a_value(
+    target_name: str | None, *, in_class: bool
+) -> bool:
+    return (target_name == "__match_args__" and in_class) or (
+        target_name == "__all__" and not in_class
+    )
+
+
 @dataclass
 class NestingCounter:
     """Class to help the PyiVisitor keep track of internal state"""
@@ -709,9 +717,9 @@ class PyiVisitor(ast.NodeVisitor):
         else:
             self.error(node, Y017)
             target_name = None
-        is_special_assignment = (
-            target_name == "__match_args__" and self.in_class.active
-        ) or (target_name == "__all__" and not self.in_class.active)
+        is_special_assignment = _is_assignment_which_must_have_a_value(
+            target_name, in_class=self.in_class.active
+        )
         if is_special_assignment:
             with self.string_literals_allowed.enabled():
                 self.generic_visit(node)
@@ -788,12 +796,17 @@ class PyiVisitor(ast.NodeVisitor):
             with self.string_literals_allowed.enabled():
                 self.generic_visit(node)
             return
-        if _is_name(node.target, "__all__") and not self.in_class.active:
-            with self.string_literals_allowed.enabled():
-                self.generic_visit(node)
-            if node.value is None:
-                self.error(node, Y035)
-            return
+        target = node.target
+        if isinstance(target, ast.Name):
+            target_name = target.id
+            if _is_assignment_which_must_have_a_value(
+                target_name, in_class=self.in_class.active
+            ):
+                with self.string_literals_allowed.enabled():
+                    self.generic_visit(node)
+                if node.value is None:
+                    self.error(node, Y035.format(var=target_name))
+                return
         self.generic_visit(node)
         if _is_TypeAlias(node.annotation):
             return
@@ -1489,6 +1502,6 @@ Y032 = (
 )
 Y033 = 'Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")'
 Y034 = 'Y034 {methods} usually return "self" at runtime. Consider using "_typeshed.Self" in "{method_name}", e.g. "{suggested_syntax}"'
-Y035 = 'Y035 "__all__" in a stub file must have a value, as it has the same semantics as "__all__" at runtime.'
+Y035 = 'Y035 "{var}" in a stub file must have a value, as it has the same semantics as "{var}" at runtime.'
 Y036 = "Y036 Badly defined {method_name} method: {details}"
 Y037 = "Y037 Use PEP 604 union types instead of {old_syntax} (e.g. {example})."
