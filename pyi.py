@@ -3,10 +3,13 @@ from __future__ import annotations
 
 import argparse
 import ast
+import builtins
+import collections.abc
 import logging
 import optparse
 import re
 import sys
+import typing
 from collections import Counter
 from collections.abc import Container, Iterable, Iterator, Sequence
 from contextlib import contextmanager
@@ -16,6 +19,7 @@ from functools import partial
 from itertools import chain
 from keyword import iskeyword
 from pathlib import Path
+from types import ModuleType
 from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple
 
 from flake8 import checker  # type: ignore[import]
@@ -548,6 +552,16 @@ def _is_assignment_which_must_have_a_value(
     )
 
 
+def _is_probably_class_from_module(var: str, *, module: ModuleType) -> bool:
+    """
+    >>> _is_probably_class_from_module("AbstractSet", module=typing)
+    True
+    >>> _is_probably_class_from_module("int", module=builtins)
+    True
+    """
+    return isinstance(getattr(module, var, object()), (type, type(typing.List)))
+
+
 @dataclass
 class NestingCounter:
     """Class to help the PyiVisitor keep track of internal state"""
@@ -574,6 +588,11 @@ class PyiVisitor(ast.NodeVisitor):
         self.errors: list[Error] = []
         # Mapping of all private TypeVars/ParamSpecs/TypeVarTuples to the nodes where they're defined
         self.typevarlike_defs: dict[TypeVarInfo, ast.Assign] = {}
+        # Mapping of all assignments in the file that could be type aliases
+        # (This excludes assignments to function calls and ellipses, etc.)
+        self.maybe_typealias_assignments: dict[str, ast.Assign] = {}
+        # Set of all names and attributes that are used as annotations in the file
+        self.all_annotations: set[str] = set()
         # Mapping of each name in the file to the no. of occurrences
         self.all_name_occurrences: Counter[str] = Counter()
         self.string_literals_allowed = NestingCounter()
@@ -743,12 +762,54 @@ class PyiVisitor(ast.NodeVisitor):
         ):
             return self._Y015_error(node)
 
-        # We avoid triggering Y026 for calls and = ... because there are various
-        # unusual cases where assignment to the result of a call is legitimate
-        # in stubs.
-        if not is_special_assignment and not isinstance(
-            assignment, (ast.Ellipsis, ast.Call)
-        ):
+        if not is_special_assignment:
+            self._check_for_type_aliases(node, target_name, assignment)
+
+    def _check_for_type_aliases(
+        self, node: ast.Assign, target_name: str, assignment: ast.expr
+    ) -> None:
+        """
+        Check for assignments that look like they could be type aliases,
+        but aren't annotated with `typing(_extensions).TypeAlias`.
+
+        We avoid triggering Y026 for calls and = ... because there are various
+        unusual cases where assignment to the result of a call is legitimate
+        in stubs (`T = TypeVar("T")`, `List = _Alias()`, etc.).
+
+        Most assignments to names in builtins.py or typing.py will be type aliases,
+        so special-case those. For other `ast.Attribute` and `ast.Name` nodes,
+        avoid triggering Y026 now, as they might be variable aliases rather than
+        type aliases.
+        """
+        if isinstance(assignment, (ast.Ellipsis, ast.Call)):
+            return
+
+        special_cased_modules = {builtins, typing, collections.abc}
+
+        if isinstance(assignment, ast.Attribute):
+            if isinstance(assignment.value, ast.Name):
+                module_name, assignment_name = assignment.value.id, assignment.attr
+                for module in special_cased_modules:
+                    if module_name == module.__name__:
+                        if assignment_name in dir(
+                            module
+                        ) and _is_probably_class_from_module(
+                            assignment_name, module=module
+                        ):
+                            self.error(node, Y026)
+                        break
+                else:
+                    self.maybe_typealias_assignments[target_name] = node
+        elif isinstance(assignment, ast.Name):
+            assignment_name = assignment.id
+            for module in special_cased_modules:
+                if assignment_name in dir(module):
+                    if _is_probably_class_from_module(assignment_name, module=module):
+                        self.error(node, Y026)
+                    break
+            else:
+                self.maybe_typealias_assignments[target_name] = node
+        else:
             self.error(node, Y026)
 
     def visit_Name(self, node: ast.Name) -> None:
@@ -792,7 +853,9 @@ class PyiVisitor(ast.NodeVisitor):
             self.generic_visit(node)
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
-        if _is_Final(node.annotation):
+        annotation = node.annotation
+        self.all_annotations.add(unparse(annotation))
+        if _is_Final(annotation):
             with self.string_literals_allowed.enabled():
                 self.generic_visit(node)
             return
@@ -808,7 +871,7 @@ class PyiVisitor(ast.NodeVisitor):
                     self.error(node, Y035.format(var=target_name))
                 return
         self.generic_visit(node)
-        if _is_TypeAlias(node.annotation):
+        if _is_TypeAlias(annotation):
             return
         if node.value and not isinstance(node.value, ast.Ellipsis):
             self._Y015_error(node)
@@ -1380,6 +1443,9 @@ class PyiVisitor(ast.NodeVisitor):
                     def_node,
                     Y018.format(typevarlike_cls=cls_name, typevar_name=typevar_name),
                 )
+        for annotation in self.all_annotations:
+            if annotation in self.maybe_typealias_assignments:
+                self.error(self.maybe_typealias_assignments[annotation], Y026)
         yield from self.errors
 
 
