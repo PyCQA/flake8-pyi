@@ -1,8 +1,14 @@
-from collections.abc import Mapping
 import builtins
 import collections
 import typing
-from typing import ParamSpec as _ParamSpec, TypeAlias, TypedDict, Union, _Alias  # Y037 Use PEP 604 union types instead of typing.Union (e.g. "int | str" instead of "Union[int, str]").
+from collections.abc import Mapping
+from typing import (  # Y037 Use PEP 604 union types instead of typing.Union (e.g. "int | str" instead of "Union[int, str]").
+    ParamSpec as _ParamSpec,
+    TypeAlias,
+    TypedDict,
+    Union,
+    _Alias,
+)
 
 import typing_extensions
 
