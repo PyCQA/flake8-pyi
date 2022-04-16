@@ -1129,10 +1129,12 @@ class PyiVisitor(ast.NodeVisitor):
             error_for_bad_exit_method(details=error_msg_details)
 
         if num_args >= 2:
-            first_arg_annotation = non_kw_only_args[1].annotation
-            if _is_PEP_604_union(first_arg_annotation):
+            arg1_annotation = non_kw_only_args[1].annotation
+            if arg1_annotation is None or _is_name(arg1_annotation, "object"):
+                pass
+            elif _is_PEP_604_union(arg1_annotation):
                 is_union_with_None, non_None_part = _analyse_exit_method_arg(
-                    first_arg_annotation
+                    arg1_annotation
                 )
                 if not (
                     is_union_with_None
@@ -1140,31 +1142,35 @@ class PyiVisitor(ast.NodeVisitor):
                     and _is_type_or_Type(non_None_part.value)
                     and _is_BaseException(non_None_part.slice)
                 ):
-                    error_for_bad_annotation(first_arg_annotation, arg_number=1)
-            elif first_arg_annotation is not None:
-                error_for_bad_annotation(first_arg_annotation, arg_number=1)
+                    error_for_bad_annotation(arg1_annotation, arg_number=1)
+            else:
+                error_for_bad_annotation(arg1_annotation, arg_number=1)
 
         if num_args >= 3:
-            second_arg_annotation = non_kw_only_args[2].annotation
-            if _is_PEP_604_union(second_arg_annotation):
+            arg2_annotation = non_kw_only_args[2].annotation
+            if arg2_annotation is None or _is_name(arg2_annotation, "object"):
+                pass
+            elif _is_PEP_604_union(arg2_annotation):
                 is_union_with_None, non_None_part = _analyse_exit_method_arg(
-                    second_arg_annotation
+                    arg2_annotation
                 )
                 if not (is_union_with_None and _is_BaseException(non_None_part)):
-                    error_for_bad_annotation(second_arg_annotation, arg_number=2)
-            elif second_arg_annotation is not None:
-                error_for_bad_annotation(second_arg_annotation, arg_number=2)
+                    error_for_bad_annotation(arg2_annotation, arg_number=2)
+            else:
+                error_for_bad_annotation(arg2_annotation, arg_number=2)
 
         if num_args >= 4:
-            third_arg_annotation = non_kw_only_args[3].annotation
-            if _is_PEP_604_union(third_arg_annotation):
+            arg3_annotation = non_kw_only_args[3].annotation
+            if arg3_annotation is None or _is_name(arg3_annotation, "object"):
+                pass
+            elif _is_PEP_604_union(arg3_annotation):
                 is_union_with_None, non_None_part = _analyse_exit_method_arg(
-                    third_arg_annotation
+                    arg3_annotation
                 )
                 if not (is_union_with_None and _is_TracebackType(non_None_part)):
-                    error_for_bad_annotation(third_arg_annotation, arg_number=3)
-            elif third_arg_annotation is not None:
-                error_for_bad_annotation(third_arg_annotation, arg_number=3)
+                    error_for_bad_annotation(arg3_annotation, arg_number=3)
+            else:
+                error_for_bad_annotation(arg3_annotation, arg_number=3)
 
     def _Y034_error(
         self, node: ast.FunctionDef | ast.AsyncFunctionDef, cls_name: str
