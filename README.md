@@ -73,11 +73,12 @@ currently emitted:
 Many error codes enforce modern conventions, and some cannot yet be used in
 all cases:
 
-* Y026 is incompatible with the pytype type checker and should be turned
-  off for stubs that need to be compatible with pytype. A fix is tracked
-  [here](https://github.com/google/pytype/issues/787).
 * Y027 is incompatible with Python 2 and should only be used in stubs
   that are meant only for Python 3.
+* Y037 (enforcing PEP 604 syntax everywhere) is not yet fully compatible with
+  the mypy type checker, which has
+  [a few bugs](https://github.com/python/mypy/issues?q=is%3Aopen+is%3Aissue+label%3Atopic-pep-604+label%3Atopic-type-alias)
+  regarding PEP 604 type aliases.
 
 ## License
 
