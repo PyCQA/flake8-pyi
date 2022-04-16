@@ -11,6 +11,10 @@ Behaviour changes:
 * Expand Y035 to cover `__match_args__` inside class definitions, as well as `__all__`
   in the global scope.
 
+Bugfixes:
+* Improve Y026 check (regarding `typing.TypeAlias`) to reduce false-positive errors
+  emitted when the plugin encountered variable aliases in a stub file.
+
 ## 22.3.0
 
 Bugfixes:

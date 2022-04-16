@@ -301,6 +301,7 @@ _is_TypeAlias = partial(_is_object, name="TypeAlias", from_=_TYPING_MODULES)
 _is_NamedTuple = partial(_is_object, name="NamedTuple", from_={"typing"})
 _is_TypedDict = partial(_is_object, name="TypedDict", from_=_TYPING_MODULES)
 _is_Literal = partial(_is_object, name="Literal", from_=_TYPING_MODULES)
+_is_Union = partial(_is_object, name="Union", from_={"typing"})
 _is_abstractmethod = partial(_is_object, name="abstractmethod", from_={"abc"})
 _is_Any = partial(_is_object, name="Any", from_={"typing"})
 _is_overload = partial(_is_object, name="overload", from_={"typing"})
@@ -743,12 +744,31 @@ class PyiVisitor(ast.NodeVisitor):
         ):
             return self._Y015_error(node)
 
-        # We avoid triggering Y026 for calls and = ... because there are various
-        # unusual cases where assignment to the result of a call is legitimate
-        # in stubs.
-        if not is_special_assignment and not isinstance(
-            assignment, (ast.Ellipsis, ast.Call)
-        ):
+        if not is_special_assignment:
+            self._check_for_type_aliases(node, target_name, assignment)
+
+    def _check_for_type_aliases(
+        self, node: ast.Assign, target_name: str, assignment: ast.expr
+    ) -> None:
+        """
+        Check for assignments that look like they could be type aliases,
+        but aren't annotated with `typing(_extensions).TypeAlias`.
+
+        We avoid triggering Y026 for calls and = ... because there are various
+        unusual cases where assignment to the result of a call is legitimate
+        in stubs (`T = TypeVar("T")`, `List = _Alias()`, etc.).
+
+        We also avoid triggering Y026 for aliases like `X = Any` or `Y = str`.
+        It's ultimately nearly impossible to reliably detect
+        whether these are type aliases or variable aliases,
+        unless you're a type checker (and we're not).
+        """
+        if isinstance(assignment, ast.BinOp):
+            return self.error(node, Y026)
+        if not isinstance(assignment, ast.Subscript):
+            return
+        subscripted_object = assignment.value
+        if _is_Union(subscripted_object) or _is_Literal(subscripted_object):
             self.error(node, Y026)
 
     def visit_Name(self, node: ast.Name) -> None:
