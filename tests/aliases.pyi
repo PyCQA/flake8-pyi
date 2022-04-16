@@ -1,7 +1,4 @@
-import builtins
-import collections
 import typing
-from collections.abc import Mapping
 from typing import (  # Y037 Use PEP 604 union types instead of typing.Union (e.g. "int | str" instead of "Union[int, str]").
     ParamSpec as _ParamSpec,
     TypeAlias,
@@ -11,17 +8,22 @@ from typing import (  # Y037 Use PEP 604 union types instead of typing.Union (e.
 )
 
 import typing_extensions
+from typing_extensions import Literal
 
-T = builtins.str  # Y026 Use typing_extensions.TypeAlias for type aliases
-U = typing.AbstractSet  # Y026 Use typing_extensions.TypeAlias for type aliases
-V = Mapping  # Y026 Use typing_extensions.TypeAlias for type aliases
-X = int  # Y026 Use typing_extensions.TypeAlias for type aliases
+U = typing.Literal["ham", "bacon"]  # Y026 Use typing_extensions.TypeAlias for type aliases
+V = Literal["spam", "eggs"]  # Y026 Use typing_extensions.TypeAlias for type aliases
+X = typing_extensions.Literal["foo", "bar"]  # Y026 Use typing_extensions.TypeAlias for type aliases
 Y = int | str  # Y026 Use typing_extensions.TypeAlias for type aliases
 Z = Union[str, bytes]  # Y026 Use typing_extensions.TypeAlias for type aliases
 
-X: TypeAlias = int
-Y: typing.TypeAlias = int
-Z: typing_extensions.TypeAlias = int
+A: typing.TypeAlias = typing.Literal["ham", "bacon"]
+B: typing_extensions.TypeAlias = Literal["spam", "eggs"]
+C: TypeAlias = typing_extensions.Literal["foo", "bar"]
+D: TypeAlias = int | str
+E: TypeAlias = Union[str, bytes]
+F: TypeAlias = int
+G: typing.TypeAlias = int
+H: typing_extensions.TypeAlias = int
 
 a = b = int  # Y017 Only simple assignments allowed
 a.b = int  # Y017 Only simple assignments allowed
@@ -41,6 +43,3 @@ class Foo:
 
 f: Foo = ...
 baz = f.baz
-
-typealias_for_deque = collections.deque  # Y026 Use typing_extensions.TypeAlias for type aliases
-uses_typealias_for_deque_in_annotation: typealias_for_deque
