@@ -1142,7 +1142,7 @@ class PyiVisitor(ast.NodeVisitor):
 
             error_msg_details = (
                 f"The {arg_name} arg in an {method_name} method "
-                f'should be annotated with "{correct_annotation}", '
+                f'should be annotated with "{correct_annotation}" or "object", '
                 f'not "{unparse(annotation_node)}"'
             )
 
