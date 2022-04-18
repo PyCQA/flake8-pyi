@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import collections.abc
 import logging
 import optparse
 import re
@@ -61,10 +62,16 @@ _COUNTER_SLICE = "KeyType"
 _CONTEXTLIB_SLICE = "T"
 _SET_SLICE = "T"
 _SEQUENCE_SLICE = "T"
+_ITERABLE_SLICE = "T"
+_ITERATOR_SLICE = "T"
+_AWAITABLE_SLICE = "T"
+_COROUTINE_SLICE = "YieldType, SendType, ReturnType"
+_ASYNCGEN_SLICE = "YieldType, SendType"
 
 
 # ChainMap and AsyncContextManager do not exist in typing or typing_extensions in Python 2,
 # so we can disallow importing them from anywhere except collections and contextlib respectively.
+# A Python 2-compatible check
 _BAD_Y022_IMPORTS = {
     # typing aliases for collections
     "typing.Counter": ("collections.Counter", _COUNTER_SLICE),
@@ -97,15 +104,16 @@ _BAD_Y022_IMPORTS = {
     ),
 }
 
-# typing_extensions.ContextManager is omitted from the Y023 and Y027 collections - special-cased
+# Objects you should import from collections.abc/typing instead of typing_extensions
 # We use `None` to signify that the object shouldn't  be parameterised.
+# A Python 2-compatible check
 _BAD_Y023_IMPORTS = {
     # collections.abc aliases
-    "Awaitable": "T",
-    "Coroutine": "YieldType, SendType, ReturnType",
-    "AsyncIterable": "T",
-    "AsyncIterator": "T",
-    "AsyncGenerator": "YieldType, SendType",
+    "Awaitable": _AWAITABLE_SLICE,
+    "Coroutine": _COROUTINE_SLICE,
+    "AsyncIterable": _ITERABLE_SLICE,
+    "AsyncIterator": _ITERATOR_SLICE,
+    "AsyncGenerator": _ASYNCGEN_SLICE,
     # typing aliases
     "Protocol": None,
     "runtime_checkable": None,
@@ -116,10 +124,35 @@ _BAD_Y023_IMPORTS = {
     "NoReturn": None,
 }
 
+# Objects you should import from collections.abc instead of typing(_extensions)
+# A Python 2-incompatible check
+# typing.AbstractSet is deliberately omitted (special-cased)
+# We use `None` to signify that the object shouldn't  be parameterised.
 _BAD_Y027_IMPORTS = {
-    "typing.ContextManager": ("contextlib.AbstractContextManager", _CONTEXTLIB_SLICE),
-    "typing.OrderedDict": ("collections.OrderedDict", _MAPPING_SLICE),
-    "typing_extensions.OrderedDict": ("collections.OrderedDict", _MAPPING_SLICE),
+    "ByteString": None,
+    "Collection": "T",
+    "ItemsView": _MAPPING_SLICE,
+    "KeysView": "KeyType",
+    "Mapping": _MAPPING_SLICE,
+    "MappingView": None,
+    "MutableMapping": _MAPPING_SLICE,
+    "MutableSequence": _SEQUENCE_SLICE,
+    "MutableSet": _SET_SLICE,
+    "Sequence": _SEQUENCE_SLICE,
+    "ValuesView": "ValueType",
+    "Iterable": _ITERABLE_SLICE,
+    "Iterator": _ITERATOR_SLICE,
+    "Generator": "YieldType, SendType, ReturnType",
+    "Hashable": None,
+    "Reversible": "T",
+    "Sized": None,
+    "Coroutine": _COROUTINE_SLICE,
+    "AsyncGenerator": _ASYNCGEN_SLICE,
+    "AsyncIterator": _ITERATOR_SLICE,
+    "AsyncIterable": _ITERABLE_SLICE,
+    "Awaitable": _AWAITABLE_SLICE,
+    "Callable": None,
+    "Container": "T",
 }
 
 
@@ -600,11 +633,22 @@ class PyiVisitor(ast.NodeVisitor):
             )
 
         # Y027 errors
-        elif fullname in _BAD_Y027_IMPORTS:
-            good_cls_name, params = _BAD_Y027_IMPORTS[fullname]
+        elif module_name == "typing" and object_name in _BAD_Y027_IMPORTS:
+            slice_contents = _BAD_Y027_IMPORTS[object_name]
+            params = "" if slice_contents is None else f"[{slice_contents}]"
             error_message = Y027.format(
-                good_syntax=f'"{good_cls_name}[{params}]"',
-                bad_syntax=f'"{fullname}[{params}]"',
+                good_syntax=f'"collections.abc.{object_name}{params}"',
+                bad_syntax=f'"typing.{object_name}{params}"',
+            )
+        elif module_name in _TYPING_MODULES and object_name == "OrderedDict":
+            error_message = Y027.format(
+                good_syntax=f'"collections.OrderedDict[{_MAPPING_SLICE}]"',
+                bad_syntax=f'"{fullname}[{_MAPPING_SLICE}]"',
+            )
+        elif fullname == "typing.ContextManager":
+            error_message = Y027.format(
+                good_syntax=f'"contextlib.AbstractContextManager[{_CONTEXTLIB_SLICE}]"',
+                bad_syntax=f'"typing.ContextManager[{_CONTEXTLIB_SLICE}]"',
             )
 
         # Y023 errors
@@ -612,8 +656,16 @@ class PyiVisitor(ast.NodeVisitor):
             if object_name in _BAD_Y023_IMPORTS:
                 slice_contents = _BAD_Y023_IMPORTS[object_name]
                 params = "" if slice_contents is None else f"[{slice_contents}]"
+                if object_name in collections.abc.__all__:
+                    suggestion = (
+                        f'"collections.abc.{object_name}{params}" '
+                        f'(or "typing.{object_name}{params}" '
+                        f"in Python 2-compatible code)"
+                    )
+                else:
+                    suggestion = f'"typing.{object_name}{params}"'
                 error_message = Y023.format(
-                    good_syntax=f'"typing.{object_name}{params}"',
+                    good_syntax=suggestion,
                     bad_syntax=f'"typing_extensions.{object_name}{params}"',
                 )
             elif object_name == "ContextManager":
@@ -639,7 +691,6 @@ class PyiVisitor(ast.NodeVisitor):
             error_message = Y037.format(
                 old_syntax=fullname, example='"int | None" instead of "Optional[int]"'
             )
-
         elif fullname == "typing.Union":
             error_message = Y037.format(
                 old_syntax=fullname, example='"int | str" instead of "Union[int, str]"'
@@ -676,6 +727,11 @@ class PyiVisitor(ast.NodeVisitor):
             self._check_import_or_attribute(
                 node=node, module_name=module_name, object_name=obj.name
             )
+
+        if module_name == "typing" and any(
+            obj.name == "AbstractSet" for obj in imported_objects
+        ):
+            self.error(node, Y038)
 
     def _check_assignment_to_function(
         self, node: ast.Assign, function: ast.expr, object_name: str
@@ -1531,3 +1587,4 @@ Y034 = 'Y034 {methods} usually return "self" at runtime. Consider using "_typesh
 Y035 = 'Y035 "{var}" in a stub file must have a value, as it has the same semantics as "{var}" at runtime.'
 Y036 = "Y036 Badly defined {method_name} method: {details}"
 Y037 = "Y037 Use PEP 604 union types instead of {old_syntax} (e.g. {example})."
+Y038 = 'Y038 Use "from collections.abc import Set as AbstractSet" instead of "from typing import AbstractSet" (PEP 585 syntax)'

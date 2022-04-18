@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+Features:
+* Expand Y027 check to prohibit importing any objects from the `typing` module that are
+  aliases for objects living `collections.abc` (except for `typing.AbstractSet`, which
+  is special-cased).
+* Introduce Y038: Use `from collections.abc import Set as AbstractSet` instead of
+  `from typing import AbstractSet`.
+
 Bugfixes:
 * Improve inaccurate error messages for Y036.
 

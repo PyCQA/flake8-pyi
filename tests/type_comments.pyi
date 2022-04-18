@@ -1,4 +1,5 @@
-from typing import Sequence, TypeAlias
+from collections.abc import Sequence
+from typing import TypeAlias
 
 a: TypeAlias = None  # type: int  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")
 b: TypeAlias = None  # type: str  # And here's an extra comment about why it's that type  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")
