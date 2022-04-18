@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## 22.4.1
 
 Features:
 * Expand Y027 check to prohibit importing any objects from the `typing` module that are
