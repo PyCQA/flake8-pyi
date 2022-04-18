@@ -86,7 +86,7 @@ from typing_extensions import AsyncContextManager  # Y022 Use "contextlib.Abstra
 # BAD IMPORTS (Y023 code)
 from typing_extensions import ClassVar  # Y023 Use "typing.ClassVar[T]" instead of "typing_extensions.ClassVar[T]"
 from typing_extensions import Awaitable  # Y023 Use "collections.abc.Awaitable[T]" (or "typing.Awaitable[T]" in Python 2-compatible code) instead of "typing_extensions.Awaitable[T]"
-from typing_extensions import ContextManager  # Y023 Use "contextlib.AbstractContextManager[T]" (or "typing.ContextManager[T]" in Python 2-compatible code) instead of "typing_extensions.ContextManager[T]" (PEP 585 syntax)
+from typing_extensions import ContextManager  # Y023 Use "contextlib.AbstractContextManager[T]" (or "typing.ContextManager[T]" in Python 2-compatible code) instead of "typing_extensions.ContextManager[T]"
 from typing_extensions import runtime_checkable  # Y023 Use "typing.runtime_checkable" instead of "typing_extensions.runtime_checkable"
 from typing_extensions import AsyncGenerator  # Y023 Use "collections.abc.AsyncGenerator[YieldType, SendType]" (or "typing.AsyncGenerator[YieldType, SendType]" in Python 2-compatible code) instead of "typing_extensions.AsyncGenerator[YieldType, SendType]"
 from typing_extensions import Coroutine  # Y023 Use "collections.abc.Coroutine[YieldType, SendType, ReturnType]" (or "typing.Coroutine[YieldType, SendType, ReturnType]" in Python 2-compatible code) instead of "typing_extensions.Coroutine[YieldType, SendType, ReturnType]"
@@ -152,7 +152,7 @@ class Foo:
     attribute: typing_extensions.ClassVar[int]  # Y023 Use "typing.ClassVar[T]" instead of "typing_extensions.ClassVar[T]"
 
 h: typing_extensions.Awaitable[float]  # Y023 Use "collections.abc.Awaitable[T]" (or "typing.Awaitable[T]" in Python 2-compatible code) instead of "typing_extensions.Awaitable[T]"
-i: typing_extensions.ContextManager[None]  # Y023 Use "contextlib.AbstractContextManager[T]" (or "typing.ContextManager[T]" in Python 2-compatible code) instead of "typing_extensions.ContextManager[T]" (PEP 585 syntax)
+i: typing_extensions.ContextManager[None]  # Y023 Use "contextlib.AbstractContextManager[T]" (or "typing.ContextManager[T]" in Python 2-compatible code) instead of "typing_extensions.ContextManager[T]"
 
 # BAD ATTRIBUTE ACCESS (Y027 code)
 k: typing_extensions.OrderedDict[int, str]  # Y027 Use "collections.OrderedDict[KeyType, ValueType]" instead of "typing_extensions.OrderedDict[KeyType, ValueType]" (PEP 585 syntax)

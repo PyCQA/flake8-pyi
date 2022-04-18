@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import argparse
 import ast
-import collections.abc
 import logging
 import optparse
 import re
@@ -59,12 +58,6 @@ class TypeVarInfo(NamedTuple):
 _MAPPING_SLICE = "KeyType, ValueType"
 _TYPE_SLICE = "MyClass"
 _COUNTER_SLICE = "KeyType"
-_CONTEXTLIB_SLICE = "T"
-_SET_SLICE = "T"
-_SEQUENCE_SLICE = "T"
-_ITERABLE_SLICE = "T"
-_ITERATOR_SLICE = "T"
-_AWAITABLE_SLICE = "T"
 _COROUTINE_SLICE = "YieldType, SendType, ReturnType"
 _ASYNCGEN_SLICE = "YieldType, SendType"
 
@@ -75,24 +68,21 @@ _ASYNCGEN_SLICE = "YieldType, SendType"
 _BAD_Y022_IMPORTS = {
     # typing aliases for collections
     "typing.Counter": ("collections.Counter", _COUNTER_SLICE),
-    "typing.Deque": ("collections.deque", _SEQUENCE_SLICE),
+    "typing.Deque": ("collections.deque", "T"),
     "typing.DefaultDict": ("collections.defaultdict", _MAPPING_SLICE),
     "typing.ChainMap": ("collections.ChainMap", _MAPPING_SLICE),
     # typing aliases for builtins
     "typing.Dict": ("dict", _MAPPING_SLICE),
-    "typing.FrozenSet": ("frozenset", _SET_SLICE),
-    "typing.List": ("list", _SEQUENCE_SLICE),
-    "typing.Set": ("set", _SET_SLICE),
+    "typing.FrozenSet": ("frozenset", "T"),
+    "typing.List": ("list", "T"),
+    "typing.Set": ("set", "T"),
     "typing.Tuple": ("tuple", "Foo, Bar"),
     "typing.Type": ("type", _TYPE_SLICE),
     # One typing alias for contextlib
-    "typing.AsyncContextManager": (
-        "contextlib.AbstractAsyncContextManager",
-        _CONTEXTLIB_SLICE,
-    ),
+    "typing.AsyncContextManager": ("contextlib.AbstractAsyncContextManager", "T"),
     # typing_extensions aliases for collections
     "typing_extensions.Counter": ("collections.Counter", _COUNTER_SLICE),
-    "typing_extensions.Deque": ("collections.deque", _SEQUENCE_SLICE),
+    "typing_extensions.Deque": ("collections.deque", "T"),
     "typing_extensions.DefaultDict": ("collections.defaultdict", _MAPPING_SLICE),
     "typing_extensions.ChainMap": ("collections.ChainMap", _MAPPING_SLICE),
     # One typing_extensions alias for a builtin
@@ -100,29 +90,31 @@ _BAD_Y022_IMPORTS = {
     # one typing_extensions alias for contextlib
     "typing_extensions.AsyncContextManager": (
         "contextlib.AbstractAsyncContextManager",
-        _CONTEXTLIB_SLICE,
+        "T",
     ),
 }
 
 # Objects you should import from collections.abc/typing instead of typing_extensions
-# We use `None` to signify that the object shouldn't  be parameterised.
 # A Python 2-compatible check
-_BAD_Y023_IMPORTS = {
-    # collections.abc aliases
-    "Awaitable": _AWAITABLE_SLICE,
+_BAD_COLLECTIONSABC_Y023_IMPORTS = {
+    "Awaitable": "T",
     "Coroutine": _COROUTINE_SLICE,
-    "AsyncIterable": _ITERABLE_SLICE,
-    "AsyncIterator": _ITERATOR_SLICE,
+    "AsyncIterable": "T",
+    "AsyncIterator": "T",
     "AsyncGenerator": _ASYNCGEN_SLICE,
-    # typing aliases
-    "Protocol": None,
-    "runtime_checkable": None,
-    "ClassVar": "T",
-    "NewType": None,
-    "overload": None,
-    "Text": None,
-    "NoReturn": None,
 }
+_BAD_TYPING_Y023_IMPORTS = frozenset(
+    {
+        "Protocol",
+        "runtime_checkable",
+        "NewType",
+        "overload",
+        "Text",
+        "NoReturn",
+        # ClassVar deliberately omitted, as it's the only one that shouldn't be parameterised
+        # It is special-case elsewhere
+    }
+)
 
 # Objects you should import from collections.abc instead of typing(_extensions)
 # A Python 2-incompatible check
@@ -136,21 +128,21 @@ _BAD_Y027_IMPORTS = {
     "Mapping": _MAPPING_SLICE,
     "MappingView": None,
     "MutableMapping": _MAPPING_SLICE,
-    "MutableSequence": _SEQUENCE_SLICE,
-    "MutableSet": _SET_SLICE,
-    "Sequence": _SEQUENCE_SLICE,
+    "MutableSequence": "T",
+    "MutableSet": "T",
+    "Sequence": "T",
     "ValuesView": "ValueType",
-    "Iterable": _ITERABLE_SLICE,
-    "Iterator": _ITERATOR_SLICE,
+    "Iterable": "T",
+    "Iterator": "T",
     "Generator": "YieldType, SendType, ReturnType",
     "Hashable": None,
     "Reversible": "T",
     "Sized": None,
     "Coroutine": _COROUTINE_SLICE,
     "AsyncGenerator": _ASYNCGEN_SLICE,
-    "AsyncIterator": _ITERATOR_SLICE,
-    "AsyncIterable": _ITERABLE_SLICE,
-    "Awaitable": _AWAITABLE_SLICE,
+    "AsyncIterator": "T",
+    "AsyncIterable": "T",
+    "Awaitable": "T",
     "Callable": None,
     "Container": "T",
 }
@@ -619,6 +611,38 @@ class PyiVisitor(ast.NodeVisitor):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(filename={self.filename!r})"
 
+    @staticmethod
+    def _get_Y023_error_message(object_name: str) -> str | None:
+        """
+        Return the appropriate error message for a bad import/attribute-access from typing_extensions.
+        Return `None` if it's an OK import/attribute-access.
+        """
+        if object_name in _BAD_COLLECTIONSABC_Y023_IMPORTS:
+            slice_contents = _BAD_COLLECTIONSABC_Y023_IMPORTS[object_name]
+            suggestion = (
+                f'"collections.abc.{object_name}[{slice_contents}]" '
+                f'(or "typing.{object_name}[{slice_contents}]" '
+                f"in Python 2-compatible code)"
+            )
+            bad_syntax = f'"typing_extensions.{object_name}[{slice_contents}]"'
+        elif object_name in _BAD_TYPING_Y023_IMPORTS:
+            suggestion = f'"typing.{object_name}"'
+            bad_syntax = f'"typing_extensions.{object_name}"'
+        elif object_name == "ClassVar":
+            suggestion = '"typing.ClassVar[T]"'
+            bad_syntax = '"typing_extensions.ClassVar[T]"'
+        elif object_name == "ContextManager":
+            suggestion = (
+                '"contextlib.AbstractContextManager[T]" '
+                '(or "typing.ContextManager[T]" '
+                "in Python 2-compatible code)"
+            )
+            bad_syntax = '"typing_extensions.ContextManager[T]"'
+        else:
+            return None
+
+        return Y023.format(good_syntax=suggestion, bad_syntax=bad_syntax)
+
     def _check_import_or_attribute(
         self, node: ast.Attribute | ast.ImportFrom, module_name: str, object_name: str
     ) -> None:
@@ -647,40 +671,17 @@ class PyiVisitor(ast.NodeVisitor):
             )
         elif fullname == "typing.ContextManager":
             error_message = Y027.format(
-                good_syntax=f'"contextlib.AbstractContextManager[{_CONTEXTLIB_SLICE}]"',
-                bad_syntax=f'"typing.ContextManager[{_CONTEXTLIB_SLICE}]"',
+                good_syntax='"contextlib.AbstractContextManager[T]"',
+                bad_syntax='"typing.ContextManager[T]"',
             )
 
         # Y023 errors
         elif module_name == "typing_extensions":
-            if object_name in _BAD_Y023_IMPORTS:
-                slice_contents = _BAD_Y023_IMPORTS[object_name]
-                params = "" if slice_contents is None else f"[{slice_contents}]"
-                if object_name in collections.abc.__all__:
-                    suggestion = (
-                        f'"collections.abc.{object_name}{params}" '
-                        f'(or "typing.{object_name}{params}" '
-                        f"in Python 2-compatible code)"
-                    )
-                else:
-                    suggestion = f'"typing.{object_name}{params}"'
-                error_message = Y023.format(
-                    good_syntax=suggestion,
-                    bad_syntax=f'"typing_extensions.{object_name}{params}"',
-                )
-            elif object_name == "ContextManager":
-                suggested_syntax = (
-                    f'"contextlib.AbstractContextManager[{_CONTEXTLIB_SLICE}]" '
-                    f'(or "typing.ContextManager[{_CONTEXTLIB_SLICE}]" '
-                    f"in Python 2-compatible code)"
-                )
-                error_message = Y023.format(
-                    good_syntax=suggested_syntax,
-                    bad_syntax=f'"typing_extensions.ContextManager[{_CONTEXTLIB_SLICE}]"',
-                )
-                error_message += " (PEP 585 syntax)"
-            else:
+            analysis = self._get_Y023_error_message(object_name)
+            if analysis is None:
                 return
+            else:
+                error_message = analysis
 
         # Y024 errors
         elif fullname == "collections.namedtuple":
