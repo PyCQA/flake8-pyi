@@ -1,9 +1,9 @@
 import types
 import typing
+from collections.abc import Awaitable
 from types import TracebackType
 from typing import (  # Y022 Use "type[MyClass]" instead of "typing.Type[MyClass]" (PEP 585 syntax)
     Any,
-    Awaitable,
     Type,
 )
 

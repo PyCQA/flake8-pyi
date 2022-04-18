@@ -2,9 +2,9 @@ import abc
 import collections.abc
 import typing
 from abc import abstractmethod
-from typing import Any, AsyncIterator, Iterator, overload
+from collections.abc import AsyncIterator, Iterator
+from typing import Any, overload
 
-import typing_extensions
 from _typeshed import Self
 from typing_extensions import final
 
@@ -69,14 +69,14 @@ class InvalidButPluginDoesNotCrash:
 class BadIterator1(Iterator[int]):
     def __iter__(self) -> Iterator[int]: ...  # Y034 "__iter__" methods in classes like "BadIterator1" usually return "self" at runtime. Consider using "_typeshed.Self" in "BadIterator1.__iter__", e.g. "def __iter__(self: Self) -> Self: ..."
 
-class BadIterator2(typing.Iterator[int]):
+class BadIterator2(typing.Iterator[int]):  # Y027 Use "collections.abc.Iterator[T]" instead of "typing.Iterator[T]" (PEP 585 syntax)
     def __iter__(self) -> Iterator[int]: ...  # Y034 "__iter__" methods in classes like "BadIterator2" usually return "self" at runtime. Consider using "_typeshed.Self" in "BadIterator2.__iter__", e.g. "def __iter__(self: Self) -> Self: ..."
 
-class BadIterator3(typing_extensions.Iterator[int]):
+class BadIterator3(typing.Iterator[int]):  # Y027 Use "collections.abc.Iterator[T]" instead of "typing.Iterator[T]" (PEP 585 syntax)
     def __iter__(self) -> collections.abc.Iterator[int]: ...  # Y034 "__iter__" methods in classes like "BadIterator3" usually return "self" at runtime. Consider using "_typeshed.Self" in "BadIterator3.__iter__", e.g. "def __iter__(self: Self) -> Self: ..."
 
 class BadAsyncIterator(collections.abc.AsyncIterator[str]):
-    def __aiter__(self) -> typing.AsyncIterator[str]: ...  # Y034 "__aiter__" methods in classes like "BadAsyncIterator" usually return "self" at runtime. Consider using "_typeshed.Self" in "BadAsyncIterator.__aiter__", e.g. "def __aiter__(self: Self) -> Self: ..."
+    def __aiter__(self) -> typing.AsyncIterator[str]: ...  # Y034 "__aiter__" methods in classes like "BadAsyncIterator" usually return "self" at runtime. Consider using "_typeshed.Self" in "BadAsyncIterator.__aiter__", e.g. "def __aiter__(self: Self) -> Self: ..."  # Y027 Use "collections.abc.AsyncIterator[T]" instead of "typing.AsyncIterator[T]" (PEP 585 syntax)
 
 class Abstract(Iterator[str]):
     @abstractmethod
