@@ -111,7 +111,7 @@ _BAD_TYPING_Y023_IMPORTS = frozenset(
         "overload",
         "Text",
         "NoReturn",
-        # ClassVar deliberately omitted, as it's the only one in this group that shouldn't be parameterised
+        # ClassVar deliberately omitted, as it's the only one in this group that should be parameterised
         # It is special-case elsewhere
     }
 )
