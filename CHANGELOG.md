@@ -1,5 +1,10 @@
 # Change Log
 
+## Unreleased
+
+Features:
+* Introduce Y039: Use `str` instead of `typing.Text` for Python 3 stubs.
+
 ## 22.4.1
 
 Features:
