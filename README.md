@@ -70,11 +70,12 @@ currently emitted:
 | Y036 | Y036 detects common errors in `__exit__` and `__aexit__` methods. For example, the first argument in an `__exit__` method should either be annotated with `object` or `type[BaseException] \| None`.
 | Y037 | Use PEP 604 syntax instead of `typing.Union` and `typing.Optional`. E.g. use `str \| int` instead of `Union[str, int]`, and use `str \| None` instead of `Optional[str]`.
 | Y038 | Use `from collections.abc import Set as AbstractSet` instead of `from typing import AbstractSet`. Like Y027, this error code should be switched off in your config file if your stubs support Python 2.
+| Y039 | Use `str` instead of `typing.Text`. This error code is incompatible with stubs supporting Python 2.
 
 Many error codes enforce modern conventions, and some cannot yet be used in
 all cases:
 
-* Y027 and Y038 are incompatible with Python 2. These should only be used in stubs
+* Y027, Y038 and Y039 are incompatible with Python 2. These should only be used in stubs
   that are meant only for Python 3.
 * Y037 (enforcing PEP 604 syntax everywhere) is not yet fully compatible with
   the mypy type checker, which has

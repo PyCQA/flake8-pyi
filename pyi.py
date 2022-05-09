@@ -697,6 +697,10 @@ class PyiVisitor(ast.NodeVisitor):
                 old_syntax=fullname, example='"int | str" instead of "Union[int, str]"'
             )
 
+        # Y039 errors
+        elif fullname == "typing.Text":
+            error_message = Y039
+
         else:
             return
 
@@ -1589,3 +1593,4 @@ Y035 = 'Y035 "{var}" in a stub file must have a value, as it has the same semant
 Y036 = "Y036 Badly defined {method_name} method: {details}"
 Y037 = "Y037 Use PEP 604 union types instead of {old_syntax} (e.g. {example})."
 Y038 = 'Y038 Use "from collections.abc import Set as AbstractSet" instead of "from typing import AbstractSet" (PEP 585 syntax)'
+Y039 = 'Y039 Use "str" instead of "typing.Text"'

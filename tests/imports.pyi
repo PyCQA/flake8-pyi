@@ -124,6 +124,7 @@ from typing import Generator  # Y027 Use "collections.abc.Generator[YieldType, S
 from collections import namedtuple  # Y024 Use "typing.NamedTuple" instead of "collections.namedtuple"
 from collections.abc import Set  # Y025 Use "from collections.abc import Set as AbstractSet" to avoid confusion with "builtins.set"
 from typing import AbstractSet  # Y038 Use "from collections.abc import Set as AbstractSet" instead of "from typing import AbstractSet" (PEP 585 syntax)
+from typing import Text  # Y039 Use "str" instead of "typing.Text"
 
 # GOOD ATTRIBUTE ACCESS
 foo: typing.SupportsIndex
@@ -160,3 +161,4 @@ l: typing.ContextManager  # Y027 Use "contextlib.AbstractContextManager[T]" inst
 
 # BAD ATTRIBUTE ACCESS: OTHER
 j: collections.namedtuple  # Y024 Use "typing.NamedTuple" instead of "collections.namedtuple"
+m: typing.Text  # Y039 Use "str" instead of "typing.Text"
