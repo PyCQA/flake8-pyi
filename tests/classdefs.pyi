@@ -1,4 +1,5 @@
 import abc
+import builtins
 import collections.abc
 import typing
 from abc import abstractmethod
@@ -11,7 +12,7 @@ from typing_extensions import final
 class Bad:
     def __new__(cls, *args: Any, **kwargs: Any) -> Bad: ...  # Y034 "__new__" methods usually return "self" at runtime. Consider using "_typeshed.Self" in "Bad.__new__", e.g. "def __new__(cls: type[Self], *args: Any, **kwargs: Any) -> Self: ..."
     def __repr__(self) -> str: ...  # Y029 Defining __repr__ or __str__ in a stub is almost always redundant
-    def __str__(self) -> str: ...  # Y029 Defining __repr__ or __str__ in a stub is almost always redundant
+    def __str__(self) -> builtins.str: ...  # Y029 Defining __repr__ or __str__ in a stub is almost always redundant
     def __eq__(self, other: Any) -> bool: ...  # Y032 Prefer "object" to "Any" for the second parameter in "__eq__" methods
     def __ne__(self, other: typing.Any) -> typing.Any: ...  # Y032 Prefer "object" to "Any" for the second parameter in "__ne__" methods
     def __enter__(self) -> Bad: ...  # Y034 "__enter__" methods in classes like "Bad" usually return "self" at runtime. Consider using "_typeshed.Self" in "Bad.__enter__", e.g. "def __enter__(self: Self) -> Self: ..."

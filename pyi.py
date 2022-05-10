@@ -296,7 +296,7 @@ _is_BaseException = partial(_is_name, name="BaseException")
 _TYPING_MODULES = frozenset({"typing", "typing_extensions"})
 
 
-def _is_object(node: ast.expr, name: str, *, from_: Container[str]) -> bool:
+def _is_object(node: ast.expr | None, name: str, *, from_: Container[str]) -> bool:
     """Determine whether `node` is an ast representation of `name`.
 
     Return True if `node` is either:
@@ -334,6 +334,7 @@ _is_final = partial(_is_object, name="final", from_=_TYPING_MODULES)
 _is_Final = partial(_is_object, name="Final", from_=_TYPING_MODULES)
 _is_Self = partial(_is_object, name="Self", from_=({"_typeshed"} | _TYPING_MODULES))
 _is_TracebackType = partial(_is_object, name="TracebackType", from_={"types"})
+_is_builtins_object = partial(_is_object, name="object", from_={"builtins"})
 
 
 def _is_type_or_Type(node: ast.expr) -> bool:
@@ -1165,7 +1166,8 @@ class PyiVisitor(ast.NodeVisitor):
             if varargs:
                 varargs_annotation = varargs.annotation
                 if not (
-                    varargs_annotation is None or _is_name(varargs_annotation, "object")
+                    varargs_annotation is None
+                    or _is_builtins_object(varargs_annotation)
                 ):
                     error_for_bad_exit_method(
                         f'Star-args in an {method_name} method should be annotated with "object", '
@@ -1211,7 +1213,7 @@ class PyiVisitor(ast.NodeVisitor):
 
         if num_args >= 2:
             arg1_annotation = non_kw_only_args[1].annotation
-            if arg1_annotation is None or _is_name(arg1_annotation, "object"):
+            if arg1_annotation is None or _is_builtins_object(arg1_annotation):
                 pass
             elif _is_PEP_604_union(arg1_annotation):
                 is_union_with_None, non_None_part = _analyse_exit_method_arg(
@@ -1229,7 +1231,7 @@ class PyiVisitor(ast.NodeVisitor):
 
         if num_args >= 3:
             arg2_annotation = non_kw_only_args[2].annotation
-            if arg2_annotation is None or _is_name(arg2_annotation, "object"):
+            if arg2_annotation is None or _is_builtins_object(arg2_annotation):
                 pass
             elif _is_PEP_604_union(arg2_annotation):
                 is_union_with_None, non_None_part = _analyse_exit_method_arg(
@@ -1242,7 +1244,7 @@ class PyiVisitor(ast.NodeVisitor):
 
         if num_args >= 4:
             arg3_annotation = non_kw_only_args[3].annotation
-            if arg3_annotation is None or _is_name(arg3_annotation, "object"):
+            if arg3_annotation is None or _is_builtins_object(arg3_annotation):
                 pass
             elif _is_PEP_604_union(arg3_annotation):
                 is_union_with_None, non_None_part = _analyse_exit_method_arg(
@@ -1299,7 +1301,7 @@ class PyiVisitor(ast.NodeVisitor):
         if method_name in {"__repr__", "__str__"}:
             if (
                 len(non_kw_only_args) == 1
-                and _is_name(node.returns, "str")
+                and _is_object(node.returns, "str", from_={"builtins"})
                 and not any(_is_abstractmethod(deco) for deco in node.decorator_list)
             ):
                 self.error(node, Y029)
@@ -1374,6 +1376,8 @@ class PyiVisitor(ast.NodeVisitor):
         else:
             return
 
+        # Don't error if the first argument is annotated with `builtins.type[T]` or `typing.Type[T]`
+        # These are edge cases, and it's hard to give good error messages for them.
         if not _is_name(first_arg_annotation.value, "type"):
             return
 
