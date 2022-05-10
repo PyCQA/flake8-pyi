@@ -1601,4 +1601,4 @@ Y036 = "Y036 Badly defined {method_name} method: {details}"
 Y037 = "Y037 Use PEP 604 union types instead of {old_syntax} (e.g. {example})."
 Y038 = 'Y038 Use "from collections.abc import Set as AbstractSet" instead of "from typing import AbstractSet" (PEP 585 syntax)'
 Y039 = 'Y039 Use "str" instead of "typing.Text"'
-Y040 = 'Y040 Do not inherit from "object" explicitly, as all classes implicitly inherit from "object" in Python 3'
+Y040 = 'Y040 Do not inherit from "object" explicitly, as it is redundant in Python 3'
