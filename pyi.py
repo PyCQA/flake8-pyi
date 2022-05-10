@@ -1130,6 +1130,9 @@ class PyiVisitor(ast.NodeVisitor):
             self.generic_visit(node)
         self.current_class_node = old_class_node
 
+        if any(_is_builtins_object(base_node) for base_node in node.bases):
+            self.error(node, Y040)
+
         # empty class body should contain "..." not "pass"
         if len(node.body) == 1:
             statement = node.body[0]
@@ -1598,3 +1601,4 @@ Y036 = "Y036 Badly defined {method_name} method: {details}"
 Y037 = "Y037 Use PEP 604 union types instead of {old_syntax} (e.g. {example})."
 Y038 = 'Y038 Use "from collections.abc import Set as AbstractSet" instead of "from typing import AbstractSet" (PEP 585 syntax)'
 Y039 = 'Y039 Use "str" instead of "typing.Text"'
+Y040 = 'Y040 Do not inherit from "object" explicitly, as it is redundant in Python 3'

@@ -8,6 +8,7 @@ Features:
   acceptable as an annotation for an `__(a)exit__` method argument.
 * Teach the Y029 check to emit errors for `__repr__` and `__str__` methods that return
   `builtins.str` (as opposed to the unqualified `str`).
+* Introduce Y040: Never explicitly inherit from `object` in Python 3 stubs.
 
 ## 22.4.1
 
