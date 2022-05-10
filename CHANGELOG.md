@@ -4,6 +4,10 @@
 
 Features:
 * Introduce Y039: Use `str` instead of `typing.Text` for Python 3 stubs.
+* Teach the Y036 check that `builtins.object` (as well as the unqualified `object`) is
+  acceptable as an annotation for an `__(a)exit__` method argument.
+* Teach the Y029 check to emit errors for `__repr__` and `__str__` methods that return
+  `builtins.str` (as opposed to the unqualified `str`).
 
 ## 22.4.1
 
