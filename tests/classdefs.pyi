@@ -9,7 +9,7 @@ from typing import Any, overload
 from _typeshed import Self
 from typing_extensions import final
 
-class Bad:
+class Bad(object):  # Y040 Do not inherit from "object" explicitly, as all classes implicitly inherit from "object" in Python 3
     def __new__(cls, *args: Any, **kwargs: Any) -> Bad: ...  # Y034 "__new__" methods usually return "self" at runtime. Consider using "_typeshed.Self" in "Bad.__new__", e.g. "def __new__(cls: type[Self], *args: Any, **kwargs: Any) -> Self: ..."
     def __repr__(self) -> str: ...  # Y029 Defining __repr__ or __str__ in a stub is almost always redundant
     def __str__(self) -> builtins.str: ...  # Y029 Defining __repr__ or __str__ in a stub is almost always redundant
@@ -18,6 +18,8 @@ class Bad:
     def __enter__(self) -> Bad: ...  # Y034 "__enter__" methods in classes like "Bad" usually return "self" at runtime. Consider using "_typeshed.Self" in "Bad.__enter__", e.g. "def __enter__(self: Self) -> Self: ..."
     async def __aenter__(self) -> Bad: ...  # Y034 "__aenter__" methods in classes like "Bad" usually return "self" at runtime. Consider using "_typeshed.Self" in "Bad.__aenter__", e.g. "async def __aenter__(self: Self) -> Self: ..."
     def __iadd__(self, other: Bad) -> Bad: ...  # Y034 "__iadd__" methods in classes like "Bad" usually return "self" at runtime. Consider using "_typeshed.Self" in "Bad.__iadd__", e.g. "def __iadd__(self: Self, other: Bad) -> Self: ..."
+
+class AlsoBad(int, builtins.object): ...  # Y040 Do not inherit from "object" explicitly, as all classes implicitly inherit from "object" in Python 3
 
 class Good:
     def __new__(cls: type[Self], *args: Any, **kwargs: Any) -> Self: ...

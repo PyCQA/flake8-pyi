@@ -71,11 +71,12 @@ currently emitted:
 | Y037 | Use PEP 604 syntax instead of `typing.Union` and `typing.Optional`. E.g. use `str \| int` instead of `Union[str, int]`, and use `str \| None` instead of `Optional[str]`.
 | Y038 | Use `from collections.abc import Set as AbstractSet` instead of `from typing import AbstractSet`. Like Y027, this error code should be switched off in your config file if your stubs support Python 2.
 | Y039 | Use `str` instead of `typing.Text`. This error code is incompatible with stubs supporting Python 2.
+| Y040 | Never explicitly inherit from `object`, as all classes implicitly inherit from `object` in Python 3. This error code is incompatible with stubs supporting Python 2.
 
 Many error codes enforce modern conventions, and some cannot yet be used in
 all cases:
 
-* Y027, Y038 and Y039 are incompatible with Python 2. These should only be used in stubs
+* Y027, Y038, Y039 and Y040 are incompatible with Python 2. These should only be used in stubs
   that are meant only for Python 3.
 * Y037 (enforcing PEP 604 syntax everywhere) is not yet fully compatible with
   the mypy type checker, which has
