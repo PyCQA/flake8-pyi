@@ -5,6 +5,10 @@ from typing import Annotated, Literal, TypeAlias, TypeVar
 import typing_extensions
 
 __all__ = ["f", "g"]
+__all__ += ["h"]
+__all__.extend(["i"])
+__all__.append("j")
+__all__.remove("j")
 __match_args__ = ('foo',)  # Y020 Quoted annotations should never be used in stubs
 
 def f(x: "int"): ...  # Y020 Quoted annotations should never be used in stubs

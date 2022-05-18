@@ -809,6 +809,16 @@ class PyiVisitor(ast.NodeVisitor):
         if not is_special_assignment:
             self._check_for_type_aliases(node, target_name, assignment)
 
+    def visit_AugAssign(self, node: ast.AugAssign) -> None:
+        """Allow `__all__ += ['foo', 'bar']` in a stub file"""
+        target, value = node.target, node.value
+        self.visit(target)
+        if _is_name(target, "__all__") and isinstance(node.op, ast.Add):
+            with self.string_literals_allowed.enabled():
+                self.visit(value)
+        else:
+            self.visit(value)
+
     def _check_for_type_aliases(
         self, node: ast.Assign, target_name: str, assignment: ast.expr
     ) -> None:
