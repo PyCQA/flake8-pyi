@@ -1,5 +1,11 @@
 # Change Log
 
+## Unreleased
+
+Behaviour changes:
+* Relax Y020 check slightly, enabling the idiom `__all__ += ["foo", "bar"]` to be used
+  in a stub file.
+
 ## 22.5.0
 
 Features:
