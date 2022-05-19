@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## 22.5.1
 
 Behaviour changes:
 * Relax Y020 check slightly, enabling the idiom `__all__ += ["foo", "bar"]` to be used
