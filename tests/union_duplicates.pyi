@@ -1,4 +1,5 @@
 # flags: --extend-ignore=Y037
+import builtins
 import typing
 from typing import Union
 
@@ -22,3 +23,17 @@ mixed_subscript_union: Union[str, Literal['foo'], typing_extensions.Literal['bar
 just_literals_pipe_union: TypeAlias = Literal[True] | Literal['idk']  # Y030 Multiple Literal members in a union. Use a single Literal, e.g. "Literal[True, 'idk']".
 mixed_pipe_union: TypeAlias = Union[Literal[966], int, Literal['baz']]  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal[966, 'baz']".
 many_literal_members_but_needs_combining: TypeAlias = int | Literal['a', 'b'] | Literal['baz']  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal['a', 'b', 'baz']".
+
+a: int | float  # Y041 "int" is redundant in a union with "float" (see PEP 484)
+b: Union[builtins.float, str, bytes, builtins.int]  # Y041 "int" is redundant in a union with "float" (see PEP 484)
+def func(arg: float | list[str] | type[bool] | complex) -> None: ...  # Y041 "float" is redundant in a union with "complex" (see PEP 484)
+
+class Foo:
+    def method(self, arg: int | builtins.float | complex) -> None: ...  # Y041 "float" is redundant in a union with "complex" (see PEP 484)  # Y041 "int" is redundant in a union with "complex" (see PEP 484)
+
+c: Union[builtins.complex, memoryview, slice, int]  # Y041 "int" is redundant in a union with "complex" (see PEP 484)
+
+# Don't error with Y041 here, the two error messages combined are quite confusing
+d: int | int | float  # Y016 Duplicate union member "int"
+
+e: Literal["foo"] | Literal["bar"] | int | float  # Y041 "int" is redundant in a union with "float" (see PEP 484)  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal['foo', 'bar']".

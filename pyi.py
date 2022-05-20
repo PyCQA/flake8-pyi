@@ -335,6 +335,9 @@ _is_Final = partial(_is_object, name="Final", from_=_TYPING_MODULES)
 _is_Self = partial(_is_object, name="Self", from_=({"_typeshed"} | _TYPING_MODULES))
 _is_TracebackType = partial(_is_object, name="TracebackType", from_={"types"})
 _is_builtins_object = partial(_is_object, name="object", from_={"builtins"})
+_is_int = partial(_is_object, name="int", from_={"builtins"})
+_is_float = partial(_is_object, name="float", from_={"builtins"})
+_is_complex = partial(_is_object, name="complex", from_={"builtins"})
 
 
 def _is_type_or_Type(node: ast.expr) -> bool:
@@ -917,7 +920,38 @@ class PyiVisitor(ast.NodeVisitor):
                 dupes_in_union = True
 
         if not dupes_in_union:
+            self._check_for_redundant_numeric_unions(members)
             self._check_for_multiple_literals(members)
+
+    def _Y041_error(
+        self, members: Sequence[ast.expr], subtype: str, supertype: str
+    ) -> None:
+        self.error(
+            members[0],
+            Y041.format(implicit_subtype=subtype, implicit_supertype=supertype),
+        )
+
+    def _check_for_redundant_numeric_unions(self, members: Sequence[ast.expr]) -> None:
+        complex_in_union, float_in_union, int_in_union = False, False, False
+
+        for member in members:
+            if _is_complex(member):
+                complex_in_union = True
+            elif _is_float(member):
+                float_in_union = True
+            elif _is_int(member):
+                int_in_union = True
+
+            if all((complex_in_union, float_in_union, int_in_union)):
+                break
+
+        if complex_in_union:
+            if float_in_union:
+                self._Y041_error(members, subtype="float", supertype="complex")
+            if int_in_union:
+                self._Y041_error(members, subtype="int", supertype="complex")
+        elif float_in_union and int_in_union:
+            self._Y041_error(members, subtype="int", supertype="float")
 
     def _check_for_multiple_literals(self, members: Sequence[ast.expr]) -> None:
         literals_in_union, non_literals_in_union = [], []
@@ -1612,3 +1646,4 @@ Y037 = "Y037 Use PEP 604 union types instead of {old_syntax} (e.g. {example})."
 Y038 = 'Y038 Use "from collections.abc import Set as AbstractSet" instead of "from typing import AbstractSet" (PEP 585 syntax)'
 Y039 = 'Y039 Use "str" instead of "typing.Text"'
 Y040 = 'Y040 Do not inherit from "object" explicitly, as it is redundant in Python 3'
+Y041 = 'Y041 "{implicit_subtype}" is redundant in a union with "{implicit_supertype}" (see PEP 484)'
