@@ -1036,17 +1036,10 @@ class PyiVisitor(ast.NodeVisitor):
 
     def visit_Subscript(self, node: ast.Subscript) -> None:
         subscripted_object = node.value
-        if isinstance(subscripted_object, ast.Name):
-            subscripted_object_name = subscripted_object.id
-        elif (
-            isinstance(subscripted_object, ast.Attribute)
-            and isinstance(subscripted_object.value, ast.Name)
-            and subscripted_object.value.id in _TYPING_MODULES
-        ):
-            subscripted_object_name = subscripted_object.attr
-        else:
-            subscripted_object_name = None
-
+        subscripted_object_nane = _get_name_of_class_if_from_modules(
+            subscripted_object, 
+            modules=_TYPING_MODULES
+        )
         self.visit(subscripted_object)
         if subscripted_object_name == "Literal":
             with self.string_literals_allowed.enabled():
