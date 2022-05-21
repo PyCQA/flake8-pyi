@@ -337,6 +337,28 @@ _is_TracebackType = partial(_is_object, name="TracebackType", from_={"types"})
 _is_builtins_object = partial(_is_object, name="object", from_={"builtins"})
 
 
+def _get_name_of_class_if_from_modules(
+    classnode: ast.expr, *, modules: Container[str]
+) -> str | None:
+    """
+    >>> _get_name_of_class_if_from_modules(_ast_node_for('int'), modules={'builtins'})
+    'int'
+    >>> _get_name_of_class_if_from_modules(_ast_node_for('builtins.int'), modules={'builtins'})
+    'int'
+    >>> _get_name_of_class_if_from_modules(_ast_node_for('builtins.int'), modules={'typing'}) is None
+    True
+    """
+    if isinstance(classnode, ast.Name):
+        return classnode.id
+    if (
+        isinstance(classnode, ast.Attribute)
+        and isinstance(classnode.value, ast.Name)
+        and classnode.value.id in modules
+    ):
+        return classnode.attr
+    return None
+
+
 def _is_type_or_Type(node: ast.expr) -> bool:
     """
     >>> _is_type_or_Type(_ast_node_for('type'))
@@ -748,15 +770,9 @@ class PyiVisitor(ast.NodeVisitor):
         TypeVars should usually be private.
         If they are private, they should be used at least once in the file in which they are defined.
         """
-        if isinstance(function, ast.Name):
-            cls_name = function.id
-        elif (
-            isinstance(function, ast.Attribute)
-            and isinstance(function.value, ast.Name)
-            and function.value.id in _TYPING_MODULES
-        ):
-            cls_name = function.attr
-        else:
+        cls_name = _get_name_of_class_if_from_modules(function, modules=_TYPING_MODULES)
+
+        if cls_name is None:
             return
 
         if cls_name in {"TypeVar", "ParamSpec", "TypeVarTuple"}:
@@ -938,19 +954,12 @@ class PyiVisitor(ast.NodeVisitor):
         )
 
     def _check_for_redundant_numeric_unions(self, members: Sequence[ast.expr]) -> None:
-        complex_in_union, float_in_union = False, False
-        int_in_union, bool_in_union = False, False
+        complex_in_union, float_in_union, int_in_union = False, False, False
 
         for member in members:
-            if isinstance(member, ast.Name):
-                name = member.id
-            elif (
-                isinstance(member, ast.Attribute)
-                and isinstance(member.value, ast.Name)
-                and member.value.id == "builtins"
-            ):
-                name = member.attr
-            else:
+            name = _get_name_of_class_if_from_modules(member, modules={"builtins"})
+
+            if name is None:
                 continue
 
             if name == "complex":
@@ -959,8 +968,6 @@ class PyiVisitor(ast.NodeVisitor):
                 float_in_union = True
             elif name == "int":
                 int_in_union = True
-            elif name == "bool":
-                bool_in_union = True
 
         if complex_in_union:
             if float_in_union:
@@ -969,9 +976,6 @@ class PyiVisitor(ast.NodeVisitor):
                 self._Y041_error(members, subtype="int", supertype="complex")
         elif float_in_union and int_in_union:
             self._Y041_error(members, subtype="int", supertype="float")
-
-        if int_in_union and bool_in_union:
-            self.error(members[0], Y042)
 
     def _check_for_multiple_literals(self, members: Sequence[ast.expr]) -> None:
         literals_in_union, non_literals_in_union = [], []
@@ -1667,4 +1671,3 @@ Y038 = 'Y038 Use "from collections.abc import Set as AbstractSet" instead of "fr
 Y039 = 'Y039 Use "str" instead of "typing.Text"'
 Y040 = 'Y040 Do not inherit from "object" explicitly, as it is redundant in Python 3'
 Y041 = 'Y041 Use "{implicit_supertype}" instead of "{implicit_subtype} | {implicit_supertype}" (see "The numeric tower" in PEP 484)'
-Y042 = 'Y042 Use "int" instead of "bool | int", as "bool" is a subclass of "int"'
