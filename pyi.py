@@ -929,7 +929,8 @@ class PyiVisitor(ast.NodeVisitor):
         )
 
     def _check_for_redundant_numeric_unions(self, members: Sequence[ast.expr]) -> None:
-        complex_in_union, float_in_union, int_in_union = False, False, False
+        complex_in_union, float_in_union = False, False
+        int_in_union, bool_in_union = False, False
 
         for member in members:
             if isinstance(member, ast.Name):
@@ -949,6 +950,8 @@ class PyiVisitor(ast.NodeVisitor):
                 float_in_union = True
             elif name == "int":
                 int_in_union = True
+            elif name == "bool":
+                bool_in_union = True
 
         if complex_in_union:
             if float_in_union:
@@ -957,6 +960,9 @@ class PyiVisitor(ast.NodeVisitor):
                 self._Y041_error(members, subtype="int", supertype="complex")
         elif float_in_union and int_in_union:
             self._Y041_error(members, subtype="int", supertype="float")
+
+        if int_in_union and bool_in_union:
+            self.error(members[0], Y042)
 
     def _check_for_multiple_literals(self, members: Sequence[ast.expr]) -> None:
         literals_in_union, non_literals_in_union = [], []
@@ -1652,3 +1658,4 @@ Y038 = 'Y038 Use "from collections.abc import Set as AbstractSet" instead of "fr
 Y039 = 'Y039 Use "str" instead of "typing.Text"'
 Y040 = 'Y040 Do not inherit from "object" explicitly, as it is redundant in Python 3'
 Y041 = 'Y041 Use "{implicit_supertype}" instead of "{implicit_subtype} | {implicit_supertype}" (see "The numeric tower" in PEP 484)'
+Y042 = 'Y042 Use "int" instead of "bool | int", as "bool" is a subclass of "int"'

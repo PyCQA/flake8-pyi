@@ -36,4 +36,5 @@ c: Union[builtins.complex, memoryview, slice, int]  # Y041 Use "complex" instead
 # Don't error with Y041 here, the two error messages combined are quite confusing
 d: int | int | float  # Y016 Duplicate union member "int"
 
-e: Literal["foo"] | Literal["bar"] | int | float  # Y041 Use "float" instead of "int | float" (see "The numeric tower" in PEP 484)  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal['foo', 'bar']".
+e: Union[int, str, bool]  # Y042 Use "int" instead of "bool | int", as "bool" is a subclass of "int"
+f: Literal["foo"] | Literal["bar"] | int | float | builtins.bool  # Y041 Use "float" instead of "int | float" (see "The numeric tower" in PEP 484)  # Y042 Use "int" instead of "bool | int", as "bool" is a subclass of "int"  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal['foo', 'bar']".

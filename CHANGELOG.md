@@ -5,6 +5,7 @@
 Features:
 * Introduce Y041: Ban redundant numeric unions (`int | float`, `int | complex`,
   `float | complex`).
+* Introduce Y042: Ban `int | bool` unions (`bool` is a subclass of `int`).
 
 ## 22.5.1
 
