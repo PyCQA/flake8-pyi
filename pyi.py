@@ -606,6 +606,7 @@ class PyiVisitor(ast.NodeVisitor):
         self.string_literals_allowed = NestingCounter()
         self.in_function = NestingCounter()
         self.in_class = NestingCounter()
+        self.visiting_TypeAlias = NestingCounter()
         # This is only relevant for visiting classes
         self.current_class_node: ast.ClassDef | None = None
 
@@ -884,25 +885,32 @@ class PyiVisitor(ast.NodeVisitor):
             self.generic_visit(node)
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
-        if _is_Final(node.annotation):
+        node_annotation = node.annotation
+        if _is_Final(node_annotation):
             with self.string_literals_allowed.enabled():
                 self.generic_visit(node)
             return
-        target = node.target
-        if isinstance(target, ast.Name):
-            target_name = target.id
+
+        node_target, node_value = node.target, node.value
+        if isinstance(node_target, ast.Name):
+            target_name = node_target.id
             if _is_assignment_which_must_have_a_value(
                 target_name, in_class=self.in_class.active
             ):
                 with self.string_literals_allowed.enabled():
                     self.generic_visit(node)
-                if node.value is None:
+                if node_value is None:
                     self.error(node, Y035.format(var=target_name))
                 return
-        self.generic_visit(node)
-        if _is_TypeAlias(node.annotation):
+
+        if _is_TypeAlias(node_annotation):
+            with self.visiting_TypeAlias.enabled():
+                self.generic_visit(node)
             return
-        if node.value and not isinstance(node.value, ast.Ellipsis):
+
+        self.generic_visit(node)
+
+        if node_value and not isinstance(node_value, ast.Ellipsis):
             self._Y015_error(node)
 
     def _check_union_members(self, members: Sequence[ast.expr]) -> None:
@@ -917,8 +925,9 @@ class PyiVisitor(ast.NodeVisitor):
                 dupes_in_union = True
 
         if not dupes_in_union:
-            self._check_for_redundant_numeric_unions(members)
             self._check_for_multiple_literals(members)
+            if not self.visiting_TypeAlias.active:
+                self._check_for_redundant_numeric_unions(members)
 
     def _Y041_error(
         self, members: Sequence[ast.expr], subtype: str, supertype: str

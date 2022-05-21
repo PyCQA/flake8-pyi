@@ -1,6 +1,7 @@
 # flags: --extend-ignore=Y037
 import builtins
 import typing
+from collections.abc import Mapping
 from typing import Union
 
 import typing_extensions
@@ -37,4 +38,9 @@ c: Union[builtins.complex, memoryview, slice, int]  # Y041 Use "complex" instead
 d: int | int | float  # Y016 Duplicate union member "int"
 
 e: Union[int, str, bool]  # Y042 Use "int" instead of "bool | int", as "bool" is a subclass of "int"
-f: Literal["foo"] | Literal["bar"] | int | float | builtins.bool  # Y041 Use "float" instead of "int | float" (see "The numeric tower" in PEP 484)  # Y042 Use "int" instead of "bool | int", as "bool" is a subclass of "int"  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal['foo', 'bar']".
+f: Literal["foo"] | Literal["bar"] | int | float | builtins.bool  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal['foo', 'bar']".  # Y041 Use "float" instead of "int | float" (see "The numeric tower" in PEP 484)  # Y042 Use "int" instead of "bool | int", as "bool" is a subclass of "int"
+
+# Type aliases are special-cased to be excluded from Y041 and Y042
+MyTypeAlias: TypeAlias = int | float | bool
+MySecondTypeAlias: TypeAlias = Union[builtins.int, str, complex, bool]
+MyThirdTypeAlias: TypeAlias = Mapping[str, int | builtins.float | builtins.bool]
