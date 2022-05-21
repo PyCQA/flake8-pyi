@@ -335,9 +335,6 @@ _is_Final = partial(_is_object, name="Final", from_=_TYPING_MODULES)
 _is_Self = partial(_is_object, name="Self", from_=({"_typeshed"} | _TYPING_MODULES))
 _is_TracebackType = partial(_is_object, name="TracebackType", from_={"types"})
 _is_builtins_object = partial(_is_object, name="object", from_={"builtins"})
-_is_int = partial(_is_object, name="int", from_={"builtins"})
-_is_float = partial(_is_object, name="float", from_={"builtins"})
-_is_complex = partial(_is_object, name="complex", from_={"builtins"})
 
 
 def _is_type_or_Type(node: ast.expr) -> bool:
@@ -935,11 +932,22 @@ class PyiVisitor(ast.NodeVisitor):
         complex_in_union, float_in_union, int_in_union = False, False, False
 
         for member in members:
-            if _is_complex(member):
+            if isinstance(member, ast.Name):
+                name = member.id
+            elif (
+                isinstance(member, ast.Attribute)
+                and isinstance(member.value, ast.Name)
+                and member.value.id == "builtins"
+            ):
+                name = member.attr
+            else:
+                continue
+
+            if name == "complex":
                 complex_in_union = True
-            elif _is_float(member):
+            elif name == "float":
                 float_in_union = True
-            elif _is_int(member):
+            elif name == "int":
                 int_in_union = True
 
         if complex_in_union:
