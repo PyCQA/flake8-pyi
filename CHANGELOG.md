@@ -1,5 +1,11 @@
 # Change Log
 
+## Unreleased
+
+Features:
+* Introduce Y041: Ban redundant numeric unions (`int | float`, `int | complex`,
+  `float | complex`).
+
 ## 22.5.1
 
 Behaviour changes:

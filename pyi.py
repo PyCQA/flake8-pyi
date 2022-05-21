@@ -337,6 +337,35 @@ _is_TracebackType = partial(_is_object, name="TracebackType", from_={"types"})
 _is_builtins_object = partial(_is_object, name="object", from_={"builtins"})
 
 
+def _get_name_of_class_if_from_modules(
+    classnode: ast.expr, *, modules: Container[str]
+) -> str | None:
+    """
+    If `classnode` is an `ast.Name`, return `classnode.id`.
+
+    If it's an `ast.Attribute`, check that the part before the dot is a module in `modules`.
+    If it is, return the part after the dot; if it isn't, return `None`.
+
+    If `classnode` is anything else, return `None`.
+
+    >>> _get_name_of_class_if_from_modules(_ast_node_for('int'), modules={'builtins'})
+    'int'
+    >>> _get_name_of_class_if_from_modules(_ast_node_for('builtins.int'), modules={'builtins'})
+    'int'
+    >>> _get_name_of_class_if_from_modules(_ast_node_for('builtins.int'), modules={'typing'}) is None
+    True
+    """
+    if isinstance(classnode, ast.Name):
+        return classnode.id
+    if (
+        isinstance(classnode, ast.Attribute)
+        and isinstance(classnode.value, ast.Name)
+        and classnode.value.id in modules
+    ):
+        return classnode.attr
+    return None
+
+
 def _is_type_or_Type(node: ast.expr) -> bool:
     """
     >>> _is_type_or_Type(_ast_node_for('type'))
@@ -606,6 +635,7 @@ class PyiVisitor(ast.NodeVisitor):
         self.string_literals_allowed = NestingCounter()
         self.in_function = NestingCounter()
         self.in_class = NestingCounter()
+        self.visiting_TypeAlias = NestingCounter()
         # This is only relevant for visiting classes
         self.current_class_node: ast.ClassDef | None = None
 
@@ -747,15 +777,9 @@ class PyiVisitor(ast.NodeVisitor):
         TypeVars should usually be private.
         If they are private, they should be used at least once in the file in which they are defined.
         """
-        if isinstance(function, ast.Name):
-            cls_name = function.id
-        elif (
-            isinstance(function, ast.Attribute)
-            and isinstance(function.value, ast.Name)
-            and function.value.id in _TYPING_MODULES
-        ):
-            cls_name = function.attr
-        else:
+        cls_name = _get_name_of_class_if_from_modules(function, modules=_TYPING_MODULES)
+
+        if cls_name is None:
             return
 
         if cls_name in {"TypeVar", "ParamSpec", "TypeVarTuple"}:
@@ -884,25 +908,32 @@ class PyiVisitor(ast.NodeVisitor):
             self.generic_visit(node)
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
-        if _is_Final(node.annotation):
+        node_annotation = node.annotation
+        if _is_Final(node_annotation):
             with self.string_literals_allowed.enabled():
                 self.generic_visit(node)
             return
-        target = node.target
-        if isinstance(target, ast.Name):
-            target_name = target.id
+
+        node_target, node_value = node.target, node.value
+        if isinstance(node_target, ast.Name):
+            target_name = node_target.id
             if _is_assignment_which_must_have_a_value(
                 target_name, in_class=self.in_class.active
             ):
                 with self.string_literals_allowed.enabled():
                     self.generic_visit(node)
-                if node.value is None:
+                if node_value is None:
                     self.error(node, Y035.format(var=target_name))
                 return
-        self.generic_visit(node)
-        if _is_TypeAlias(node.annotation):
+
+        if _is_TypeAlias(node_annotation):
+            with self.visiting_TypeAlias.enabled():
+                self.generic_visit(node)
             return
-        if node.value and not isinstance(node.value, ast.Ellipsis):
+
+        self.generic_visit(node)
+
+        if node_value and not isinstance(node_value, ast.Ellipsis):
             self._Y015_error(node)
 
     def _check_union_members(self, members: Sequence[ast.expr]) -> None:
@@ -918,6 +949,40 @@ class PyiVisitor(ast.NodeVisitor):
 
         if not dupes_in_union:
             self._check_for_multiple_literals(members)
+            if not self.visiting_TypeAlias.active:
+                self._check_for_redundant_numeric_unions(members)
+
+    def _Y041_error(
+        self, members: Sequence[ast.expr], subtype: str, supertype: str
+    ) -> None:
+        self.error(
+            members[0],
+            Y041.format(implicit_subtype=subtype, implicit_supertype=supertype),
+        )
+
+    def _check_for_redundant_numeric_unions(self, members: Sequence[ast.expr]) -> None:
+        complex_in_union, float_in_union, int_in_union = False, False, False
+
+        for member in members:
+            name = _get_name_of_class_if_from_modules(member, modules={"builtins"})
+
+            if name is None:
+                continue
+
+            if name == "complex":
+                complex_in_union = True
+            elif name == "float":
+                float_in_union = True
+            elif name == "int":
+                int_in_union = True
+
+        if complex_in_union:
+            if float_in_union:
+                self._Y041_error(members, subtype="float", supertype="complex")
+            if int_in_union:
+                self._Y041_error(members, subtype="int", supertype="complex")
+        elif float_in_union and int_in_union:
+            self._Y041_error(members, subtype="int", supertype="float")
 
     def _check_for_multiple_literals(self, members: Sequence[ast.expr]) -> None:
         literals_in_union, non_literals_in_union = [], []
@@ -1612,3 +1677,4 @@ Y037 = "Y037 Use PEP 604 union types instead of {old_syntax} (e.g. {example})."
 Y038 = 'Y038 Use "from collections.abc import Set as AbstractSet" instead of "from typing import AbstractSet" (PEP 585 syntax)'
 Y039 = 'Y039 Use "str" instead of "typing.Text"'
 Y040 = 'Y040 Do not inherit from "object" explicitly, as it is redundant in Python 3'
+Y041 = 'Y041 Use "{implicit_supertype}" instead of "{implicit_subtype} | {implicit_supertype}" (see "The numeric tower" in PEP 484)'
