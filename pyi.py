@@ -942,9 +942,6 @@ class PyiVisitor(ast.NodeVisitor):
             elif _is_int(member):
                 int_in_union = True
 
-            if all((complex_in_union, float_in_union, int_in_union)):
-                break
-
         if complex_in_union:
             if float_in_union:
                 self._Y041_error(members, subtype="float", supertype="complex")
