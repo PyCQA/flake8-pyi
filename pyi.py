@@ -341,6 +341,13 @@ def _get_name_of_class_if_from_modules(
     classnode: ast.expr, *, modules: Container[str]
 ) -> str | None:
     """
+    If `classnode` is an `ast.Name`, return `classnode.id`.
+
+    If it's an `ast.Attribute`, check that the part before the dot is a module in `modules`.
+    If it is, return the part after the dot; if it isn't, return `None`.
+
+    If `classnode` is anything else, return `None`.
+
     >>> _get_name_of_class_if_from_modules(_ast_node_for('int'), modules={'builtins'})
     'int'
     >>> _get_name_of_class_if_from_modules(_ast_node_for('builtins.int'), modules={'builtins'})
