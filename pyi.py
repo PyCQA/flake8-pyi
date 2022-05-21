@@ -1036,7 +1036,7 @@ class PyiVisitor(ast.NodeVisitor):
 
     def visit_Subscript(self, node: ast.Subscript) -> None:
         subscripted_object = node.value
-        subscripted_object_nane = _get_name_of_class_if_from_modules(
+        subscripted_object_name = _get_name_of_class_if_from_modules(
             subscripted_object, modules=_TYPING_MODULES
         )
         self.visit(subscripted_object)
