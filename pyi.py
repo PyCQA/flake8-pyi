@@ -300,9 +300,7 @@ class LegacyDenormalizer(ast.NodeTransformer):
 
         def visit_Subscript(self, node: ast.Subscript) -> ast.Subscript:
             return ast.Subscript(
-                value=node.value,
-                slice=ast.Index(value=node.slice),
-                ctx=node.ctx
+                value=node.value, slice=ast.Index(value=node.slice), ctx=node.ctx
             )
 
 
