@@ -33,7 +33,11 @@ from pyflakes.checker import (
 if sys.version_info >= (3, 9):
     from ast import unparse
 else:
-    from ast_decompiler import decompile as unparse
+    from ast_decompiler import decompile
+
+    def unparse(node: ast.AST) -> str:
+        return decompile(node).strip("\n")
+
 
 if TYPE_CHECKING:
     from typing import Literal, TypeGuard
@@ -556,14 +560,9 @@ def _has_bad_hardcoded_returns(
     )
 
 
-def _unparse_assign_node(node: ast.Assign | ast.AnnAssign) -> str:
-    """Unparse an Assign node, and remove any newlines in it"""
-    return unparse(node).replace("\n", "")
-
-
 def _unparse_func_node(node: ast.FunctionDef | ast.AsyncFunctionDef) -> str:
     """Unparse a function node, and reformat it to fit on one line."""
-    return re.sub(r"\s+", " ", unparse(node)).strip()
+    return re.sub(r"\s+", " ", unparse(node))
 
 
 def _is_list_of_str_nodes(seq: list[ast.expr | None]) -> TypeGuard[list[ast.Str]]:
@@ -1554,10 +1553,10 @@ class PyiVisitor(ast.NodeVisitor):
                 self.error(default, (Y014 if arg.annotation is None else Y011))
 
     def _Y015_error(self, node: ast.Assign | ast.AnnAssign) -> None:
-        old_syntax = _unparse_assign_node(node)
+        old_syntax = unparse(node)
         copy_of_node = deepcopy(node)
         copy_of_node.value = ast.Constant(value=...)
-        new_syntax = _unparse_assign_node(copy_of_node)
+        new_syntax = unparse(copy_of_node)
         error_message = Y015.format(old_syntax=old_syntax, new_syntax=new_syntax)
         self.error(node, error_message)
 
