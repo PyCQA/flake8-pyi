@@ -1,5 +1,10 @@
+# flags: --extend-ignore=Y037
+import builtins
 import typing
-from typing import (  # Y037 Use PEP 604 union types instead of typing.Union (e.g. "int | str" instead of "Union[int, str]").
+from typing import (
+    Annotated,
+    Any,
+    Optional,
     ParamSpec as _ParamSpec,
     TypeAlias,
     TypedDict,
@@ -10,11 +15,16 @@ from typing import (  # Y037 Use PEP 604 union types instead of typing.Union (e.
 import typing_extensions
 from typing_extensions import Literal
 
-U = typing.Literal["ham", "bacon"]  # Y026 Use typing_extensions.TypeAlias for type aliases
-V = Literal["spam", "eggs"]  # Y026 Use typing_extensions.TypeAlias for type aliases
-X = typing_extensions.Literal["foo", "bar"]  # Y026 Use typing_extensions.TypeAlias for type aliases
-Y = int | str  # Y026 Use typing_extensions.TypeAlias for type aliases
-Z = Union[str, bytes]  # Y026 Use typing_extensions.TypeAlias for type aliases
+P = builtins.tuple[int, int]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "P: TypeAlias = builtins.tuple[int, int]"
+Q = tuple[int, int]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "Q: TypeAlias = tuple[int, int]"
+R = Any  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "R: TypeAlias = Any"
+S = Optional[str]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "S: TypeAlias = Optional[str]"
+T = Annotated[int, "some very useful metadata"]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "T: TypeAlias = Annotated[int, 'some very useful metadata']"
+U = typing.Literal["ham", "bacon"]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "U: TypeAlias = typing.Literal['ham', 'bacon']"
+V = Literal["spam", "eggs"]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "V: TypeAlias = Literal['spam', 'eggs']"
+X = typing_extensions.Literal["foo", "bar"]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "X: TypeAlias = typing_extensions.Literal['foo', 'bar']"
+Y = int | str  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "Y: TypeAlias = int | str"
+Z = Union[str, bytes]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "Z: TypeAlias = Union[str, bytes]"
 
 A: typing.TypeAlias = typing.Literal["ham", "bacon"]
 B: typing_extensions.TypeAlias = Literal["spam", "eggs"]
@@ -24,6 +34,11 @@ E: TypeAlias = Union[str, bytes]
 F: TypeAlias = int
 G: typing.TypeAlias = int
 H: typing_extensions.TypeAlias = int
+I: TypeAlias = Annotated[int, "some very useful metadata"]
+J: TypeAlias = Optional[str]
+K: TypeAlias = Any
+L: TypeAlias = tuple[int, int]
+P: TypeAlias = builtins.tuple[int, int]
 
 a = b = int  # Y017 Only simple assignments allowed
 a.b = int  # Y017 Only simple assignments allowed
