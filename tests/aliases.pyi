@@ -21,7 +21,7 @@ R = Any  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "R: TypeA
 S = Optional[str]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "S: TypeAlias = Optional[str]"
 T = Annotated[int, "some very useful metadata"]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "T: TypeAlias = Annotated[int, 'some very useful metadata']"
 U = typing.Literal["ham", "bacon"]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "U: TypeAlias = typing.Literal['ham', 'bacon']"
-V = Literal["spam", "eggs"]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "V: TypeAlias = Literal['spam', 'eggs']"
+V = Literal["[(", ")]"]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "V: TypeAlias = Literal['[(', ')]']"
 X = typing_extensions.Literal["foo", "bar"]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "X: TypeAlias = typing_extensions.Literal['foo', 'bar']"
 Y = int | str  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "Y: TypeAlias = int | str"
 Z = Union[str, bytes]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "Z: TypeAlias = Union[str, bytes]"
