@@ -11,6 +11,7 @@ Features:
   emits an error for assignments to `typing.Annotated`, `typing.Optional` and
   `typing.Any`, as well as subscripted `tuple`s, `dict`s, `set`s, `frozenset`s,
   `list`s, and `type`s.
+* Support Python 3.11.
 
 ## 22.5.1
 
