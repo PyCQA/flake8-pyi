@@ -95,7 +95,7 @@ from typing_extensions import Coroutine  # Y023 Use "collections.abc.Coroutine[Y
 from typing import ContextManager  # Y027 Use "contextlib.AbstractContextManager[T]" instead of "typing.ContextManager[T]" (PEP 585 syntax)
 from typing import OrderedDict  # Y027 Use "collections.OrderedDict[KeyType, ValueType]" instead of "typing.OrderedDict[KeyType, ValueType]" (PEP 585 syntax)
 from typing_extensions import OrderedDict  # Y027 Use "collections.OrderedDict[KeyType, ValueType]" instead of "typing_extensions.OrderedDict[KeyType, ValueType]" (PEP 585 syntax)
-from typing import Callable  # Y027 Use "collections.abc.Callable" instead of "typing.Callable" (PEP 585 syntax)
+from typing import Callable  # Y027 Use "collections.abc.Callable[<parameters>, <return_type>]" instead of "typing.Callable[<parameters>, <return_type>]" (PEP 585 syntax)
 from typing import ByteString  # Y027 Use "collections.abc.ByteString" instead of "typing.ByteString" (PEP 585 syntax)
 from typing import Container  # Y027 Use "collections.abc.Container[T]" instead of "typing.Container[T]" (PEP 585 syntax)
 from typing import Hashable  # Y027 Use "collections.abc.Hashable" instead of "typing.Hashable" (PEP 585 syntax)

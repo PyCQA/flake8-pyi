@@ -9,8 +9,8 @@ Features:
 * Expand Y026 check. Since version 22.4.0, this has only emitted an error for
   assignments to `typing.Literal`, `typing.Union`, and PEP 604 unions. It now also
   emits an error for assignments to `typing.Annotated`, `typing.Optional` and
-  `typing.Any`, as well as subscripted `tuple`s, `dict`s, `set`s, `frozenset`s,
-  `list`s, and `type`s.
+  `typing.Any`, as well as subscripted `type`, and subscripted collection classes from
+  `builtins` or `collections.abc`.
 * Support Python 3.11.
 
 ## 22.5.1

@@ -120,11 +120,11 @@ _BAD_TYPING_Y023_IMPORTS = frozenset(
     }
 )
 
-# Objects you should import from collections.abc instead of typing(_extensions)
+# Y027: Objects you should import from collections.abc instead of typing(_extensions)
 # A Python 2-incompatible check
 # typing.AbstractSet is deliberately omitted (special-cased)
 # We use `None` to signify that the object shouldn't  be parameterised.
-_BAD_Y027_IMPORTS = {
+_ALL_COLLECTIONSABC_IMPORTS = {
     "ByteString": None,
     "Collection": "T",
     "ItemsView": _MAPPING_SLICE,
@@ -147,7 +147,7 @@ _BAD_Y027_IMPORTS = {
     "AsyncIterator": "T",
     "AsyncIterable": "T",
     "Awaitable": "T",
-    "Callable": None,
+    "Callable": "<parameters>, <return_type>",
     "Container": "T",
 }
 
@@ -466,7 +466,9 @@ def _is_decorated_with_final(
     return any(_is_final(decorator) for decorator in node.decorator_list)
 
 
-def _get_collections_abc_obj_id(node: ast.expr | None) -> str | None:
+def _get_collections_abc_obj_id(
+    node: ast.expr | None, *, include_typing: bool = True
+) -> str | None:
     """
     If the node represents a subscripted object from collections.abc or typing,
     return the name of the object.
@@ -476,8 +478,12 @@ def _get_collections_abc_obj_id(node: ast.expr | None) -> str | None:
     'AsyncIterator'
     >>> _get_collections_abc_obj_id(_ast_node_for('typing.AsyncIterator[str]'))
     'AsyncIterator'
+    >>> _get_collections_abc_obj_id(_ast_node_for('typing.AsyncIterator[str]'), include_typing=False) is None
+    True
     >>> _get_collections_abc_obj_id(_ast_node_for('typing_extensions.AsyncIterator[str]'))
     'AsyncIterator'
+    >>> _get_collections_abc_obj_id(_ast_node_for('typing_extensions.AsyncIterator[str]'), include_typing=False) is None
+    True
     >>> _get_collections_abc_obj_id(_ast_node_for('collections.abc.AsyncIterator[str]'))
     'AsyncIterator'
     >>> _get_collections_abc_obj_id(_ast_node_for('collections.OrderedDict[str, int]')) is None
@@ -491,8 +497,10 @@ def _get_collections_abc_obj_id(node: ast.expr | None) -> str | None:
     if not isinstance(subscripted_obj, ast.Attribute):
         return None
     obj_value, obj_attr = subscripted_obj.value, subscripted_obj.attr
-    if isinstance(obj_value, ast.Name) and obj_value.id in _TYPING_MODULES:
-        return obj_attr
+    if isinstance(obj_value, ast.Name):
+        if include_typing and obj_value.id in _TYPING_MODULES:
+            return obj_attr
+        return None
     if (
         isinstance(obj_value, ast.Attribute)
         and _is_name(obj_value.value, "collections")
@@ -701,8 +709,8 @@ class PyiVisitor(ast.NodeVisitor):
             )
 
         # Y027 errors
-        elif module_name == "typing" and object_name in _BAD_Y027_IMPORTS:
-            slice_contents = _BAD_Y027_IMPORTS[object_name]
+        elif module_name == "typing" and object_name in _ALL_COLLECTIONSABC_IMPORTS:
+            slice_contents = _ALL_COLLECTIONSABC_IMPORTS[object_name]
             params = "" if slice_contents is None else f"[{slice_contents}]"
             error_message = Y027.format(
                 good_syntax=f'"collections.abc.{object_name}{params}"',
@@ -894,6 +902,16 @@ class PyiVisitor(ast.NodeVisitor):
         )
 
         if name_if_from_builtins_or_typing in _Y026_TYPEALIAS_BLACKLIST:
+            return self._Y026_error(node, target, assignment)
+
+        name_if_from_collectionsabc = _get_collections_abc_obj_id(
+            assignment, include_typing=False
+        )
+
+        if (
+            name_if_from_collectionsabc is not None
+            and _ALL_COLLECTIONSABC_IMPORTS.get(name_if_from_collectionsabc) is not None
+        ):
             self._Y026_error(node, target, assignment)
 
     def visit_Name(self, node: ast.Name) -> None:
