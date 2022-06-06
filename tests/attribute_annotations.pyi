@@ -1,6 +1,6 @@
 import sys
 import typing
-from typing import Final, TypeAlias
+from typing import Any, ClassVar, Final, TypeAlias
 
 import typing_extensions
 
@@ -25,6 +25,7 @@ field14: Final = True
 field15: Final = ('a', 'b', 'c')
 field16: typing.Final = "foo"
 field17: typing_extensions.Final = "foo"
+__hash__: None
 
 class Foo:
     field1: int
@@ -51,3 +52,10 @@ class Foo:
         field18 = "z"  # Y015 Bad default value. Use "field18 = ..." instead of "field18 = 'z'"  # Y020 Quoted annotations should never be used in stubs
     else:
         field19 = "w"  # Y015 Bad default value. Use "field19 = ..." instead of "field19 = 'w'"  # Y020 Quoted annotations should never be used in stubs
+    __hash__: None  # Y042 Use "__hash__: ClassVar[None]" instead of "__hash__: None"
+
+class Bar:
+    __hash__: ClassVar[None]
+
+class Baz:
+    __hash__: Any

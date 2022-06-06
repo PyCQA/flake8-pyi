@@ -946,14 +946,20 @@ class PyiVisitor(ast.NodeVisitor):
         node_target, node_value = node.target, node.value
         if isinstance(node_target, ast.Name):
             target_name = node_target.id
-            if _is_assignment_which_must_have_a_value(
-                target_name, in_class=self.in_class.active
-            ):
+            in_class = self.in_class.active
+            if _is_assignment_which_must_have_a_value(target_name, in_class=in_class):
                 with self.string_literals_allowed.enabled():
                     self.generic_visit(node)
                 if node_value is None:
                     self.error(node, Y035.format(var=target_name))
                 return
+            if (
+                in_class
+                and node_value is None
+                and target_name == "__hash__"
+                and _is_None(node_annotation)
+            ):
+                self.error(node, Y042)
 
         if _is_TypeAlias(node_annotation):
             with self.visiting_TypeAlias.enabled():
@@ -1699,3 +1705,4 @@ Y038 = 'Y038 Use "from collections.abc import Set as AbstractSet" instead of "fr
 Y039 = 'Y039 Use "str" instead of "typing.Text"'
 Y040 = 'Y040 Do not inherit from "object" explicitly, as it is redundant in Python 3'
 Y041 = 'Y041 Use "{implicit_supertype}" instead of "{implicit_subtype} | {implicit_supertype}" (see "The numeric tower" in PEP 484)'
+Y042 = 'Y042 Use "__hash__: ClassVar[None]" instead of "__hash__: None"'

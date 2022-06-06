@@ -5,6 +5,7 @@
 Features:
 * Introduce Y041: Ban redundant numeric unions (`int | float`, `int | complex`,
   `float | complex`).
+* Introduce Y042: Use `__hash__: ClassVar[None]` instead of `__hash__: None`.
 * Improve error message for Y026 check.
 * Expand Y026 check. Since version 22.4.0, this has only emitted an error for
   assignments to `typing.Literal`, `typing.Union`, and PEP 604 unions. It now also

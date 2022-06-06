@@ -73,6 +73,7 @@ currently emitted:
 | Y039 | Use `str` instead of `typing.Text`. This error code is incompatible with stubs supporting Python 2.
 | Y040 | Never explicitly inherit from `object`, as all classes implicitly inherit from `object` in Python 3. This error code is incompatible with stubs supporting Python 2.
 | Y041 | Y041 detects redundant numeric unions. For example, PEP 484 specifies that type checkers should treat `int` as an implicit subtype of `float`, so `int` is redundant in the union `int \| float`. In the same way, `int` is redundant in the union `int \| complex`, and `float` is redundant in the union `float \| complex`.
+| Y042 | Use `__hash__: ClassVar[None]` instead of `__hash__: None`.
 
 Many error codes enforce modern conventions, and some cannot yet be used in
 all cases:
