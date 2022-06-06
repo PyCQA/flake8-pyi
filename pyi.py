@@ -293,19 +293,6 @@ class LegacyNormalizer(ast.NodeTransformer):
             return node.value
 
 
-class LegacyDenormalizer(ast.NodeTransformer):
-    """Reverse the effects of the LegacyNormalizer class."""
-
-    if sys.version_info < (3, 9):
-
-        def visit_Subscript(self, node: ast.Subscript) -> ast.Subscript:
-            return ast.Subscript(
-                value=node.value,
-                slice=ast.Index(value=node.slice),
-                ctx=node.ctx
-            )
-
-
 def _ast_node_for(string: str) -> ast.AST:
     """Helper function for doctests"""
     expr = ast.parse(string).body[0]
@@ -876,7 +863,7 @@ class PyiVisitor(ast.NodeVisitor):
         new_node = ast.AnnAssign(
             target=target,
             annotation=ast.Name(id="TypeAlias", ctx=ast.Load()),
-            value=LegacyDenormalizer().visit(assignment),
+            value=assignment,
             simple=1,
         )
         self.error(node, Y026.format(suggestion=unparse(new_node)))
