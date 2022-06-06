@@ -867,7 +867,9 @@ class PyiVisitor(ast.NodeVisitor):
             value=assignment,
             simple=1,
         )
-        self.error(node, Y026.format(suggestion=unparse(new_node)))
+        # reverse the effects of the LegacyNormalizer class for Python <3.9:
+        suggestion = unparse(new_node).replace("[(", "[").replace(")]", "]")
+        self.error(node, Y026.format(suggestion=suggestion))
 
     def _check_for_type_aliases(
         self, node: ast.Assign, target: ast.Name, assignment: ast.expr
