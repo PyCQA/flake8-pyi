@@ -40,7 +40,7 @@ setup(
     install_requires=[
         "flake8 >= 3.2.1",
         "pyflakes >= 2.1.1",
-        'ast-decompiler >= 0.4.0, <0.5.0; python_version < "3.9"',
+        'ast-decompiler <1.0; python_version < "3.9"',
     ],
     test_suite="tests.test_pyi",
     classifiers=[
