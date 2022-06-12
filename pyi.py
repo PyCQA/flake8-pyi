@@ -375,12 +375,16 @@ def _get_name_of_class_if_from_modules(
     """
     if isinstance(classnode, ast.Name):
         return classnode.id
-    if (
-        isinstance(classnode, ast.Attribute)
-        and isinstance(classnode.value, ast.Name)
-        and classnode.value.id in modules
-    ):
-        return classnode.attr
+    if isinstance(classnode, ast.Attribute):
+        module_node = classnode.value
+        if isinstance(module_node, ast.Name) and module_node.id in modules:
+            return classnode.attr
+        if (
+            isinstance(module_node, ast.Attribute)
+            and isinstance(module_node.value, ast.Name)
+            and f"{module_node.value.id}.{module_node.attr}" in modules
+        ):
+            return classnode.attr
     return None
 
 
@@ -485,21 +489,9 @@ def _get_collections_abc_obj_id(node: ast.expr | None) -> str | None:
     """
     if not isinstance(node, ast.Subscript):
         return None
-    subscripted_obj = node.value
-    if isinstance(subscripted_obj, ast.Name):
-        return subscripted_obj.id
-    if not isinstance(subscripted_obj, ast.Attribute):
-        return None
-    obj_value, obj_attr = subscripted_obj.value, subscripted_obj.attr
-    if isinstance(obj_value, ast.Name) and obj_value.id in _TYPING_MODULES:
-        return obj_attr
-    if (
-        isinstance(obj_value, ast.Attribute)
-        and _is_name(obj_value.value, "collections")
-        and obj_value.attr == "abc"
-    ):
-        return obj_attr
-    return None
+    return _get_name_of_class_if_from_modules(
+        node.value, modules=_TYPING_MODULES | {"collections.abc"}
+    )
 
 
 _ITER_METHODS = frozenset({("Iterator", "__iter__"), ("AsyncIterator", "__aiter__")})
@@ -791,9 +783,6 @@ class PyiVisitor(ast.NodeVisitor):
         If they are private, they should be used at least once in the file in which they are defined.
         """
         cls_name = _get_name_of_class_if_from_modules(function, modules=_TYPING_MODULES)
-
-        if cls_name is None:
-            return
 
         if cls_name in {"TypeVar", "ParamSpec", "TypeVarTuple"}:
             if object_name.startswith("_"):
@@ -1467,8 +1456,6 @@ class PyiVisitor(ast.NodeVisitor):
     ) -> None:
         if not isinstance(first_arg_annotation, ast.Subscript):
             return
-
-        cls_typevar: str
 
         if isinstance(first_arg_annotation.slice, ast.Name):
             cls_typevar = first_arg_annotation.slice.id
