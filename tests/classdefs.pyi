@@ -1,3 +1,5 @@
+# flags: --extend-ignore=Y023
+
 import abc
 import builtins
 import collections.abc
@@ -6,6 +8,7 @@ from abc import abstractmethod
 from collections.abc import AsyncIterator, Iterator
 from typing import Any, overload
 
+import typing_extensions
 from _typeshed import Self
 from typing_extensions import final
 
@@ -49,9 +52,15 @@ class Fine:
 
 class FineSubclass(Fine): ...
 
-class AlsoGood(str):
-    def __str__(self) -> AlsoGood: ...
-    def __repr__(self) -> AlsoGood: ...
+class StrangeButAcceptable(str):
+    @typing_extensions.overload
+    def __new__(cls, foo: int) -> StrangeButAcceptableSubclass: ...
+    @typing_extensions.overload
+    def __new__(cls, *args: Any, **kwargs: Any) -> StrangeButAcceptable: ...
+    def __str__(self) -> StrangeButAcceptable: ...
+    def __repr__(self) -> StrangeButAcceptable: ...
+
+class StrangeButAcceptableSubclass(StrangeButAcceptable): ...
 
 class FineAndDandy:
     def __str__(self, weird_extra_arg) -> str: ...

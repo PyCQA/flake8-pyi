@@ -311,7 +311,6 @@ def _is_name(node: ast.expr | None, name: str) -> bool:
     return isinstance(node, ast.Name) and node.id == name
 
 
-_is_BaseException = partial(_is_name, name="BaseException")
 _TYPING_MODULES = frozenset({"typing", "typing_extensions"})
 
 
@@ -341,13 +340,14 @@ def _is_object(node: ast.expr | None, name: str, *, from_: Container[str]) -> bo
     )
 
 
+_is_BaseException = partial(_is_object, name="BaseException", from_={"builtins"})
 _is_TypeAlias = partial(_is_object, name="TypeAlias", from_=_TYPING_MODULES)
-_is_NamedTuple = partial(_is_object, name="NamedTuple", from_={"typing"})
+_is_NamedTuple = partial(_is_object, name="NamedTuple", from_=_TYPING_MODULES)
 _is_TypedDict = partial(_is_object, name="TypedDict", from_=_TYPING_MODULES)
 _is_Literal = partial(_is_object, name="Literal", from_=_TYPING_MODULES)
 _is_abstractmethod = partial(_is_object, name="abstractmethod", from_={"abc"})
 _is_Any = partial(_is_object, name="Any", from_={"typing"})
-_is_overload = partial(_is_object, name="overload", from_={"typing"})
+_is_overload = partial(_is_object, name="overload", from_=_TYPING_MODULES)
 _is_final = partial(_is_object, name="final", from_=_TYPING_MODULES)
 _is_Final = partial(_is_object, name="Final", from_=_TYPING_MODULES)
 _is_Self = partial(_is_object, name="Self", from_=({"_typeshed"} | _TYPING_MODULES))
@@ -375,12 +375,16 @@ def _get_name_of_class_if_from_modules(
     """
     if isinstance(classnode, ast.Name):
         return classnode.id
-    if (
-        isinstance(classnode, ast.Attribute)
-        and isinstance(classnode.value, ast.Name)
-        and classnode.value.id in modules
-    ):
-        return classnode.attr
+    if isinstance(classnode, ast.Attribute):
+        module_node = classnode.value
+        if isinstance(module_node, ast.Name) and module_node.id in modules:
+            return classnode.attr
+        if (
+            isinstance(module_node, ast.Attribute)
+            and isinstance(module_node.value, ast.Name)
+            and f"{module_node.value.id}.{module_node.attr}" in modules
+        ):
+            return classnode.attr
     return None
 
 
@@ -397,18 +401,10 @@ def _is_type_or_Type(node: ast.expr) -> bool:
     >>> _is_type_or_Type(_ast_node_for('typing.Type'))
     True
     """
-    if isinstance(node, ast.Name):
-        return node.id in {"type", "Type"}
-    if isinstance(node, ast.Attribute):
-        node_value = node.value
-        if not isinstance(node_value, ast.Name):
-            return False
-        node_value_id = node_value.id
-        attr = node.attr
-        return (node_value_id == "builtins" and attr == "type") or (
-            node_value_id in _TYPING_MODULES and attr == "Type"
-        )
-    return False
+    cls_name = _get_name_of_class_if_from_modules(
+        node, modules=_TYPING_MODULES | {"builtins"}
+    )
+    return cls_name in {"type", "Type"}
 
 
 def _is_PEP_604_union(node: ast.expr | None) -> TypeGuard[ast.BinOp]:
@@ -485,21 +481,9 @@ def _get_collections_abc_obj_id(node: ast.expr | None) -> str | None:
     """
     if not isinstance(node, ast.Subscript):
         return None
-    subscripted_obj = node.value
-    if isinstance(subscripted_obj, ast.Name):
-        return subscripted_obj.id
-    if not isinstance(subscripted_obj, ast.Attribute):
-        return None
-    obj_value, obj_attr = subscripted_obj.value, subscripted_obj.attr
-    if isinstance(obj_value, ast.Name) and obj_value.id in _TYPING_MODULES:
-        return obj_attr
-    if (
-        isinstance(obj_value, ast.Attribute)
-        and _is_name(obj_value.value, "collections")
-        and obj_value.attr == "abc"
-    ):
-        return obj_attr
-    return None
+    return _get_name_of_class_if_from_modules(
+        node.value, modules=_TYPING_MODULES | {"collections.abc"}
+    )
 
 
 _ITER_METHODS = frozenset({("Iterator", "__iter__"), ("AsyncIterator", "__aiter__")})
@@ -792,9 +776,6 @@ class PyiVisitor(ast.NodeVisitor):
         """
         cls_name = _get_name_of_class_if_from_modules(function, modules=_TYPING_MODULES)
 
-        if cls_name is None:
-            return
-
         if cls_name in {"TypeVar", "ParamSpec", "TypeVarTuple"}:
             if object_name.startswith("_"):
                 target_info = TypeVarInfo(cls_name=cls_name, name=object_name)
@@ -936,6 +917,13 @@ class PyiVisitor(ast.NodeVisitor):
         else:
             self.generic_visit(node)
 
+    # Y043: Error for alias names in "T"
+    # (plus possibly a single digit afterwards), but only if:
+    #
+    # - The name starts with "_"
+    # - The penultimate character in the name is an ASCII-lowercase letter
+    _Y043_REGEX = re.compile(r"^_.*[a-z]T\d?$")
+
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         node_annotation = node.annotation
         if _is_Final(node_annotation):
@@ -964,6 +952,10 @@ class PyiVisitor(ast.NodeVisitor):
         if _is_TypeAlias(node_annotation):
             with self.visiting_TypeAlias.enabled():
                 self.generic_visit(node)
+            if isinstance(node_target, ast.Name) and self._Y043_REGEX.match(
+                target_name
+            ):
+                self.error(node, Y043)
             return
 
         self.generic_visit(node)
@@ -1474,8 +1466,6 @@ class PyiVisitor(ast.NodeVisitor):
         if not isinstance(first_arg_annotation, ast.Subscript):
             return
 
-        cls_typevar: str
-
         if isinstance(first_arg_annotation.slice, ast.Name):
             cls_typevar = first_arg_annotation.slice.id
         else:
@@ -1706,3 +1696,4 @@ Y039 = 'Y039 Use "str" instead of "typing.Text"'
 Y040 = 'Y040 Do not inherit from "object" explicitly, as it is redundant in Python 3'
 Y041 = 'Y041 Use "{implicit_supertype}" instead of "{implicit_subtype} | {implicit_supertype}" (see "The numeric tower" in PEP 484)'
 Y042 = 'Y042 Use "__hash__: ClassVar[None]" instead of "__hash__: None"'
+Y043 = 'Y043 Bad name for a type alias (the "T" suffix implies a TypeVar)'
