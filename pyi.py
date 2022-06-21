@@ -151,21 +151,6 @@ _BAD_Y027_IMPORTS = {
     "Container": "T",
 }
 
-_Y026_TYPEALIAS_BLACKLIST = frozenset(
-    {
-        "Literal",
-        "Union",
-        "Optional",
-        "Annotated",
-        "dict",
-        "tuple",
-        "list",
-        "set",
-        "frozenset",
-        "type",
-    }
-)
-
 
 class PyiAwareFlakesChecker(FlakesChecker):
     def deferHandleNode(self, node: ast.AST | None, parent) -> None:
@@ -838,17 +823,6 @@ class PyiVisitor(ast.NodeVisitor):
         else:
             self.visit(value)
 
-    def _Y026_error(
-        self, node: ast.Assign, target: ast.Name, assignment: ast.expr
-    ) -> None:
-        new_node = ast.AnnAssign(
-            target=target,
-            annotation=ast.Name(id="TypeAlias", ctx=ast.Load()),
-            value=assignment,
-            simple=1,
-        )
-        self.error(node, Y026.format(suggestion=unparse(new_node)))
-
     def _check_for_type_aliases(
         self, node: ast.Assign, target: ast.Name, assignment: ast.expr
     ) -> None:
@@ -860,22 +834,22 @@ class PyiVisitor(ast.NodeVisitor):
         unusual cases where assignment to the result of a call is legitimate
         in stubs (`T = TypeVar("T")`, `List = _Alias()`, etc.).
 
-        We also avoid triggering Y026 for aliases like `X = Any` or `Y = str`.
+        We also avoid triggering Y026 for aliases like `X = str`.
         It's ultimately nearly impossible to reliably detect
         whether these are type aliases or variable aliases,
         unless you're a type checker (and we're not).
+
+        The only exception (which we special-case, because it is so common in a stub)
+        is the type alias `X = (typing.)Any`.
         """
-        if isinstance(assignment, ast.BinOp) or _is_Any(assignment):
-            return self._Y026_error(node, target, assignment)
-        if not isinstance(assignment, ast.Subscript):
-            return
-
-        name_if_from_builtins_or_typing = _get_name_of_class_if_from_modules(
-            assignment.value, modules=_TYPING_MODULES | {"builtins"}
-        )
-
-        if name_if_from_builtins_or_typing in _Y026_TYPEALIAS_BLACKLIST:
-            self._Y026_error(node, target, assignment)
+        if isinstance(assignment, (ast.Subscript, ast.BinOp)) or _is_Any(assignment):
+            new_node = ast.AnnAssign(
+                target=target,
+                annotation=ast.Name(id="TypeAlias", ctx=ast.Load()),
+                value=assignment,
+                simple=1,
+            )
+            self.error(node, Y026.format(suggestion=unparse(new_node)))
 
     def visit_Name(self, node: ast.Name) -> None:
         self.all_name_occurrences[node.id] += 1
