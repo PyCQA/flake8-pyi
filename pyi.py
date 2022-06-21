@@ -311,7 +311,6 @@ def _is_name(node: ast.expr | None, name: str) -> bool:
     return isinstance(node, ast.Name) and node.id == name
 
 
-_is_BaseException = partial(_is_name, name="BaseException")
 _TYPING_MODULES = frozenset({"typing", "typing_extensions"})
 
 
@@ -341,13 +340,14 @@ def _is_object(node: ast.expr | None, name: str, *, from_: Container[str]) -> bo
     )
 
 
+_is_BaseException = partial(_is_object, name="BaseException", from_={"builtins"})
 _is_TypeAlias = partial(_is_object, name="TypeAlias", from_=_TYPING_MODULES)
-_is_NamedTuple = partial(_is_object, name="NamedTuple", from_={"typing"})
+_is_NamedTuple = partial(_is_object, name="NamedTuple", from_=_TYPING_MODULES)
 _is_TypedDict = partial(_is_object, name="TypedDict", from_=_TYPING_MODULES)
 _is_Literal = partial(_is_object, name="Literal", from_=_TYPING_MODULES)
 _is_abstractmethod = partial(_is_object, name="abstractmethod", from_={"abc"})
 _is_Any = partial(_is_object, name="Any", from_={"typing"})
-_is_overload = partial(_is_object, name="overload", from_={"typing"})
+_is_overload = partial(_is_object, name="overload", from_=_TYPING_MODULES)
 _is_final = partial(_is_object, name="final", from_=_TYPING_MODULES)
 _is_Final = partial(_is_object, name="Final", from_=_TYPING_MODULES)
 _is_Self = partial(_is_object, name="Self", from_=({"_typeshed"} | _TYPING_MODULES))

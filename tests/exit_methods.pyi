@@ -1,12 +1,11 @@
+# flags: --extend-ignore=Y022
+
 import builtins
 import types
 import typing
 from collections.abc import Awaitable
 from types import TracebackType
-from typing import (  # Y022 Use "type[MyClass]" instead of "typing.Type[MyClass]" (PEP 585 syntax)
-    Any,
-    Type,
-)
+from typing import Any, Type
 
 import typing_extensions
 
@@ -16,12 +15,12 @@ class One:
     async def __aexit__(self, *args) -> str: ...
 
 class Two:
-    def __exit__(self, typ: type[BaseException] | None, *args: builtins.object) -> bool | None: ...
+    def __exit__(self, typ: type[builtins.BaseException] | None, *args: builtins.object) -> bool | None: ...
     async def __aexit__(self, typ: Type[BaseException] | None, *args: object) -> bool: ...
 
 class Three:
-    def __exit__(self, __typ: typing.Type[BaseException] | None, exc: BaseException | None, *args: object) -> None: ...  # Y022 Use "type[MyClass]" instead of "typing.Type[MyClass]" (PEP 585 syntax)
-    async def __aexit__(self, typ: typing_extensions.Type[BaseException] | None, __exc: BaseException | None, *args: object) -> None: ...  # Y022 Use "type[MyClass]" instead of "typing_extensions.Type[MyClass]" (PEP 585 syntax)
+    def __exit__(self, __typ: typing.Type[BaseException] | None, exc: BaseException | None, *args: object) -> None: ...
+    async def __aexit__(self, typ: typing_extensions.Type[BaseException] | None, __exc: BaseException | None, *args: object) -> None: ...
 
 class Four:
     def __exit__(self, typ: type[BaseException] | None, exc: BaseException | None, tb: TracebackType | None) -> None: ...
