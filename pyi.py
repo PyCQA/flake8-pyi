@@ -401,18 +401,10 @@ def _is_type_or_Type(node: ast.expr) -> bool:
     >>> _is_type_or_Type(_ast_node_for('typing.Type'))
     True
     """
-    if isinstance(node, ast.Name):
-        return node.id in {"type", "Type"}
-    if isinstance(node, ast.Attribute):
-        node_value = node.value
-        if not isinstance(node_value, ast.Name):
-            return False
-        node_value_id = node_value.id
-        attr = node.attr
-        return (node_value_id == "builtins" and attr == "type") or (
-            node_value_id in _TYPING_MODULES and attr == "Type"
-        )
-    return False
+    cls_name = _get_name_of_class_if_from_modules(
+        node, modules=_TYPING_MODULES | {"builtins"}
+    )
+    return cls_name in {"type", "Type"}
 
 
 def _is_PEP_604_union(node: ast.expr | None) -> TypeGuard[ast.BinOp]:
