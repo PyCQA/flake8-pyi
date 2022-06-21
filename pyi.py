@@ -917,6 +917,13 @@ class PyiVisitor(ast.NodeVisitor):
         else:
             self.generic_visit(node)
 
+    # Y043: Error for alias names in "T"
+    # (plus possibly a single digit afterwards), but only if:
+    #
+    # - The name starts with "_"
+    # - The penultimate character in the name is an ASCII-lowercase letter
+    _Y043_REGEX = re.compile(r"^_.*[a-z]T\d?$")
+
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         node_annotation = node.annotation
         if _is_Final(node_annotation):
@@ -939,6 +946,10 @@ class PyiVisitor(ast.NodeVisitor):
         if _is_TypeAlias(node_annotation):
             with self.visiting_TypeAlias.enabled():
                 self.generic_visit(node)
+            if isinstance(node_target, ast.Name) and self._Y043_REGEX.match(
+                target_name
+            ):
+                self.error(node, Y043)
             return
 
         self.generic_visit(node)
@@ -1678,3 +1689,4 @@ Y038 = 'Y038 Use "from collections.abc import Set as AbstractSet" instead of "fr
 Y039 = 'Y039 Use "str" instead of "typing.Text"'
 Y040 = 'Y040 Do not inherit from "object" explicitly, as it is redundant in Python 3'
 Y041 = 'Y041 Use "{implicit_supertype}" instead of "{implicit_subtype} | {implicit_supertype}" (see "The numeric tower" in PEP 484)'
+Y043 = 'Y043 Bad name for a type alias (the "T" suffix implies a TypeVar)'

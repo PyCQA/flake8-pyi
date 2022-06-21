@@ -58,3 +58,12 @@ class Foo:
 
 f: Foo = ...
 baz = f.baz
+
+_PrivateAliasT: TypeAlias = str | int  # Y043 Bad name for a type alias (the "T" suffix implies a TypeVar)
+_PrivateAliasT2: TypeAlias = typing.Any  # Y043 Bad name for a type alias (the "T" suffix implies a TypeVar)
+_PrivateAliasT3: TypeAlias = Literal["not", "a", "chance"]  # Y043 Bad name for a type alias (the "T" suffix implies a TypeVar)
+PublicAliasT: TypeAlias = str | int
+PublicAliasT2: TypeAlias = Union[str, bytes]
+_ABCDEFGHIJKLMNOPQRST: TypeAlias = typing.Any
+_PrivateAliasS: TypeAlias = Literal["I", "guess", "this", "is", "okay"]
+_PrivateAliasS2: TypeAlias = Annotated[str, "also okay"]
