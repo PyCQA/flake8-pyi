@@ -12,6 +12,8 @@ Features:
   `typing.Any`, as well as subscripted `tuple`s, `dict`s, `set`s, `frozenset`s,
   `list`s, and `type`s.
 * Support Python 3.11.
+* Support `typing_extensions.overload` and `typing_extensions.NamedTuple`. (The latter
+  is not yet released, but will be in the next version of `typing_extensions`.)
 
 ## 22.5.1
 

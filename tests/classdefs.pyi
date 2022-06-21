@@ -1,3 +1,5 @@
+# flags: --extend-ignore=Y023
+
 import abc
 import builtins
 import collections.abc
@@ -6,6 +8,7 @@ from abc import abstractmethod
 from collections.abc import AsyncIterator, Iterator
 from typing import Any, overload
 
+import typing_extensions
 from _typeshed import Self
 from typing_extensions import final
 
@@ -34,7 +37,7 @@ class Good:
     def __ior__(self: Self, other: Self) -> Self: ...
 
 class Fine:
-    @overload
+    @typing_extensions.overload
     def __new__(cls, foo: int) -> FineSubclass: ...
     @overload
     def __new__(cls, *args: Any, **kwargs: Any) -> Fine: ...
