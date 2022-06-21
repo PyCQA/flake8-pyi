@@ -917,7 +917,7 @@ class PyiVisitor(ast.NodeVisitor):
         else:
             self.generic_visit(node)
 
-    # Y043: Error for alias names in "T"
+    # Y043: Error for alias names ending in "T"
     # (plus possibly a single digit afterwards), but only if:
     #
     # - The name starts with "_"
