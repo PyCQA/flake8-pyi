@@ -8,15 +8,12 @@ Features:
 * Improve error message for Y026 check.
 * Expand Y026 check. Since version 22.4.0, this has only emitted an error for
   assignments to `typing.Literal`, `typing.Union`, and PEP 604 unions. It now also
-<<<<<<< y026-2
   emits an error for any subscription on the right-hand side of a simple assignment, as
   well as for assignments to `typing.Any` and `None`.
-=======
   emits an error for assignments to `typing.Annotated`, `typing.Optional` and
   `typing.Any`, as well as subscripted `tuple`s, `dict`s, `set`s, `frozenset`s,
   `list`s, and `type`s.
 * Introduce Y043: Ban type aliases from having names ending with an uppercase "T".
->>>>>>> master
 * Support Python 3.11.
 * Support `typing_extensions.overload` and `typing_extensions.NamedTuple`. (The latter
   is not yet released, but will be in the next version of `typing_extensions`.)
