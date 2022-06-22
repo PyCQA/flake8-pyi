@@ -839,10 +839,15 @@ class PyiVisitor(ast.NodeVisitor):
         whether these are type aliases or variable aliases,
         unless you're a type checker (and we're not).
 
-        The only exception (which we special-case, because it is so common in a stub)
-        is the type alias `X = (typing.)Any`.
+        The only exceptions are the type aliases `X = (typing.)Any`
+        (special-cased, because it is so common in a stub),
+        and `X = None` (special-cased because it is so special).
         """
-        if isinstance(assignment, (ast.Subscript, ast.BinOp)) or _is_Any(assignment):
+        if (
+            isinstance(assignment, (ast.Subscript, ast.BinOp))
+            or _is_Any(assignment)
+            or _is_None(assignment)
+        ):
             new_node = ast.AnnAssign(
                 target=target,
                 annotation=ast.Name(id="TypeAlias", ctx=ast.Load()),

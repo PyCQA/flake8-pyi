@@ -9,7 +9,7 @@ Features:
 * Expand Y026 check. Since version 22.4.0, this has only emitted an error for
   assignments to `typing.Literal`, `typing.Union`, and PEP 604 unions. It now also
   emits an error for any subscription on the right-hand side of a simple assignment, as
-  well as for assignments to `typing.Any`.
+  well as for assignments to `typing.Any` and `None`.
 * Support Python 3.11.
 * Support `typing_extensions.overload` and `typing_extensions.NamedTuple`. (The latter
   is not yet released, but will be in the next version of `typing_extensions`.)

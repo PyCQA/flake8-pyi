@@ -36,6 +36,7 @@ V = Literal["[(", ")]"]  # Y026 Use typing_extensions.TypeAlias for type aliases
 X = typing_extensions.Literal["foo", "bar"]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "X: TypeAlias = typing_extensions.Literal['foo', 'bar']"
 Y = int | str  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "Y: TypeAlias = int | str"
 Z = Union[str, bytes]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "Z: TypeAlias = Union[str, bytes]"
+ZZ = None  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "ZZ: TypeAlias = None"
 
 StringMapping: TypeAlias = Mapping[str, str]
 IntSequence: TypeAlias = collections.abc.Sequence[int]
