@@ -1,3 +1,9 @@
+# flags: --extend-ignore=F723,E261,E262
+#
+# F723: syntax error in type comment
+# E261: at least two spaces before inline comment
+# E262: inline comment should start with '# '
+
 from collections.abc import Sequence
 from typing import TypeAlias
 
