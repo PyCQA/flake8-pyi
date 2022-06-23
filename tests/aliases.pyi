@@ -1,6 +1,9 @@
 # flags: --extend-ignore=Y037
+import array
 import builtins
+import collections.abc
 import typing
+from collections.abc import Mapping
 from typing import (
     Annotated,
     Any,
@@ -11,10 +14,18 @@ from typing import (
     Union,
     _Alias,
 )
+from weakref import WeakValueDictionary
 
 import typing_extensions
 from typing_extensions import Literal
 
+class Foo:
+    def baz(self) -> None: ...
+
+StringMapping = Mapping[str, str]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "StringMapping: TypeAlias = Mapping[str, str]"
+IntSequence = collections.abc.Sequence[int]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "IntSequence: TypeAlias = collections.abc.Sequence[int]"
+IntArray = array.array[int]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "IntArray: TypeAlias = array.array[int]"
+FooWeakDict = WeakValueDictionary[str, Foo]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "FooWeakDict: TypeAlias = WeakValueDictionary[str, Foo]"
 P = builtins.tuple[int, int]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "P: TypeAlias = builtins.tuple[int, int]"
 Q = tuple[int, int]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "Q: TypeAlias = tuple[int, int]"
 R = Any  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "R: TypeAlias = Any"
@@ -25,7 +36,12 @@ V = Literal["[(", ")]"]  # Y026 Use typing_extensions.TypeAlias for type aliases
 X = typing_extensions.Literal["foo", "bar"]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "X: TypeAlias = typing_extensions.Literal['foo', 'bar']"
 Y = int | str  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "Y: TypeAlias = int | str"
 Z = Union[str, bytes]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "Z: TypeAlias = Union[str, bytes]"
+ZZ = None  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "ZZ: TypeAlias = None"
 
+StringMapping: TypeAlias = Mapping[str, str]
+IntSequence: TypeAlias = collections.abc.Sequence[int]
+IntArray: TypeAlias = array.array[int]
+FooWeakDict: TypeAlias = WeakValueDictionary[str, Foo]
 A: typing.TypeAlias = typing.Literal["ham", "bacon"]
 B: typing_extensions.TypeAlias = Literal["spam", "eggs"]
 C: TypeAlias = typing_extensions.Literal["foo", "bar"]
@@ -52,9 +68,6 @@ def foo() -> None: ...
 alias_for_foo_but_not_type_alias = foo
 
 alias_for_function_from_builtins = dir
-
-class Foo:
-    def baz(self) -> None: ...
 
 f: Foo = ...
 baz = f.baz
