@@ -20,7 +20,7 @@ def i(x: Annotated[int, "lots", "of", "strings"], b: typing.Annotated[str, "more
     """Documented and guaranteed useful."""  # Y021 Docstrings should not be included in stubs
 
 def j() -> "int": ...  # Y020 Quoted annotations should never be used in stubs
-Alias: TypeAlias = list["int"]  # Y020 Quoted annotations should never be used in stubs
+_MyAlias: TypeAlias = list["int"]  # Y020 Quoted annotations should never be used in stubs
 
 class Child(list["int"]):  # Y020 Quoted annotations should never be used in stubs
     """Documented and guaranteed useful."""  # Y021 Docstrings should not be included in stubs

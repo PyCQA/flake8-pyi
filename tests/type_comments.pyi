@@ -7,12 +7,12 @@
 from collections.abc import Sequence
 from typing import TypeAlias
 
-a: TypeAlias = None  # type: int  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")
-b: TypeAlias = None  # type: str  # And here's an extra comment about why it's that type  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")
-c: TypeAlias = None  #type: int  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")
-d: TypeAlias = None  #      type: int  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")
-e: TypeAlias = None#    type: int  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")
-f: TypeAlias = None#type:int  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")
+a = None  # type: int  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "a: TypeAlias = None"
+b = None  # type: str  # And here's an extra comment about why it's that type  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "b: TypeAlias = None"
+C: TypeAlias = None  #type: int  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")  # Y001 Name of private type alias must start with _
+D: TypeAlias = None  #      type: int  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")  # Y001 Name of private type alias must start with _
+_E: TypeAlias = None#    type: int  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")
+_F: TypeAlias = None#type:int  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")
 
 def func(
     arg1,  # type: dict[str, int]  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")
@@ -20,18 +20,18 @@ def func(
 ): ...
 
 class Foo:
-    attr: TypeAlias = None  # type: set[str]  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")
+    attr = None  # type: set[str]  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "attr: TypeAlias = None"
 
-g: TypeAlias = None  # type: ignore
-h: TypeAlias = None  # type: ignore[attr-defined]
-i: TypeAlias = None  #type: ignore
-j: TypeAlias = None  #      type: ignore
-k: TypeAlias = None#    type: ignore
-l: TypeAlias = None#type:ignore
+g = None  # type: ignore  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "g: TypeAlias = None"
+h = None  # type: ignore[attr-defined]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "h: TypeAlias = None"
+I: TypeAlias = None  #type: ignore  # Y001 Name of private type alias must start with _
+J: TypeAlias = None  #      type: ignore  # Y001 Name of private type alias must start with _
+_K: TypeAlias = None#    type: ignore
+_L: TypeAlias = None#type:ignore
 
 # Whole line commented out  # type: int
-m: TypeAlias = None  # type: can't parse me!
+_M: TypeAlias = None  # type: can't parse me!
 
 class Bar:
-    n: TypeAlias = None  # type: can't parse me either!
+    n = None  # type: can't parse me either!  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "n: TypeAlias = None"
     # This whole line is commented out and indented # type: str

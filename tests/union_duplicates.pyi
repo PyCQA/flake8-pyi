@@ -21,9 +21,9 @@ def f5_union(x: typing.Union[int, int, None]) -> None: ...  # Y016 Duplicate uni
 
 just_literals_subscript_union: Union[Literal[1], typing.Literal[2]]  # Y030 Multiple Literal members in a union. Use a single Literal, e.g. "Literal[1, 2]".
 mixed_subscript_union: Union[str, Literal['foo'], typing_extensions.Literal['bar']]  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal['foo', 'bar']".
-just_literals_pipe_union: TypeAlias = Literal[True] | Literal['idk']  # Y030 Multiple Literal members in a union. Use a single Literal, e.g. "Literal[True, 'idk']".
-mixed_pipe_union: TypeAlias = Union[Literal[966], int, Literal['baz']]  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal[966, 'baz']".
-many_literal_members_but_needs_combining: TypeAlias = int | Literal['a', 'b'] | Literal['baz']  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal['a', 'b', 'baz']".
+JustLiteralsPipeUnion: TypeAlias = Literal[True] | Literal['idk']  # Y001 Name of private type alias must start with _  # Y030 Multiple Literal members in a union. Use a single Literal, e.g. "Literal[True, 'idk']".
+_mixed_pipe_union: TypeAlias = Union[Literal[966], int, Literal['baz']]  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal[966, 'baz']".
+_ManyLiteralMembersButNeedsCombining: TypeAlias = int | Literal['a', 'b'] | Literal['baz']  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal['a', 'b', 'baz']".
 
 a: int | float  # Y041 Use "float" instead of "int | float" (see "The numeric tower" in PEP 484)
 b: Union[builtins.float, str, bytes, builtins.int]  # Y041 Use "float" instead of "int | float" (see "The numeric tower" in PEP 484)
@@ -40,6 +40,6 @@ d: int | int | float  # Y016 Duplicate union member "int"
 f: Literal["foo"] | Literal["bar"] | int | float | builtins.bool  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal['foo', 'bar']".  # Y041 Use "float" instead of "int | float" (see "The numeric tower" in PEP 484)
 
 # Type aliases are special-cased to be excluded from Y041
-MyTypeAlias: TypeAlias = int | float | bool
-MySecondTypeAlias: TypeAlias = Union[builtins.int, str, complex, bool]
-MyThirdTypeAlias: TypeAlias = Mapping[str, int | builtins.float | builtins.bool]
+_MyTypeAlias: TypeAlias = int | float | bool
+_MySecondTypeAlias: TypeAlias = Union[builtins.int, str, complex, bool]
+_MyThirdTypeAlias: TypeAlias = Mapping[str, int | builtins.float | builtins.bool]

@@ -1,8 +1,8 @@
-# flags: --ignore=Y037
-from typing import Optional, TypeAlias, Union
+from typing import TypeAlias
 
-MaybeCStr: TypeAlias = Optional[CStr]
-CStr: TypeAlias = Union[C, str]
+_MaybeCStr: TypeAlias = _CStr | None
+_CStr: TypeAlias = C | str
+
 __version__: str = ...
 __author__: str = ...
 

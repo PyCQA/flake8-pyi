@@ -925,10 +925,12 @@ class PyiVisitor(ast.NodeVisitor):
         if _is_TypeAlias(node_annotation):
             with self.visiting_TypeAlias.enabled():
                 self.generic_visit(node)
-            if isinstance(node_target, ast.Name) and self._Y043_REGEX.match(
-                target_name
-            ):
-                self.error(node, Y043)
+            if isinstance(node_target, ast.Name):
+                if target_name.startswith("_"):
+                    if self._Y043_REGEX.match(target_name):
+                        self.error(node, Y043)
+                else:
+                    self.error(node, Y001.format("type alias"))
             return
 
         self.generic_visit(node)

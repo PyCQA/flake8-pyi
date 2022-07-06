@@ -15,7 +15,7 @@ field8 = False  # Y015 Bad default value. Use "field8 = ..." instead of "field8 
 
 # We don't want this one to trigger Y015 -- it's valid as a TypeAlias
 field9 = None  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "field9: TypeAlias = None"
-field10: TypeAlias = None
+field10: TypeAlias = None  # Y001 Name of private type alias must start with _
 
 # Tests for Final
 field11: Final = 1
