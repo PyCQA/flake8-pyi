@@ -926,11 +926,10 @@ class PyiVisitor(ast.NodeVisitor):
             with self.visiting_TypeAlias.enabled():
                 self.generic_visit(node)
             if isinstance(node_target, ast.Name):
-                if target_name.startswith("_"):
-                    if self._Y043_REGEX.match(target_name):
-                        self.error(node, Y043)
-                else:
+                if not target_name.startswith("_"):
                     self.error(node, Y042)
+                if self._Y043_REGEX.match(target_name):
+                    self.error(node, Y043)
             return
 
         self.generic_visit(node)
