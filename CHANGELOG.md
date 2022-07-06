@@ -18,6 +18,7 @@ Features:
 * Support `typing_extensions.overload` and `typing_extensions.NamedTuple`. (The latter
   is not yet released, but will be in the next version of `typing_extensions`.)
 * Introduce Y044: Discourage unnecessary `from __future__ import annotations` import.
+  Contributed by Torsten Wörtwein.
 
 ## 22.5.1
 
