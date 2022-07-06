@@ -32,7 +32,7 @@ currently emitted:
 
 | Code | Description 
 |------|-------------
-| Y001 | Names of `TypeVar`s, `ParamSpec`s, `TypeVarTuple`s and type aliases in stubs should usually start with `_`. This makes sure you don't accidentally expose names internal to the stub.
+| Y001 | Names of `TypeVar`s, `ParamSpec`s and `TypeVarTuple`s in stubs should usually start with `_`. This makes sure you don't accidentally expose names internal to the stub.
 | Y002 | If test must be a simple comparison against `sys.platform` or `sys.version_info`. Stub files support simple conditionals to indicate differences between Python versions or platforms, but type checkers only understand a limited subset of Python syntax, and this warning triggers on conditionals that type checkers will probably not understand.
 | Y003 | Unrecognized `sys.version_info` check. Similar, but triggers on some comparisons involving version checks.
 | Y004 | Version comparison must use only major and minor version. Type checkers like mypy don't know about patch versions of Python (e.g. 3.4.3 versus 3.4.4), only major and minor versions (3.3 versus 3.4). Therefore, version checks in stubs should only use the major and minor versions. If new functionality was introduced in a patch version, pretend that it was there all along.
@@ -73,6 +73,7 @@ currently emitted:
 | Y039 | Use `str` instead of `typing.Text`. This error code is incompatible with stubs supporting Python 2.
 | Y040 | Never explicitly inherit from `object`, as all classes implicitly inherit from `object` in Python 3. This error code is incompatible with stubs supporting Python 2.
 | Y041 | Y041 detects redundant numeric unions. For example, PEP 484 specifies that type checkers should treat `int` as an implicit subtype of `float`, so `int` is redundant in the union `int \| float`. In the same way, `int` is redundant in the union `int \| complex`, and `float` is redundant in the union `float \| complex`.
+| Y042 | Names of type aliases in stubs should usually start with `_`. As with Y001, this makes sure you don't accidentally expose names internal to the stub.
 | Y043 | Do not use names ending in "T" for private type aliases. (The "T" suffix implies that an object is a `TypeVar`.)
 
 Many error codes enforce modern conventions, and some cannot yet be used in

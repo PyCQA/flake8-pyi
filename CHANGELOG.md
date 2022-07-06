@@ -17,8 +17,7 @@ Features:
 * Support Python 3.11.
 * Support `typing_extensions.overload` and `typing_extensions.NamedTuple`. (The latter
   is not yet released, but will be in the next version of `typing_extensions`.)
-* Extend Y001 check to cover type aliases as well as `TypeVar`s, `ParamSpec`s and
-  `TypeVarTuple`s.
+* Introduce Y042: Type aliases should have names starting with `_`.
 
 ## 22.5.1
 

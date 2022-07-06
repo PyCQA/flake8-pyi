@@ -39,22 +39,22 @@ Z = Union[str, bytes]  # Y026 Use typing_extensions.TypeAlias for type aliases, 
 ZZ = None  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "ZZ: TypeAlias = None"
 
 _StringMapping: TypeAlias = Mapping[str, str]
-IntSequence: TypeAlias = collections.abc.Sequence[int]  # Y001 Name of private type alias must start with _
+IntSequence: TypeAlias = collections.abc.Sequence[int]  # Y042 Name of private type alias must start with _
 _IntArray: TypeAlias = array.array[int]
-FooWeakDict: TypeAlias = WeakValueDictionary[str, Foo]  # Y001 Name of private type alias must start with _
-A: typing.TypeAlias = typing.Literal["ham", "bacon"]  # Y001 Name of private type alias must start with _
+FooWeakDict: TypeAlias = WeakValueDictionary[str, Foo]  # Y042 Name of private type alias must start with _
+A: typing.TypeAlias = typing.Literal["ham", "bacon"]  # Y042 Name of private type alias must start with _
 _B: typing_extensions.TypeAlias = Literal["spam", "eggs"]
-C: TypeAlias = typing_extensions.Literal["foo", "bar"]  # Y001 Name of private type alias must start with _
+C: TypeAlias = typing_extensions.Literal["foo", "bar"]  # Y042 Name of private type alias must start with _
 _D: TypeAlias = int | str
-E: TypeAlias = Union[str, bytes]  # Y001 Name of private type alias must start with _
+E: TypeAlias = Union[str, bytes]  # Y042 Name of private type alias must start with _
 _F: TypeAlias = int
-G: typing.TypeAlias = int  # Y001 Name of private type alias must start with _
+G: typing.TypeAlias = int  # Y042 Name of private type alias must start with _
 _H: typing_extensions.TypeAlias = int
-I: TypeAlias = Annotated[int, "some very useful metadata"]  # Y001 Name of private type alias must start with _
+I: TypeAlias = Annotated[int, "some very useful metadata"]  # Y042 Name of private type alias must start with _
 _J: TypeAlias = Optional[str]
-K: TypeAlias = Any  # Y001 Name of private type alias must start with _
+K: TypeAlias = Any  # Y042 Name of private type alias must start with _
 _L: TypeAlias = tuple[int, int]
-P: TypeAlias = builtins.tuple[int, int]  # Y001 Name of private type alias must start with _
+P: TypeAlias = builtins.tuple[int, int]  # Y042 Name of private type alias must start with _
 
 a = b = int  # Y017 Only simple assignments allowed
 a.b = int  # Y017 Only simple assignments allowed
@@ -75,8 +75,8 @@ baz = f.baz
 _PrivateAliasT: TypeAlias = str | int  # Y043 Bad name for a type alias (the "T" suffix implies a TypeVar)
 _PrivateAliasT2: TypeAlias = typing.Any  # Y043 Bad name for a type alias (the "T" suffix implies a TypeVar)
 _PrivateAliasT3: TypeAlias = Literal["not", "a", "chance"]  # Y043 Bad name for a type alias (the "T" suffix implies a TypeVar)
-PublicAliasT: TypeAlias = str | int  # Y001 Name of private type alias must start with _
-PublicAliasT2: TypeAlias = Union[str, bytes]  # Y001 Name of private type alias must start with _
+PublicAliasT: TypeAlias = str | int  # Y042 Name of private type alias must start with _
+PublicAliasT2: TypeAlias = Union[str, bytes]  # Y042 Name of private type alias must start with _
 _ABCDEFGHIJKLMNOPQRST: TypeAlias = typing.Any
 _PrivateAliasS: TypeAlias = Literal["I", "guess", "this", "is", "okay"]
 _PrivateAliasS2: TypeAlias = Annotated[str, "also okay"]

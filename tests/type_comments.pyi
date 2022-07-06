@@ -9,8 +9,8 @@ from typing import TypeAlias
 
 a = None  # type: int  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "a: TypeAlias = None"
 b = None  # type: str  # And here's an extra comment about why it's that type  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "b: TypeAlias = None"
-C: TypeAlias = None  #type: int  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")  # Y001 Name of private type alias must start with _
-D: TypeAlias = None  #      type: int  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")  # Y001 Name of private type alias must start with _
+C: TypeAlias = None  #type: int  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")  # Y042 Name of private type alias must start with _
+D: TypeAlias = None  #      type: int  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")  # Y042 Name of private type alias must start with _
 _E: TypeAlias = None#    type: int  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")
 _F: TypeAlias = None#type:int  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")
 
@@ -24,8 +24,8 @@ class Foo:
 
 g = None  # type: ignore  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "g: TypeAlias = None"
 h = None  # type: ignore[attr-defined]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "h: TypeAlias = None"
-I: TypeAlias = None  #type: ignore  # Y001 Name of private type alias must start with _
-J: TypeAlias = None  #      type: ignore  # Y001 Name of private type alias must start with _
+I: TypeAlias = None  #type: ignore  # Y042 Name of private type alias must start with _
+J: TypeAlias = None  #      type: ignore  # Y042 Name of private type alias must start with _
 _K: TypeAlias = None#    type: ignore
 _L: TypeAlias = None#type:ignore
 

@@ -930,7 +930,7 @@ class PyiVisitor(ast.NodeVisitor):
                     if self._Y043_REGEX.match(target_name):
                         self.error(node, Y043)
                 else:
-                    self.error(node, Y001.format("type alias"))
+                    self.error(node, Y042)
             return
 
         self.generic_visit(node)
@@ -1670,4 +1670,5 @@ Y038 = 'Y038 Use "from collections.abc import Set as AbstractSet" instead of "fr
 Y039 = 'Y039 Use "str" instead of "typing.Text"'
 Y040 = 'Y040 Do not inherit from "object" explicitly, as it is redundant in Python 3'
 Y041 = 'Y041 Use "{implicit_supertype}" instead of "{implicit_subtype} | {implicit_supertype}" (see "The numeric tower" in PEP 484)'
+Y042 = "Y042 Name of private type alias must start with _"
 Y043 = 'Y043 Bad name for a type alias (the "T" suffix implies a TypeVar)'

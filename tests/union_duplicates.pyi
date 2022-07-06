@@ -21,7 +21,7 @@ def f5_union(x: typing.Union[int, int, None]) -> None: ...  # Y016 Duplicate uni
 
 just_literals_subscript_union: Union[Literal[1], typing.Literal[2]]  # Y030 Multiple Literal members in a union. Use a single Literal, e.g. "Literal[1, 2]".
 mixed_subscript_union: Union[str, Literal['foo'], typing_extensions.Literal['bar']]  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal['foo', 'bar']".
-JustLiteralsPipeUnion: TypeAlias = Literal[True] | Literal['idk']  # Y001 Name of private type alias must start with _  # Y030 Multiple Literal members in a union. Use a single Literal, e.g. "Literal[True, 'idk']".
+JustLiteralsPipeUnion: TypeAlias = Literal[True] | Literal['idk']  # Y042 Name of private type alias must start with _  # Y030 Multiple Literal members in a union. Use a single Literal, e.g. "Literal[True, 'idk']".
 _mixed_pipe_union: TypeAlias = Union[Literal[966], int, Literal['baz']]  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal[966, 'baz']".
 _ManyLiteralMembersButNeedsCombining: TypeAlias = int | Literal['a', 'b'] | Literal['baz']  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal['a', 'b', 'baz']".
 
