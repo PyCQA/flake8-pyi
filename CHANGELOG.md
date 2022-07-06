@@ -17,6 +17,7 @@ Features:
 * Support Python 3.11.
 * Support `typing_extensions.overload` and `typing_extensions.NamedTuple`. (The latter
   is not yet released, but will be in the next version of `typing_extensions`.)
+* Introduce Y044: Discourage unnecessary "from __future__ import annotations" import.
 
 ## 22.5.1
 

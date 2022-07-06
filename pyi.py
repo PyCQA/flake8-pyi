@@ -740,6 +740,10 @@ class PyiVisitor(ast.NodeVisitor):
             for obj in imported_objects
         ):
             return self.error(node, Y025)
+        elif module_name == "__future__" and any(
+            obj.name == "annotations" for obj in imported_objects
+        ):
+            return self.error(node, Y044)
 
         for obj in imported_objects:
             self._check_import_or_attribute(
@@ -1669,3 +1673,4 @@ Y039 = 'Y039 Use "str" instead of "typing.Text"'
 Y040 = 'Y040 Do not inherit from "object" explicitly, as it is redundant in Python 3'
 Y041 = 'Y041 Use "{implicit_supertype}" instead of "{implicit_subtype} | {implicit_supertype}" (see "The numeric tower" in PEP 484)'
 Y043 = 'Y043 Bad name for a type alias (the "T" suffix implies a TypeVar)'
+Y044 = 'Y044 "from __future__ import annotations" has no effect in stub files.'
