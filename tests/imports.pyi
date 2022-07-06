@@ -3,6 +3,9 @@
 # Note: DO NOT RUN ISORT ON THIS FILE.
 # It's excluded in our pyproject.toml.
 
+# BAD IMPORTS (Y044)
+from __future__ import annotations  # Y044 "from __future__ import annotations" has no effect in stub files.
+
 # GOOD IMPORTS
 import typing
 import typing_extensions
