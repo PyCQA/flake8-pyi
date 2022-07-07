@@ -929,10 +929,15 @@ class PyiVisitor(ast.NodeVisitor):
         if _is_TypeAlias(node_annotation):
             with self.visiting_TypeAlias.enabled():
                 self.generic_visit(node)
-            if isinstance(node_target, ast.Name) and self._Y043_REGEX.match(
-                target_name
-            ):
-                self.error(node, Y043)
+            if isinstance(node_target, ast.Name):
+                if target_name.startswith("_"):
+                    if target_name[1].islower():
+                        self.error(node, Y042)
+                else:
+                    if target_name[0].islower():
+                        self.error(node, Y042)
+                if self._Y043_REGEX.match(target_name):
+                    self.error(node, Y043)
             return
 
         self.generic_visit(node)
@@ -1672,5 +1677,6 @@ Y038 = 'Y038 Use "from collections.abc import Set as AbstractSet" instead of "fr
 Y039 = 'Y039 Use "str" instead of "typing.Text"'
 Y040 = 'Y040 Do not inherit from "object" explicitly, as it is redundant in Python 3'
 Y041 = 'Y041 Use "{implicit_supertype}" instead of "{implicit_subtype} | {implicit_supertype}" (see "The numeric tower" in PEP 484)'
+Y042 = "Y042 Type aliases should use the CamelCase naming convention"
 Y043 = 'Y043 Bad name for a type alias (the "T" suffix implies a TypeVar)'
 Y044 = 'Y044 "from __future__ import annotations" has no effect in stub files.'

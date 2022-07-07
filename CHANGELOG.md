@@ -13,6 +13,7 @@ Features:
   emits an error for assignments to `typing.Annotated`, `typing.Optional` and
   `typing.Any`, as well as subscripted `tuple`s, `dict`s, `set`s, `frozenset`s,
   `list`s, and `type`s.
+* Introduce Y042: Type alias names should use CamelCase rather than snake_case
 * Introduce Y043: Ban type aliases from having names ending with an uppercase "T".
 * Support Python 3.11.
 * Support `typing_extensions.overload` and `typing_extensions.NamedTuple`. (The latter

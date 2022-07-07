@@ -73,6 +73,7 @@ currently emitted:
 | Y039 | Use `str` instead of `typing.Text`. This error code is incompatible with stubs supporting Python 2.
 | Y040 | Never explicitly inherit from `object`, as all classes implicitly inherit from `object` in Python 3. This error code is incompatible with stubs supporting Python 2.
 | Y041 | Y041 detects redundant numeric unions. For example, PEP 484 specifies that type checkers should treat `int` as an implicit subtype of `float`, so `int` is redundant in the union `int \| float`. In the same way, `int` is redundant in the union `int \| complex`, and `float` is redundant in the union `float \| complex`.
+| Y042 | Type alias names should use CamelCase rather than snake_case
 | Y043 | Do not use names ending in "T" for private type aliases. (The "T" suffix implies that an object is a `TypeVar`.)
 | Y044 | `from __future__ import annotations` has no effect in stub files, as forward references in stubs are enabled by default.
 
