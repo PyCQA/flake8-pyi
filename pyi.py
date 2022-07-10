@@ -900,6 +900,8 @@ class PyiVisitor(ast.NodeVisitor):
         else:
             self.generic_visit(node)
 
+    _Y042_REGEX = re.compile(r"^_?[a-z]")
+
     # Y043: Error for alias names in "T"
     # (plus possibly a single digit afterwards), but only if:
     #
@@ -930,12 +932,8 @@ class PyiVisitor(ast.NodeVisitor):
             with self.visiting_TypeAlias.enabled():
                 self.generic_visit(node)
             if isinstance(node_target, ast.Name):
-                if target_name.startswith("_"):
-                    if target_name[1].islower():
-                        self.error(node, Y042)
-                else:
-                    if target_name[0].islower():
-                        self.error(node, Y042)
+                if self._Y042_REGEX.match(target_name):
+                    self.error(node, Y042)
                 if self._Y043_REGEX.match(target_name):
                     self.error(node, Y043)
             return
