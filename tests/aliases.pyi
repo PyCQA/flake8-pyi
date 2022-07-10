@@ -83,3 +83,6 @@ _PrivateAliasS2: TypeAlias = Annotated[str, "also okay"]
 
 snake_case_alias1: TypeAlias = str | int  # Y042 Type aliases should use the CamelCase naming convention
 _snake_case_alias2: TypeAlias = Literal["whatever"]  # Y042 Type aliases should use the CamelCase naming convention
+
+# check that this edge case doesn't crash the plugin
+_: TypeAlias = str | int
