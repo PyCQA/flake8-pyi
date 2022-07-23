@@ -19,6 +19,10 @@ Features:
   is not yet released, but will be in the next version of `typing_extensions`.)
 * Introduce Y044: Discourage unnecessary `from __future__ import annotations` import.
   Contributed by Torsten Wörtwein.
+* Introduce Y045: Ban returning `(Async)Iterable` from `__(a)iter__` methods.
+* Slightly expand Y034 to cover the case where a class inheriting from `(Async)Iterator`
+  returns `(Async)Iterable` from `__(a)iter__`. These classes should nearly always return
+  `Self` from these methods.
 
 ## 22.5.1
 

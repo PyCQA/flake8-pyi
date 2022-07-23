@@ -309,19 +309,27 @@ def _is_object(node: ast.expr | None, name: str, *, from_: Container[str]) -> bo
         strings.
 
     >>> from functools import partial
-    >>> _is_Literal = partial(_is_object, name="Literal", from_=_TYPING_MODULES)
-    >>> _is_Literal(_ast_node_for("Literal"))
+    >>> _is_AsyncIterator = partial(_is_object, name="AsyncIterator", from_=_TYPING_MODULES | {"collections.abc"})
+    >>> _is_AsyncIterator(_ast_node_for("AsyncIterator"))
     True
-    >>> _is_Literal(_ast_node_for("typing.Literal"))
+    >>> _is_AsyncIterator(_ast_node_for("typing.AsyncIterator"))
     True
-    >>> _is_Literal(_ast_node_for("typing_extensions.Literal"))
+    >>> _is_AsyncIterator(_ast_node_for("typing_extensions.AsyncIterator"))
+    True
+    >>> _is_AsyncIterator(_ast_node_for("collections.abc.AsyncIterator"))
     True
     """
-    return _is_name(node, name) or (
-        isinstance(node, ast.Attribute)
-        and node.attr == name
-        and isinstance(node.value, ast.Name)
-        and node.value.id in from_
+    if _is_name(node, name):
+        return True
+    if not (isinstance(node, ast.Attribute) and node.attr == name):
+        return False
+    node_value = node.value
+    if isinstance(node_value, ast.Name):
+        return node_value.id in from_
+    return (
+        isinstance(node_value, ast.Attribute)
+        and isinstance(node_value.value, ast.Name)
+        and f"{node_value.value.id}.{node_value.attr}" in from_
     )
 
 
@@ -338,6 +346,10 @@ _is_Final = partial(_is_object, name="Final", from_=_TYPING_MODULES)
 _is_Self = partial(_is_object, name="Self", from_=({"_typeshed"} | _TYPING_MODULES))
 _is_TracebackType = partial(_is_object, name="TracebackType", from_={"types"})
 _is_builtins_object = partial(_is_object, name="object", from_={"builtins"})
+_is_Iterable = partial(_is_object, name="Iterable", from_={"typing", "collections.abc"})
+_is_AsyncIterable = partial(
+    _is_object, name="AsyncIterable", from_={"collections.abc"} | _TYPING_MODULES
+)
 
 
 def _get_name_of_class_if_from_modules(
@@ -471,8 +483,6 @@ def _get_collections_abc_obj_id(node: ast.expr | None) -> str | None:
     )
 
 
-_ITER_METHODS = frozenset({("Iterator", "__iter__"), ("AsyncIterator", "__aiter__")})
-
 _INPLACE_BINOP_METHODS = frozenset(
     {
         "__iadd__",
@@ -523,9 +533,16 @@ def _has_bad_hardcoded_returns(
         )
 
     return_obj_name = _get_collections_abc_obj_id(returns)
-    return (return_obj_name, method_name) in _ITER_METHODS and any(
-        _get_collections_abc_obj_id(base_node) == return_obj_name
-        for base_node in classdef.bases
+    bases = {_get_collections_abc_obj_id(base_node) for base_node in classdef.bases}
+
+    return (
+        method_name == "__iter__"
+        and return_obj_name in {"Iterable", "Iterator"}
+        and "Iterator" in bases
+    ) or (
+        method_name == "__aiter__"
+        and return_obj_name in {"AsyncIterable", "AsyncIterator"}
+        and "AsyncIterator" in bases
     )
 
 
@@ -1352,6 +1369,30 @@ class PyiVisitor(ast.NodeVisitor):
         )
         self.error(node, error_message)
 
+    def _check_iter_returns(
+        self, node: ast.FunctionDef, returns: ast.expr | None
+    ) -> None:
+        if _is_Iterable(returns) or (
+            isinstance(returns, ast.Subscript) and _is_Iterable(returns.value)
+        ):
+            msg = Y045.format(
+                iter_method="__iter__", good_cls="Iterator", bad_cls="Iterable"
+            )
+            self.error(node, msg)
+
+    def _check_aiter_returns(
+        self, node: ast.FunctionDef, returns: ast.expr | None
+    ) -> None:
+        if _is_AsyncIterable(returns) or (
+            isinstance(returns, ast.Subscript) and _is_AsyncIterable(returns.value)
+        ):
+            msg = Y045.format(
+                iter_method="__aiter__",
+                good_cls="AsyncIterator",
+                bad_cls="AsyncIterable",
+            )
+            self.error(node, msg)
+
     def _visit_synchronous_method(self, node: ast.FunctionDef) -> None:
         method_name = node.name
         all_args = node.args
@@ -1360,6 +1401,14 @@ class PyiVisitor(ast.NodeVisitor):
 
         if _has_bad_hardcoded_returns(node, classdef=classdef):
             return self._Y034_error(node=node, cls_name=classdef.name)
+
+        returns = node.returns
+
+        if method_name == "__iter__":
+            return self._check_iter_returns(node, returns)
+
+        if method_name == "__aiter__":
+            return self._check_aiter_returns(node, returns)
 
         if method_name in {"__exit__", "__aexit__"}:
             return self._check_exit_method(node=node, method_name=method_name)
@@ -1375,7 +1424,7 @@ class PyiVisitor(ast.NodeVisitor):
         if method_name in {"__repr__", "__str__"}:
             if (
                 len(non_kw_only_args) == 1
-                and _is_object(node.returns, "str", from_={"builtins"})
+                and _is_object(returns, "str", from_={"builtins"})
                 and not any(_is_abstractmethod(deco) for deco in node.decorator_list)
             ):
                 self.error(node, Y029)
@@ -1674,3 +1723,4 @@ Y040 = 'Y040 Do not inherit from "object" explicitly, as it is redundant in Pyth
 Y041 = 'Y041 Use "{implicit_supertype}" instead of "{implicit_subtype} | {implicit_supertype}" (see "The numeric tower" in PEP 484)'
 Y043 = 'Y043 Bad name for a type alias (the "T" suffix implies a TypeVar)'
 Y044 = 'Y044 "from __future__ import annotations" has no effect in stub files.'
+Y045 = 'Y045 "{iter_method}" methods should return an {good_cls}, not an {bad_cls}'
