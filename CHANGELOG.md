@@ -1,29 +1,27 @@
 # Change Log
 
-## Unreleased
+## 22.7.0
 
-Features:
+New error codes:
 * Introduce Y041: Ban redundant numeric unions (`int | float`, `int | complex`,
   `float | complex`).
+* Introduce Y042: Type alias names should use CamelCase rather than snake_case
+* Introduce Y043: Ban type aliases from having names ending with an uppercase "T".
+* Introduce Y044: Discourage unnecessary `from __future__ import annotations` import.
+  Contributed by Torsten Wörtwein.
+* Introduce Y045: Ban returning `(Async)Iterable` from `__(a)iter__` methods.
+
+Other enhancements and behaviour changes:
 * Improve error message for Y026 check.
 * Expand Y026 check. Since version 22.4.0, this has only emitted an error for
   assignments to `typing.Literal`, `typing.Union`, and PEP 604 unions. It now also
   emits an error for any subscription on the right-hand side of a simple assignment, as
   well as for assignments to `typing.Any` and `None`.
-  emits an error for assignments to `typing.Annotated`, `typing.Optional` and
-  `typing.Any`, as well as subscripted `tuple`s, `dict`s, `set`s, `frozenset`s,
-  `list`s, and `type`s.
-* Introduce Y042: Type alias names should use CamelCase rather than snake_case
-* Introduce Y043: Ban type aliases from having names ending with an uppercase "T".
-* Support Python 3.11.
-* Support `typing_extensions.overload` and `typing_extensions.NamedTuple`. (The latter
-  is not yet released, but will be in the next version of `typing_extensions`.)
-* Introduce Y044: Discourage unnecessary `from __future__ import annotations` import.
-  Contributed by Torsten Wörtwein.
-* Introduce Y045: Ban returning `(Async)Iterable` from `__(a)iter__` methods.
+* Support `typing_extensions.overload` and `typing_extensions.NamedTuple`.
 * Slightly expand Y034 to cover the case where a class inheriting from `(Async)Iterator`
   returns `(Async)Iterable` from `__(a)iter__`. These classes should nearly always return
   `Self` from these methods.
+* Support Python 3.11.
 
 ## 22.5.1
 

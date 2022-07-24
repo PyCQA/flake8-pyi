@@ -42,7 +42,7 @@ else:
 if TYPE_CHECKING:
     from typing import Literal, TypeGuard
 
-__version__ = "22.5.1"
+__version__ = "22.7.0"
 
 LOG = logging.getLogger("flake8.pyi")
 
