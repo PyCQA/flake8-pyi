@@ -40,7 +40,10 @@ else:
 
 
 if TYPE_CHECKING:
-    from typing import Literal, TypeGuard
+    # We don't have typing_extensions as a runtime dependency,
+    # but all our annotations are stringized due to __future__ annotations,
+    # and mypy thinks typing_extensions is part of the stdlib.
+    from typing_extensions import Literal, TypeGuard
 
 __version__ = "22.7.0"
 
@@ -1020,7 +1023,8 @@ class PyiVisitor(ast.NodeVisitor):
         if len(literals_in_union) < 2:
             return
 
-        new_literal_members: list[ast.expr] = []
+        # Contains ast.slice nodes on Python <3.9; contains ast.expr nodes on Python >= 3.9
+        new_literal_members: list[ast.expr | ast.slice] = []
 
         for literal in literals_in_union:
             if isinstance(literal, ast.Tuple):
