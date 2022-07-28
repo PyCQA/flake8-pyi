@@ -1,6 +1,7 @@
 black==22.6.0
-pytest==6.2.5
-mypy==0.961
+pytest==7.1.2
+mypy==0.971
 isort==5.10.1
-flake8-bugbear==22.1.11
-types-pyflakes==2.4.0
+flake8-bugbear==22.7.1
+types-pyflakes==2.4.3
+ast_decompiler<1.0; python_version < '3.9'
