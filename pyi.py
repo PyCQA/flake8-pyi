@@ -537,7 +537,7 @@ def _has_bad_hardcoded_returns(
 
     if method_name == "__iter__":
         return return_obj_name in {"Iterable", "Iterator"} and "Iterator" in bases
-    if method_name == "__aiter__":
+    elif method_name == "__aiter__":
         return (
             return_obj_name in {"AsyncIterable", "AsyncIterator"}
             and "AsyncIterator" in bases
