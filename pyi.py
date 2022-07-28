@@ -538,15 +538,14 @@ def _has_bad_hardcoded_returns(
     return_obj_name = _get_collections_abc_obj_id(returns)
     bases = {_get_collections_abc_obj_id(base_node) for base_node in classdef.bases}
 
-    return (
-        method_name == "__iter__"
-        and return_obj_name in {"Iterable", "Iterator"}
-        and "Iterator" in bases
-    ) or (
-        method_name == "__aiter__"
-        and return_obj_name in {"AsyncIterable", "AsyncIterator"}
-        and "AsyncIterator" in bases
-    )
+    if method_name == "__iter__":
+        return return_obj_name in {"Iterable", "Iterator"} and "Iterator" in bases
+    elif method_name == "__aiter__":
+        return (
+            return_obj_name in {"AsyncIterable", "AsyncIterator"}
+            and "AsyncIterator" in bases
+        )
+    return False
 
 
 def _unparse_func_node(node: ast.FunctionDef | ast.AsyncFunctionDef) -> str:
@@ -750,29 +749,30 @@ class PyiVisitor(ast.NodeVisitor):
         )
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
-        module_name, imported_objects = node.module, node.names
+        module_name = node.module
 
         if module_name is None:
             return
 
-        if module_name == "collections.abc" and any(
-            obj.name == "Set" and obj.asname != "AbstractSet"
-            for obj in imported_objects
-        ):
-            return self.error(node, Y025)
-        elif module_name == "__future__" and any(
-            obj.name == "annotations" for obj in imported_objects
-        ):
-            return self.error(node, Y044)
+        imported_names = {obj.name: obj for obj in node.names}
 
-        for obj in imported_objects:
-            self._check_import_or_attribute(
-                node=node, module_name=module_name, object_name=obj.name
-            )
+        if module_name == "collections.abc":
+            if (
+                "Set" in imported_names
+                and imported_names["Set"].asname != "AbstractSet"
+            ):
+                self.error(node, Y025)
+            return
 
-        if module_name == "typing" and any(
-            obj.name == "AbstractSet" for obj in imported_objects
-        ):
+        if module_name == "__future__":
+            if "annotations" in imported_names:
+                self.error(node, Y044)
+            return
+
+        for object_name in imported_names:
+            self._check_import_or_attribute(node, module_name, object_name)
+
+        if module_name == "typing" and "AbstractSet" in imported_names:
             self.error(node, Y038)
 
     def _check_assignment_to_function(
