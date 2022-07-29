@@ -353,6 +353,7 @@ _is_Iterable = partial(_is_object, name="Iterable", from_={"typing", "collection
 _is_AsyncIterable = partial(
     _is_object, name="AsyncIterable", from_={"collections.abc"} | _TYPING_MODULES
 )
+_is_Protocol = partial(_is_object, name="Protocol", from_=_TYPING_MODULES)
 
 
 def _get_name_of_class_if_from_modules(
@@ -631,6 +632,8 @@ class PyiVisitor(ast.NodeVisitor):
         self.errors: list[Error] = []
         # Mapping of all private TypeVars/ParamSpecs/TypeVarTuples to the nodes where they're defined
         self.typevarlike_defs: dict[TypeVarInfo, ast.Assign] = {}
+        # And the same for private Protocol defs
+        self.protocol_defs: dict[str, ast.ClassDef] = {}
         # Mapping of each name in the file to the no. of occurrences
         self.all_name_occurrences: Counter[str] = Counter()
         self.string_literals_allowed = NestingCounter()
@@ -1219,6 +1222,13 @@ class PyiVisitor(ast.NodeVisitor):
             self.error(node, Y007)
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        cls_name = node.name
+        if (
+            (not self.in_class.active)
+            and cls_name.startswith("_")
+            and any(_is_Protocol(base) for base in node.bases)
+        ):
+            self.protocol_defs[cls_name] = node
         old_class_node = self.current_class_node
         self.current_class_node = node
         with self.in_class.enabled():
@@ -1599,6 +1609,9 @@ class PyiVisitor(ast.NodeVisitor):
                     def_node,
                     Y018.format(typevarlike_cls=cls_name, typevar_name=typevar_name),
                 )
+        for protocol_name, cls_node in self.protocol_defs.items():
+            if self.all_name_occurrences[protocol_name] == 0:
+                self.error(cls_node, Y046.format(protocol_name=protocol_name))
         yield from self.errors
 
 
@@ -1732,3 +1745,4 @@ Y042 = "Y042 Type aliases should use the CamelCase naming convention"
 Y043 = 'Y043 Bad name for a type alias (the "T" suffix implies a TypeVar)'
 Y044 = 'Y044 "from __future__ import annotations" has no effect in stub files.'
 Y045 = 'Y045 "{iter_method}" methods should return an {good_cls}, not an {bad_cls}'
+Y046 = 'Y046 Protocol "{protocol_name}" is not used'
