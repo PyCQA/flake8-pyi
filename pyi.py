@@ -1563,7 +1563,7 @@ class PyiVisitor(ast.NodeVisitor):
         body = node.body
         if len(body) > 1:
             self.error(body[1], Y048)
-        elif node.body:
+        elif body:
             statement = body[0]
             # normally, should just be "..."
             if isinstance(statement, ast.Pass):
