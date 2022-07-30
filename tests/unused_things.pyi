@@ -1,8 +1,8 @@
 import typing
 from typing import Protocol
-from typing_extensions import Literal, TypeAlias
 
 import typing_extensions
+from typing_extensions import Literal, TypeAlias
 
 class _Foo(Protocol):  # Y046 Protocol "_Foo" is not used
     bar: int
