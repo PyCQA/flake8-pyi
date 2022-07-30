@@ -78,7 +78,7 @@ currently emitted:
 | Y044 | `from __future__ import annotations` has no effect in stub files, as forward references in stubs are enabled by default.
 | Y045 | `__iter__` methods should never return `Iterable[T]`, as they should always return some kind of iterator.
 | Y046 | A private `Protocol` should be used at least once in the file in which it is defined.
-| Y047 | A private `TypeAlias` should be used at least once in the file in which it is defined. Aliases declared in `__init__.pyi` files are exempted from this check, since it is often useful to declare type aliases in an `__init__.pyi` file which are used in multiple places elsewhere in a stubs package.
+| Y047 | A private `TypeAlias` should be used at least once in the file in which it is defined.
 
 Many error codes enforce modern conventions, and some cannot yet be used in
 all cases:

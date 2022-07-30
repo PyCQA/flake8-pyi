@@ -1616,10 +1616,9 @@ class PyiVisitor(ast.NodeVisitor):
         for protocol in self.protocol_defs:
             if self.all_name_occurrences[protocol.name] == 0:
                 self.error(protocol, Y046.format(protocol_name=protocol.name))
-        if self.filename.parts[-1] != "__init__.pyi":
-            for alias_name, alias in self.typealias_decls.items():
-                if self.all_name_occurrences[alias_name] == 1:
-                    self.error(alias, Y047.format(alias_name=alias_name))
+        for alias_name, alias in self.typealias_decls.items():
+            if self.all_name_occurrences[alias_name] == 1:
+                self.error(alias, Y047.format(alias_name=alias_name))
         yield from self.errors
 
 
