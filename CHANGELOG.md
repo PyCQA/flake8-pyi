@@ -4,6 +4,7 @@
 
 New error codes:
 * Y046: Detect unused `Protocol`s.
+* Y047: Detect unused `TypeAlias` declarations.
 
 ## 22.7.0
 
