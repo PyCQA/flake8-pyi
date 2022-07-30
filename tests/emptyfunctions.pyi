@@ -22,7 +22,7 @@ def returning(x: int) -> float:
 
 def multiple_ellipses(x: int) -> float:
     ...
-    ...  # Y010 Function body must contain only "..."
+    ...  # Y048 Function body should contain exactly one statement
 
 async def empty_async(x: int) -> float: ...
 
@@ -37,4 +37,4 @@ async def returning_async(x: int) -> float:
 
 async def multiple_ellipses_async(x: int) -> float:
     ...
-    ...  # Y010 Function body must contain only "..."
+    ...  # Y048 Function body should contain exactly one statement
