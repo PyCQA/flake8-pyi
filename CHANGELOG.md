@@ -5,6 +5,9 @@
 New error codes:
 * Y046: Detect unused `Protocol`s.
 
+Other changes:
+* Pin required flake8 version to <5.0.0 (flake8-pyi is not currently compatible with flake8 5.0.0).
+
 ## 22.7.0
 
 New error codes:
