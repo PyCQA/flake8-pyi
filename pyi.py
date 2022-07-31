@@ -1565,19 +1565,21 @@ class PyiVisitor(ast.NodeVisitor):
         with self.in_function.enabled():
             self.generic_visit(node)
 
-        for i, statement in enumerate(node.body):
-            if i == 0:
-                # normally, should just be "..."
-                if isinstance(statement, ast.Pass):
-                    self.error(statement, Y009)
-                    continue
-                # Ellipsis is fine. Str (docstrings) is not but we produce
-                # tailored error message for it elsewhere.
-                elif isinstance(statement, ast.Expr) and isinstance(
-                    statement.value, (ast.Ellipsis, ast.Str)
-                ):
-                    continue
-            self.error(statement, Y010)
+        body = node.body
+        if len(body) > 1:
+            self.error(body[1], Y048)
+        elif body:
+            statement = body[0]
+            # normally, should just be "..."
+            if isinstance(statement, ast.Pass):
+                self.error(statement, Y009)
+            # Ellipsis is fine. Str (docstrings) is not but we produce
+            # tailored error message for it elsewhere.
+            elif not (
+                isinstance(statement, ast.Expr)
+                and isinstance(statement.value, (ast.Ellipsis, ast.Str))
+            ):
+                self.error(statement, Y010)
 
         if self.in_class.active:
             self.check_self_typevars(node)
@@ -1754,3 +1756,4 @@ Y044 = 'Y044 "from __future__ import annotations" has no effect in stub files.'
 Y045 = 'Y045 "{iter_method}" methods should return an {good_cls}, not an {bad_cls}'
 Y046 = 'Y046 Protocol "{protocol_name}" is not used'
 Y047 = 'Y047 Type alias "{alias_name}" is not used'
+Y048 = "Y048 Function body should contain exactly one statement"

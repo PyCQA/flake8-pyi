@@ -79,6 +79,7 @@ currently emitted:
 | Y045 | `__iter__` methods should never return `Iterable[T]`, as they should always return some kind of iterator.
 | Y046 | A private `Protocol` should be used at least once in the file in which it is defined.
 | Y047 | A private `TypeAlias` should be used at least once in the file in which it is defined.
+| Y048 | Function bodies should contain exactly one statement. (Note that if a function body includes a docstring, the docstring counts as a "statement".)
 
 Many error codes enforce modern conventions, and some cannot yet be used in
 all cases:
