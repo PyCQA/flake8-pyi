@@ -18,17 +18,11 @@ from keyword import iskeyword
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple
 
-from flake8 import checker  # type: ignore[import]
+import flake8  # type: ignore[import]
+from flake8 import checker
 from flake8.options.manager import OptionManager  # type: ignore[import]
-from flake8.plugins.manager import Plugin  # type: ignore[import]
 from flake8.plugins.pyflakes import FlakesChecker  # type: ignore[import]
-from pyflakes.checker import (
-    PY2,
-    ClassDefinition,
-    ClassScope,
-    FunctionScope,
-    ModuleScope,
-)
+from pyflakes.checker import ClassDefinition, ClassScope, FunctionScope, ModuleScope
 
 if sys.version_info >= (3, 9):
     from ast import unparse
@@ -48,6 +42,7 @@ if TYPE_CHECKING:
 __version__ = "22.7.0"
 
 LOG = logging.getLogger("flake8.pyi")
+FLAKE8_MAJOR_VERSION = flake8.__version_info__[0]
 
 
 class Error(NamedTuple):
@@ -223,9 +218,8 @@ class PyiAwareFlakesChecker(FlakesChecker):
             self.handleNode(decorator, node)
         for baseNode in node.bases:
             self.deferHandleNode(baseNode, node)
-        if not PY2:
-            for keywordNode in node.keywords:
-                self.deferHandleNode(keywordNode, node)
+        for keywordNode in node.keywords:
+            self.deferHandleNode(keywordNode, node)
         self.pushScope(ClassScope)
         # doctest does not process doctest within a doctest
         # classes within classes are processed.
@@ -249,21 +243,38 @@ class PyiAwareFlakesChecker(FlakesChecker):
 
 
 class PyiAwareFileChecker(checker.FileChecker):
-    def run_check(self, plugin: Plugin, **kwargs: Any) -> Any:
-        if self.filename == "-":
-            filename = self.options.stdin_display_name
-        else:
-            filename = self.filename
+    if FLAKE8_MAJOR_VERSION < 5:
 
-        if filename.endswith(".pyi") and plugin["plugin"] == FlakesChecker:
-            LOG.info(
-                "Replacing FlakesChecker with PyiAwareFlakesChecker while "
-                "checking %r",
-                filename,
-            )
-            plugin = dict(plugin)
-            plugin["plugin"] = PyiAwareFlakesChecker
-        return super().run_check(plugin, **kwargs)
+        def run_check(self, plugin, **kwargs: Any) -> Any:
+            if self.filename == "-":
+                filename = self.options.stdin_display_name
+            else:
+                filename = self.filename
+
+            if filename.endswith(".pyi") and plugin["plugin"] is FlakesChecker:
+                LOG.info(
+                    f"Replacing FlakesChecker with PyiAwareFlakesChecker while "
+                    f"checking {filename!r}",
+                )
+                plugin = dict(plugin)
+                plugin["plugin"] = PyiAwareFlakesChecker
+            return super().run_check(plugin, **kwargs)
+
+    else:
+
+        def run_check(self, plugin, **kwargs: Any) -> Any:
+            if self.filename == "-":
+                filename = self.options.stdin_display_name
+            else:
+                filename = self.filename
+
+            if filename.endswith(".pyi") and plugin.obj is FlakesChecker:
+                LOG.info(
+                    f"Replacing FlakesChecker with PyiAwareFlakesChecker while "
+                    f"checking {filename!r}",
+                )
+                plugin = plugin._replace(obj=PyiAwareFlakesChecker)
+            return super().run_check(plugin, **kwargs)
 
 
 class LegacyNormalizer(ast.NodeTransformer):

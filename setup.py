@@ -38,7 +38,7 @@ setup(
     zip_safe=False,
     python_requires=">=3.7",
     install_requires=[
-        "flake8 >= 3.2.1, < 5.0.0",
+        "flake8 >= 3.2.1",
         "pyflakes >= 2.1.1",
         'ast-decompiler <1.0; python_version < "3.9"',
     ],
