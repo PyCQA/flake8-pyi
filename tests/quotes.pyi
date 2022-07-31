@@ -34,3 +34,22 @@ elif sys.platform == "win32":
     f: "str"  # Y020 Quoted annotations should never be used in stubs
 else:
     f: "bytes"  # Y020 Quoted annotations should never be used in stubs
+
+class Empty:
+    """Empty"""  # Y021 Docstrings should not be included in stubs
+
+def docstring_and_ellipsis() -> None:
+    """Docstring"""  # Y021 Docstrings should not be included in stubs
+    ...  # Y048 Function body should contain exactly one statement
+
+def docstring_and_pass() -> None:
+    """Docstring"""  # Y021 Docstrings should not be included in stubs
+    pass  # Y048 Function body should contain exactly one statement
+
+class DocstringAndEllipsis:
+    """Docstring"""  # Y021 Docstrings should not be included in stubs
+    ...  # Y013 Non-empty class body must not contain "..."
+
+class DocstringAndPass:
+    """Docstring"""  # Y021 Docstrings should not be included in stubs
+    pass  # Y012 Class body must not contain "pass"

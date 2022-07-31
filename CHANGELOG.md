@@ -4,6 +4,11 @@
 
 New error codes:
 * Y046: Detect unused `Protocol`s.
+* Y048: Function bodies should contain exactly one statement.
+
+Bugfixes:
+* Improve error message for the case where a function body contains a docstring
+  and a `...` or `pass` statement.
 
 Other changes:
 * Pin required flake8 version to <5.0.0 (flake8-pyi is not currently compatible with flake8 5.0.0).
