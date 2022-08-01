@@ -11,7 +11,7 @@ Bugfixes:
   and a `...` or `pass` statement.
 
 Other changes:
-* Pin required flake8 version to <5.0.0 (flake8-pyi is not currently compatible with flake8 5.0.0).
+* Add support for flake8 5.0.0.
 
 ## 22.7.0
 
