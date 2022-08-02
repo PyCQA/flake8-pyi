@@ -9,7 +9,7 @@ import re
 import sys
 from collections import Counter
 from collections.abc import Container, Iterable, Iterator, Sequence
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from copy import deepcopy
 from dataclasses import dataclass
 from functools import partial
@@ -1672,7 +1672,8 @@ class PyiTreeChecker:
                     option.to_optparse().default = option.default
                     parser.parser.defaults[option.dest] = option.default
 
-        try:
+        with suppress(optparse.OptionConflictError):
+            # In tests, sometimes this option gets called twice for some reason.
             parser.add_option(
                 "--no-pyi-aware-file-checker",
                 default=False,
@@ -1680,9 +1681,6 @@ class PyiTreeChecker:
                 parse_from_config=True,
                 help="don't patch flake8 with .pyi-aware file checker",
             )
-        except optparse.OptionConflictError:
-            # In tests, sometimes this option gets called twice for some reason.
-            pass
 
     @classmethod
     def parse_options(
