@@ -9,7 +9,7 @@ import re
 import sys
 from collections import Counter
 from collections.abc import Container, Iterable, Iterator, Sequence
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from copy import deepcopy
 from dataclasses import dataclass
 from functools import partial
@@ -18,17 +18,11 @@ from keyword import iskeyword
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple
 
-from flake8 import checker  # type: ignore[import]
+import flake8  # type: ignore[import]
+from flake8 import checker
 from flake8.options.manager import OptionManager  # type: ignore[import]
-from flake8.plugins.manager import Plugin  # type: ignore[import]
 from flake8.plugins.pyflakes import FlakesChecker  # type: ignore[import]
-from pyflakes.checker import (
-    PY2,
-    ClassDefinition,
-    ClassScope,
-    FunctionScope,
-    ModuleScope,
-)
+from pyflakes.checker import ClassDefinition, ClassScope, FunctionScope, ModuleScope
 
 if sys.version_info >= (3, 9):
     from ast import unparse
@@ -45,9 +39,22 @@ if TYPE_CHECKING:
     # and mypy thinks typing_extensions is part of the stdlib.
     from typing_extensions import Literal, TypeGuard
 
-__version__ = "22.8.0"
+__version__ = "22.8.1"
 
 LOG = logging.getLogger("flake8.pyi")
+FLAKE8_MAJOR_VERSION = flake8.__version_info__[0]
+
+if FLAKE8_MAJOR_VERSION < 5:
+    import warnings
+
+    warnings.warn(
+        (
+            "flake8-pyi will drop support for running with flake8 < 5.0.0 "
+            "in a future version. This will not happen until November 2022 "
+            "at the earliest."
+        ),
+        category=FutureWarning,
+    )
 
 
 class Error(NamedTuple):
@@ -223,9 +230,8 @@ class PyiAwareFlakesChecker(FlakesChecker):
             self.handleNode(decorator, node)
         for baseNode in node.bases:
             self.deferHandleNode(baseNode, node)
-        if not PY2:
-            for keywordNode in node.keywords:
-                self.deferHandleNode(keywordNode, node)
+        for keywordNode in node.keywords:
+            self.deferHandleNode(keywordNode, node)
         self.pushScope(ClassScope)
         # doctest does not process doctest within a doctest
         # classes within classes are processed.
@@ -249,20 +255,26 @@ class PyiAwareFlakesChecker(FlakesChecker):
 
 
 class PyiAwareFileChecker(checker.FileChecker):
-    def run_check(self, plugin: Plugin, **kwargs: Any) -> Any:
+    def run_check(self, plugin, **kwargs: Any) -> Any:
         if self.filename == "-":
             filename = self.options.stdin_display_name
         else:
             filename = self.filename
 
-        if filename.endswith(".pyi") and plugin["plugin"] == FlakesChecker:
-            LOG.info(
-                "Replacing FlakesChecker with PyiAwareFlakesChecker while "
-                "checking %r",
-                filename,
+        if filename.endswith(".pyi"):
+            log_msg = (
+                f"Replacing FlakesChecker with PyiAwareFlakesChecker while "
+                f"checking {filename!r}"
             )
-            plugin = dict(plugin)
-            plugin["plugin"] = PyiAwareFlakesChecker
+            if FLAKE8_MAJOR_VERSION < 5:
+                if plugin["plugin"] is FlakesChecker:
+                    LOG.info(log_msg)
+                    plugin = dict(plugin)
+                    plugin["plugin"] = PyiAwareFlakesChecker
+            else:
+                if plugin.obj is FlakesChecker:
+                    LOG.info(log_msg)
+                    plugin = plugin._replace(obj=PyiAwareFlakesChecker)
         return super().run_check(plugin, **kwargs)
 
 
@@ -1663,9 +1675,8 @@ class PyiTreeChecker:
         path = Path(self.filename)
         if path.suffix == ".pyi":
             yield from _check_for_type_comments(path)
-            visitor = PyiVisitor(filename=path)
-            for error in visitor.run(LegacyNormalizer().visit(self.tree)):
-                yield error
+            tree = LegacyNormalizer().visit(self.tree)
+            yield from PyiVisitor(filename=path).run(tree)
 
     @classmethod
     def add_options(cls, parser: OptionManager) -> None:
@@ -1680,7 +1691,8 @@ class PyiTreeChecker:
                     option.to_optparse().default = option.default
                     parser.parser.defaults[option.dest] = option.default
 
-        try:
+        with suppress(optparse.OptionConflictError):
+            # In tests, sometimes this option gets called twice for some reason.
             parser.add_option(
                 "--no-pyi-aware-file-checker",
                 default=False,
@@ -1688,9 +1700,6 @@ class PyiTreeChecker:
                 parse_from_config=True,
                 help="don't patch flake8 with .pyi-aware file checker",
             )
-        except optparse.OptionConflictError:
-            # In tests, sometimes this option gets called twice for some reason.
-            pass
 
     @classmethod
     def parse_options(
