@@ -21,5 +21,6 @@ max-line-length = 80
 max-complexity = 12
 select = B,C,E,F,W,Y,B9
 per-file-ignores =
-  *.py: E203, E501, W503, W291, W293
-  *.pyi: E301, E302, E305, E501, E701, E704, W503
+  # TODO: reenable some of the bugbear checks
+  *.py: B950, E203, E501, W503, W291, W293
+  *.pyi: B902, B903, B950, E301, E302, E305, E501, E701, E704, W503

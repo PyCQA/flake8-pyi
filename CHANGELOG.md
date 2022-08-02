@@ -1,5 +1,9 @@
 # Change Log
 
+## Unreleased
+
+* Add support for flake8 5.0.0.
+
 ## 22.8.0
 
 New error codes:
