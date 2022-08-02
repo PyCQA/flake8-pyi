@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+New error codes:
 * Y047: Detect unused `TypeAlias` declarations.
 
 ## 22.8.0
