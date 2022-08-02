@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## 22.8.0
 
 New error codes:
 * Y046: Detect unused `Protocol`s.
