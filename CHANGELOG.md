@@ -1,8 +1,8 @@
 # Change Log
 
-## Unreleased
+## 22.8.1
 
-* Add support for flake8 5.0.0.
+* Add support for flake8 >= 5.0.0.
 
 ## 22.8.0
 
