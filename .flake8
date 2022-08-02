@@ -3,7 +3,8 @@
 # The following rule now goes against PEP8:
 #       W503 line break before binary operator
 #
-# The following rules are incompatible with or enforced by black:
+# The following rules are incompatible with or largely enforced by black:
+#       B950 Line too long (flake8-bugbear equivalent of E501)
 #       E203 whitespace before ':' -- .py files only
 #       E501 line too long
 #       W291 trailing whitespace -- .py files only
@@ -21,6 +22,5 @@ max-line-length = 80
 max-complexity = 12
 select = B,C,E,F,W,Y,B9
 per-file-ignores =
-  # TODO: reenable some of the bugbear checks
   *.py: B950, E203, E501, W503, W291, W293
-  *.pyi: B902, B903, B950, E301, E302, E305, E501, E701, E704, W503
+  *.pyi: B, E301, E302, E305, E501, E701, E704, W503
