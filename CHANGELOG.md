@@ -1,5 +1,9 @@
 # Change Log
 
+## Unreleased
+
+* Add support for flake8 5.0.0.
+
 ## 22.8.0
 
 New error codes:
@@ -11,7 +15,7 @@ Bugfixes:
   and a `...` or `pass` statement.
 
 Other changes:
-* Add support for flake8 5.0.0.
+* Pin required flake8 version to <5.0.0 (flake8-pyi is not currently compatible with flake8 5.0.0).
 
 ## 22.7.0
 
