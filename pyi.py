@@ -1656,8 +1656,7 @@ class PyiTreeChecker:
         if path.suffix == ".pyi":
             yield from _check_for_type_comments(path)
             visitor = PyiVisitor(filename=path)
-            for error in visitor.run(LegacyNormalizer().visit(self.tree)):
-                yield error
+            yield from visitor.run(LegacyNormalizer().visit(self.tree))
 
     @classmethod
     def add_options(cls, parser: OptionManager) -> None:
