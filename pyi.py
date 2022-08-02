@@ -44,6 +44,18 @@ __version__ = "22.8.0"
 LOG = logging.getLogger("flake8.pyi")
 FLAKE8_MAJOR_VERSION = flake8.__version_info__[0]
 
+if FLAKE8_MAJOR_VERSION < 5:
+    import warnings
+
+    warnings.warn(
+        (
+            "flake8-pyi will drop support for running with flake8 < 5.0.0 "
+            "in a future version. This will not happen until November 2022 "
+            "at the earliest."
+        ),
+        category=FutureWarning,
+    )
+
 
 class Error(NamedTuple):
     lineno: int
@@ -243,38 +255,27 @@ class PyiAwareFlakesChecker(FlakesChecker):
 
 
 class PyiAwareFileChecker(checker.FileChecker):
-    if FLAKE8_MAJOR_VERSION < 5:
+    def run_check(self, plugin, **kwargs: Any) -> Any:
+        if self.filename == "-":
+            filename = self.options.stdin_display_name
+        else:
+            filename = self.filename
 
-        def run_check(self, plugin, **kwargs: Any) -> Any:
-            if self.filename == "-":
-                filename = self.options.stdin_display_name
+        if filename.endswith(".pyi"):
+            log_msg = (
+                f"Replacing FlakesChecker with PyiAwareFlakesChecker while "
+                f"checking {filename!r}"
+            )
+            if FLAKE8_MAJOR_VERSION < 5:
+                if plugin["plugin"] is FlakesChecker:
+                    LOG.info(log_msg)
+                    plugin = dict(plugin)
+                    plugin["plugin"] = PyiAwareFlakesChecker
             else:
-                filename = self.filename
-
-            if filename.endswith(".pyi") and plugin["plugin"] is FlakesChecker:
-                LOG.info(
-                    f"Replacing FlakesChecker with PyiAwareFlakesChecker while "
-                    f"checking {filename!r}",
-                )
-                plugin = dict(plugin)
-                plugin["plugin"] = PyiAwareFlakesChecker
-            return super().run_check(plugin, **kwargs)
-
-    else:
-
-        def run_check(self, plugin, **kwargs: Any) -> Any:
-            if self.filename == "-":
-                filename = self.options.stdin_display_name
-            else:
-                filename = self.filename
-
-            if filename.endswith(".pyi") and plugin.obj is FlakesChecker:
-                LOG.info(
-                    f"Replacing FlakesChecker with PyiAwareFlakesChecker while "
-                    f"checking {filename!r}",
-                )
-                plugin = plugin._replace(obj=PyiAwareFlakesChecker)
-            return super().run_check(plugin, **kwargs)
+                if plugin.obj is FlakesChecker:
+                    LOG.info(log_msg)
+                    plugin = plugin._replace(obj=PyiAwareFlakesChecker)
+        return super().run_check(plugin, **kwargs)
 
 
 class LegacyNormalizer(ast.NodeTransformer):
