@@ -45,7 +45,7 @@ if TYPE_CHECKING:
     # and mypy thinks typing_extensions is part of the stdlib.
     from typing_extensions import Literal, TypeGuard
 
-__version__ = "22.7.0"
+__version__ = "22.8.0"
 
 LOG = logging.getLogger("flake8.pyi")
 
