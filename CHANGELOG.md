@@ -1,10 +1,13 @@
 # Change Log
 
+## Unreleased
+
+* Y047: Detect unused `TypeAlias` declarations.
+
 ## 22.8.0
 
 New error codes:
 * Y046: Detect unused `Protocol`s.
-* Y047: Detect unused `TypeAlias` declarations.
 * Y048: Function bodies should contain exactly one statement.
 
 Bugfixes:
