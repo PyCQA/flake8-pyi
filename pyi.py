@@ -76,8 +76,11 @@ _COROUTINE_SLICE = "YieldType, SendType, ReturnType"
 _ASYNCGEN_SLICE = "YieldType, SendType"
 
 
-# ChainMap and AsyncContextManager do not exist in typing or typing_extensions in Python 2,
-# so we can disallow importing them from anywhere except collections and contextlib respectively.
+# ChainMap and AsyncContextManager do not exist
+# in typing or typing_extensions in Python 2,
+# so we can disallow importing them from anywhere
+# except collections and contextlib respectively.
+#
 # A Python 2-compatible check
 _BAD_Y022_IMPORTS = {
     # typing aliases for collections
@@ -125,8 +128,9 @@ _BAD_TYPING_Y023_IMPORTS = frozenset(
         "overload",
         "Text",
         "NoReturn",
-        # ClassVar deliberately omitted, as it's the only one in this group that should be parameterised
-        # It is special-case elsewhere
+        # ClassVar deliberately omitted,
+        # as it's the only one in this group that should be parameterised.
+        # It is special-cased elsewhere.
     }
 )
 
@@ -287,8 +291,10 @@ class LegacyNormalizer(ast.NodeTransformer):
             """Index nodes no longer exist in Python 3.9.
 
             For example, consider the AST representing Union[str, int].
-            Before 3.9:    Subscript(value=Name(id='Union'), slice=Index(value=Tuple(...)))
-            3.9 and newer: Subscript(value=Name(id='Union'), slice=Tuple(...))
+            Before 3.9:
+                Subscript(value=Name(id='Union'), slice=Index(value=Tuple(...)))
+            3.9 and newer:
+                Subscript(value=Name(id='Union'), slice=Tuple(...))
             """
             return node.value
 
@@ -374,7 +380,8 @@ def _get_name_of_class_if_from_modules(
     """
     If `classnode` is an `ast.Name`, return `classnode.id`.
 
-    If it's an `ast.Attribute`, check that the part before the dot is a module in `modules`.
+    If it's an `ast.Attribute`,check that the part before the dot
+    is a module in `modules`.
     If it is, return the part after the dot; if it isn't, return `None`.
 
     If `classnode` is anything else, return `None`.
@@ -425,9 +432,13 @@ def _is_PEP_604_union(node: ast.expr | None) -> TypeGuard[ast.BinOp]:
 
 
 def _is_None(node: ast.expr) -> bool:
-    # <=3.7: `BaseException | None` parses as BinOp(left=Name(id='BaseException'), op=BitOr(), right=NameConstant(value=None))`
-    # >=3.8: `BaseException | None` parses as BinOp(left=Name(id='BaseException'), op=BitOr(), right=Constant(value=None))`
-    # ast.NameConstant is deprecated in 3.8+, but doesn't raise a DeprecationWarning (and the isinstance() check still works)
+    # <=3.7: `BaseException | None` parses as:
+    #     BinOp(left=Name(id='BaseException'), op=BitOr(), right=NameConstant(value=None))`
+    # >=3.8: `BaseException | None` parses as
+    #     BinOp(left=Name(id='BaseException'), op=BitOr(), right=Constant(value=None))`
+    #
+    # ast.NameConstant is deprecated in 3.8+, but doesn't raise a DeprecationWarning,
+    # and the isinstance() check still works
     return isinstance(node, ast.NameConstant) and node.value is None
 
 
@@ -450,7 +461,7 @@ class ExitArgAnalysis(NamedTuple):
 
 
 def _analyse_exit_method_arg(node: ast.BinOp) -> ExitArgAnalysis:
-    """Return a two-item tuple providing analysis of the annotation of an exit-method arg.
+    """Return a two-item tuple analysing the annotation of an exit-method arg.
 
     The `node` represents a union type written as `X | Y`.
 
@@ -522,7 +533,8 @@ def _has_bad_hardcoded_returns(
     method: ast.FunctionDef | ast.AsyncFunctionDef, *, classdef: ast.ClassDef
 ) -> bool:
     """Return `True` if `function` should be rewritten using `_typeshed.Self`."""
-    # Much too complex for our purposes to worry about overloaded functions or abstractmethods
+    # Much too complex for our purposes to worry
+    # about overloaded functions or abstractmethods
     if any(
         _is_overload(deco) or _is_abstractmethod(deco) for deco in method.decorator_list
     ):
@@ -642,7 +654,8 @@ class PyiVisitor(ast.NodeVisitor):
     def __init__(self, filename: Path | None = None) -> None:
         self.filename = Path("(none)") if filename is None else filename
         self.errors: list[Error] = []
-        # Mapping of all private TypeVars/ParamSpecs/TypeVarTuples to the nodes where they're defined
+        # Mapping of all private TypeVars/ParamSpecs/TypeVarTuples
+        # to the nodes where they're defined
         self.typevarlike_defs: dict[TypeVarInfo, ast.Assign] = {}
         # A list of all private Protocol-definition nodes
         self.protocol_defs: list[ast.ClassDef] = []
@@ -796,7 +809,8 @@ class PyiVisitor(ast.NodeVisitor):
         """Attempt to find assignments to TypeVar-like objects.
 
         TypeVars should usually be private.
-        If they are private, they should be used at least once in the file in which they are defined.
+        If they are private, they should be used at least once
+        in the file in which they are defined.
         """
         cls_name = _get_name_of_class_if_from_modules(function, modules=_TYPING_MODULES)
 
@@ -1038,7 +1052,8 @@ class PyiVisitor(ast.NodeVisitor):
         if len(literals_in_union) < 2:
             return
 
-        # Contains ast.slice nodes on Python <3.9; contains ast.expr nodes on Python >= 3.9
+        # Contains ast.slice nodes on Python <3.9;
+        # contains ast.expr nodes on Python >= 3.9
         new_literal_members: list[ast.expr | ast.slice] = []
 
         for literal in literals_in_union:
@@ -1071,7 +1086,8 @@ class PyiVisitor(ast.NodeVisitor):
         members.append(current)
         members.reverse()
 
-        # Do not call generic_visit(node), that would call this method again unnecessarily
+        # Do not call generic_visit(node),
+        # that would call this method again unnecessarily
         for member in members:
             self.visit(member)
 
@@ -1289,7 +1305,8 @@ class PyiVisitor(ast.NodeVisitor):
                     or _is_builtins_object(varargs_annotation)
                 ):
                     error_for_bad_exit_method(
-                        f'Star-args in an {method_name} method should be annotated with "object", '
+                        f"Star-args in an {method_name} method "
+                        f'should be annotated with "object", '
                         f'not "{unparse(varargs_annotation)}"'
                     )
             else:
@@ -1525,7 +1542,8 @@ class PyiVisitor(ast.NodeVisitor):
         else:
             return
 
-        # Don't error if the first argument is annotated with `builtins.type[T]` or `typing.Type[T]`
+        # Don't error if the first argument is annotated
+        # with `builtins.type[T]` or `typing.Type[T]`
         # These are edge cases, and it's hard to give good error messages for them.
         if not _is_name(first_arg_annotation.value, "type"):
             return
@@ -1742,15 +1760,31 @@ Y031 = "Y031 Use class-based syntax for TypedDicts where possible"
 Y032 = (
     'Y032 Prefer "object" to "Any" for the second parameter in "{method_name}" methods'
 )
-Y033 = 'Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")'
-Y034 = 'Y034 {methods} usually return "self" at runtime. Consider using "_typeshed.Self" in "{method_name}", e.g. "{suggested_syntax}"'
-Y035 = 'Y035 "{var}" in a stub file must have a value, as it has the same semantics as "{var}" at runtime.'
+Y033 = (
+    "Y033 Do not use type comments in stubs "
+    '(e.g. use "x: int" instead of "x = ... # type: int")'
+)
+Y034 = (
+    'Y034 {methods} usually return "self" at runtime. '
+    'Consider using "_typeshed.Self" in "{method_name}", e.g. "{suggested_syntax}"'
+)
+Y035 = (
+    'Y035 "{var}" in a stub file must have a value, '
+    'as it has the same semantics as "{var}" at runtime.'
+)
 Y036 = "Y036 Badly defined {method_name} method: {details}"
 Y037 = "Y037 Use PEP 604 union types instead of {old_syntax} (e.g. {example})."
-Y038 = 'Y038 Use "from collections.abc import Set as AbstractSet" instead of "from typing import AbstractSet" (PEP 585 syntax)'
+Y038 = (
+    'Y038 Use "from collections.abc import Set as AbstractSet" '
+    'instead of "from typing import AbstractSet" (PEP 585 syntax)'
+)
 Y039 = 'Y039 Use "str" instead of "typing.Text"'
 Y040 = 'Y040 Do not inherit from "object" explicitly, as it is redundant in Python 3'
-Y041 = 'Y041 Use "{implicit_supertype}" instead of "{implicit_subtype} | {implicit_supertype}" (see "The numeric tower" in PEP 484)'
+Y041 = (
+    'Y041 Use "{implicit_supertype}" '
+    'instead of "{implicit_subtype} | {implicit_supertype}" '
+    '(see "The numeric tower" in PEP 484)'
+)
 Y042 = "Y042 Type aliases should use the CamelCase naming convention"
 Y043 = 'Y043 Bad name for a type alias (the "T" suffix implies a TypeVar)'
 Y044 = 'Y044 "from __future__ import annotations" has no effect in stub files.'
