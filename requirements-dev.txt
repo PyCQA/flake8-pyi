@@ -3,5 +3,5 @@ pytest==7.1.2
 mypy==0.971
 isort==5.10.1
 flake8-bugbear==22.7.1
-types-pyflakes==2.4.3
+types-pyflakes==2.5.0
 ast_decompiler<1.0; python_version < '3.9'
