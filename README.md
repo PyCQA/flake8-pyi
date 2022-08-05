@@ -5,6 +5,8 @@ A plugin for Flake8 that provides specializations for
 especially interesting for linting
 [typeshed](https://github.com/python/typeshed/).
 
+Refer to [this documentation](https://typing.readthedocs.io/en/latest/source/stubs.html) for more
+details on stub files.
 
 ## Functionality
 
@@ -30,7 +32,7 @@ plugins, as they might generate errors that are inappropriate for
 This plugin reserves codes starting with **Y0**. The following warnings are
 currently emitted:
 
-| Code | Description 
+| Code | Description
 |------|-------------
 | Y001 | Names of `TypeVar`s, `ParamSpec`s and `TypeVarTuple`s in stubs should usually start with `_`. This makes sure you don't accidentally expose names internal to the stub.
 | Y002 | If test must be a simple comparison against `sys.platform` or `sys.version_info`. Stub files support simple conditionals to indicate differences between Python versions or platforms, but type checkers only understand a limited subset of Python syntax, and this warning triggers on conditionals that type checkers will probably not understand.
@@ -75,7 +77,7 @@ currently emitted:
 | Y041 | Y041 detects redundant numeric unions. For example, PEP 484 specifies that type checkers should treat `int` as an implicit subtype of `float`, so `int` is redundant in the union `int \| float`. In the same way, `int` is redundant in the union `int \| complex`, and `float` is redundant in the union `float \| complex`.
 | Y042 | Type alias names should use CamelCase rather than snake_case
 | Y043 | Do not use names ending in "T" for private type aliases. (The "T" suffix implies that an object is a `TypeVar`.)
-| Y044 | `from __future__ import annotations` has no effect in stub files, as forward references in stubs are enabled by default.
+| Y044 | `from __future__ import annotations` has no effect in stub files, since type checkers automatically treat stubs as having those semantics.
 | Y045 | `__iter__` methods should never return `Iterable[T]`, as they should always return some kind of iterator.
 | Y046 | A private `Protocol` should be used at least once in the file in which it is defined.
 | Y048 | Function bodies should contain exactly one statement. (Note that if a function body includes a docstring, the docstring counts as a "statement".)
