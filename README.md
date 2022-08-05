@@ -5,7 +5,7 @@ A plugin for Flake8 that provides specializations for
 especially interesting for linting
 [typeshed](https://github.com/python/typeshed/).
 
-Refer [here](https://typing.readthedocs.io/en/latest/source/stubs.html) for more
+Refer to [this documentation](https://typing.readthedocs.io/en/latest/source/stubs.html) for more
 details on stub files.
 
 ## Functionality
