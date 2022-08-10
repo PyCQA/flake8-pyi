@@ -1,4 +1,4 @@
-# flags: --extend-ignore=Y037
+# flags: --extend-ignore=Y037,Y047
 import array
 import builtins
 import collections.abc

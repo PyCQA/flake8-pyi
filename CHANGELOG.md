@@ -1,5 +1,10 @@
 # Change Log
 
+## Unreleased
+
+New error codes:
+* Y047: Detect unused `TypeAlias` declarations.
+
 ## 22.8.1
 
 * Add support for flake8 >= 5.0.0.

@@ -659,6 +659,8 @@ class PyiVisitor(ast.NodeVisitor):
         self.typevarlike_defs: dict[TypeVarInfo, ast.Assign] = {}
         # A list of all private Protocol-definition nodes
         self.protocol_defs: list[ast.ClassDef] = []
+        # Mapping of all private TypeAlias declarations to the nodes where they're defined
+        self.typealias_decls: dict[str, ast.AnnAssign] = {}
         # Mapping of each name in the file to the no. of occurrences
         self.all_name_occurrences: Counter[str] = Counter()
         self.string_literals_allowed = NestingCounter()
@@ -958,6 +960,16 @@ class PyiVisitor(ast.NodeVisitor):
     # - The penultimate character in the name is an ASCII-lowercase letter
     _Y043_REGEX = re.compile(r"^_.*[a-z]T\d?$")
 
+    def _check_typealias(self, node: ast.AnnAssign, alias_name: str) -> None:
+        with self.visiting_TypeAlias.enabled():
+            self.generic_visit(node)
+        if alias_name.startswith("_"):
+            self.typealias_decls[alias_name] = node
+        if self._Y042_REGEX.match(alias_name):
+            self.error(node, Y042)
+        if self._Y043_REGEX.match(alias_name):
+            self.error(node, Y043)
+
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         node_annotation = node.annotation
         if _is_Final(node_annotation):
@@ -977,15 +989,8 @@ class PyiVisitor(ast.NodeVisitor):
                     self.error(node, Y035.format(var=target_name))
                 return
 
-        if _is_TypeAlias(node_annotation):
-            with self.visiting_TypeAlias.enabled():
-                self.generic_visit(node)
-            if isinstance(node_target, ast.Name):
-                if self._Y042_REGEX.match(target_name):
-                    self.error(node, Y042)
-                if self._Y043_REGEX.match(target_name):
-                    self.error(node, Y043)
-            return
+        if _is_TypeAlias(node_annotation) and isinstance(node_target, ast.Name):
+            return self._check_typealias(node=node, alias_name=target_name)
 
         self.generic_visit(node)
 
@@ -1643,6 +1648,9 @@ class PyiVisitor(ast.NodeVisitor):
         for protocol in self.protocol_defs:
             if self.all_name_occurrences[protocol.name] == 0:
                 self.error(protocol, Y046.format(protocol_name=protocol.name))
+        for alias_name, alias in self.typealias_decls.items():
+            if self.all_name_occurrences[alias_name] == 1:
+                self.error(alias, Y047.format(alias_name=alias_name))
         yield from self.errors
 
 
@@ -1790,4 +1798,5 @@ Y043 = 'Y043 Bad name for a type alias (the "T" suffix implies a TypeVar)'
 Y044 = 'Y044 "from __future__ import annotations" has no effect in stub files.'
 Y045 = 'Y045 "{iter_method}" methods should return an {good_cls}, not an {bad_cls}'
 Y046 = 'Y046 Protocol "{protocol_name}" is not used'
+Y047 = 'Y047 Type alias "{alias_name}" is not used'
 Y048 = "Y048 Function body should contain exactly one statement"

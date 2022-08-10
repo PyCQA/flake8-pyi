@@ -2,6 +2,7 @@ import typing
 from typing import Protocol
 
 import typing_extensions
+from typing_extensions import Literal, TypeAlias
 
 class _Foo(Protocol):  # Y046 Protocol "_Foo" is not used
     bar: int
@@ -19,3 +20,9 @@ class _UsedPrivateProtocol(Protocol):
     bar: int
 
 def uses__UsedPrivateProtocol(arg: _UsedPrivateProtocol) -> None: ...
+
+_UnusedPrivateAlias: TypeAlias = str | int  # Y047 Type alias "_UnusedPrivateAlias" is not used
+PublicAlias: TypeAlias = str | int
+_UsedAlias: TypeAlias = Literal["Look, this is used!"]
+
+def uses__UsedAlias(arg: _UsedAlias) -> None: ...
