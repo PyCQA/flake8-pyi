@@ -357,7 +357,9 @@ def _is_object(node: ast.expr | None, name: str, *, from_: Container[str]) -> bo
 _is_BaseException = partial(_is_object, name="BaseException", from_={"builtins"})
 _is_TypeAlias = partial(_is_object, name="TypeAlias", from_=_TYPING_MODULES)
 _is_NamedTuple = partial(_is_object, name="NamedTuple", from_=_TYPING_MODULES)
-_is_TypedDict = partial(_is_object, name="TypedDict", from_=_TYPING_MODULES)
+_is_TypedDict = partial(
+    _is_object, name="TypedDict", from_=_TYPING_MODULES | {"mypy_extensions"}
+)
 _is_Literal = partial(_is_object, name="Literal", from_=_TYPING_MODULES)
 _is_abstractmethod = partial(_is_object, name="abstractmethod", from_={"abc"})
 _is_Any = partial(_is_object, name="Any", from_={"typing"})
@@ -659,7 +661,11 @@ class PyiVisitor(ast.NodeVisitor):
         self.typevarlike_defs: dict[TypeVarInfo, ast.Assign] = {}
         # A list of all private Protocol-definition nodes
         self.protocol_defs: list[ast.ClassDef] = []
-        # Mapping of all private TypeAlias declarations to the nodes where they're defined
+        # The same for class-based private TypedDicts
+        self.class_based_typeddicts: list[ast.ClassDef] = []
+        # Mapping of private TypedDicts to the nodes where they're defined
+        self.assignment_based_typeddicts: dict[str, ast.Assign] = {}
+        # The same for private TypeAliases
         self.typealias_decls: dict[str, ast.AnnAssign] = {}
         # Mapping of each name in the file to the no. of occurrences
         self.all_name_occurrences: Counter[str] = Counter()
@@ -805,7 +811,7 @@ class PyiVisitor(ast.NodeVisitor):
         if module_name == "typing" and "AbstractSet" in imported_names:
             self.error(node, Y038)
 
-    def _check_assignment_to_function(
+    def _check_for_typevarlike_assignments(
         self, node: ast.Assign, function: ast.expr, object_name: str
     ) -> None:
         """Attempt to find assignments to TypeVar-like objects.
@@ -851,9 +857,14 @@ class PyiVisitor(ast.NodeVisitor):
         assert isinstance(target, ast.Name)
         assignment = node.value
         if isinstance(assignment, ast.Call):
-            self._check_assignment_to_function(
-                node=node, function=assignment.func, object_name=target_name
-            )
+            function = assignment.func
+            if _is_TypedDict(function):
+                if target_name.startswith("_"):
+                    self.assignment_based_typeddicts[target_name] = node
+            else:
+                self._check_for_typevarlike_assignments(
+                    node=node, function=function, object_name=target_name
+                )
 
         elif isinstance(assignment, (ast.Num, ast.Str, ast.Bytes)):
             return self._Y015_error(node)
@@ -1255,12 +1266,15 @@ class PyiVisitor(ast.NodeVisitor):
             self.error(node, Y007)
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
-        if (
-            (not self.in_class.active)
-            and node.name.startswith("_")
-            and any(_is_Protocol(base) for base in node.bases)
-        ):
-            self.protocol_defs.append(node)
+        if node.name.startswith("_") and not self.in_class.active:
+            for base in node.bases:
+                if _is_Protocol(base):
+                    self.protocol_defs.append(node)
+                    break
+                if _is_TypedDict(base):
+                    self.class_based_typeddicts.append(node)
+                    break
+
         old_class_node = self.current_class_node
         self.current_class_node = node
         with self.in_class.enabled():
@@ -1636,9 +1650,19 @@ class PyiVisitor(ast.NodeVisitor):
     def error(self, node: ast.AST, message: str) -> None:
         self.errors.append(Error(node.lineno, node.col_offset, message, PyiTreeChecker))
 
-    def run(self, tree: ast.AST) -> Iterable[Error]:
-        self.errors.clear()
-        self.visit(tree)
+    def _check_for_unused_things(self) -> None:
+        """
+        After the AST tree has been visited,
+        analyse whether there are any unused things in this module.
+
+        We currently check for unused
+        - TypeVars
+        - ParamSpecs
+        - TypeVarTuples
+        - Aliases
+        - Protocols
+        - TypedDicts
+        """
         for (cls_name, typevar_name), def_node in self.typevarlike_defs.items():
             if self.all_name_occurrences[typevar_name] == 1:
                 self.error(
@@ -1648,9 +1672,20 @@ class PyiVisitor(ast.NodeVisitor):
         for protocol in self.protocol_defs:
             if self.all_name_occurrences[protocol.name] == 0:
                 self.error(protocol, Y046.format(protocol_name=protocol.name))
+        for class_based_typeddict in self.class_based_typeddicts:
+            cls_name = class_based_typeddict.name
+            if self.all_name_occurrences[cls_name] == 0:
+                self.error(class_based_typeddict, Y049.format(typeddict_name=cls_name))
+        for td_name, td_node in self.assignment_based_typeddicts.items():
+            if self.all_name_occurrences[td_name] == 1:
+                self.error(td_node, Y049.format(typeddict_name=td_name))
         for alias_name, alias in self.typealias_decls.items():
             if self.all_name_occurrences[alias_name] == 1:
                 self.error(alias, Y047.format(alias_name=alias_name))
+
+    def run(self, tree: ast.AST) -> Iterator[Error]:
+        self.visit(tree)
+        self._check_for_unused_things()
         yield from self.errors
 
 
@@ -1800,3 +1835,4 @@ Y045 = 'Y045 "{iter_method}" methods should return an {good_cls}, not an {bad_cl
 Y046 = 'Y046 Protocol "{protocol_name}" is not used'
 Y047 = 'Y047 Type alias "{alias_name}" is not used'
 Y048 = "Y048 Function body should contain exactly one statement"
+Y049 = 'Y049 TypedDict "{typeddict_name}" is not used'

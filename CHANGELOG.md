@@ -4,6 +4,10 @@
 
 New error codes:
 * Y047: Detect unused `TypeAlias` declarations.
+* Y049: Detect unused `TypedDict` definitions.
+
+Other enhancements:
+* Support `mypy_extensions.TypedDict`.
 
 ## 22.8.1
 

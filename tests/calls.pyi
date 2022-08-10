@@ -1,6 +1,7 @@
 import typing
 from typing import NamedTuple, TypedDict
 
+import mypy_extensions
 import typing_extensions
 
 T = NamedTuple("T", [('foo', int), ('bar', str)])  # Y028 Use class-based syntax for NamedTuples
@@ -15,6 +16,7 @@ class V(NamedTuple):
 W = TypedDict("W", {'foo': str, 'bar': int})  # Y031 Use class-based syntax for TypedDicts where possible
 B = typing.TypedDict("B", {'foo': str, 'bar': int})  # Y031 Use class-based syntax for TypedDicts where possible
 WithTotal = typing_extensions.TypedDict("WithTotal", {'foo': str, 'bar': int}, total=False)  # Y031 Use class-based syntax for TypedDicts where possible
+BB = mypy_extensions.TypedDict("BB", {'foo': str, 'bar': int})  # Y031 Use class-based syntax for TypedDicts where possible
 
 # we don't want these two to raise errors (type-checkers already do that for us),
 # we just want to make sure the plugin doesn't crash if it comes across an invalid TypedDict
