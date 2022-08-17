@@ -375,7 +375,6 @@ _is_AsyncIterable = partial(
 )
 _is_Protocol = partial(_is_object, name="Protocol", from_=_TYPING_MODULES)
 _is_NoReturn = partial(_is_object, name="NoReturn", from_=_TYPING_MODULES)
-_is_Never = partial(_is_object, name="Never", from_=_TYPING_MODULES)
 
 
 def _get_name_of_class_if_from_modules(
