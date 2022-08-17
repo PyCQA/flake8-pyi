@@ -1629,10 +1629,6 @@ class PyiVisitor(ast.NodeVisitor):
 
         if self.in_class.active:
             self.check_self_typevars(node)
-        return_annotation = node.returns
-        if _is_Never(return_annotation):
-            assert return_annotation
-            self.error(return_annotation, Y051)
 
     def visit_arg(self, node: ast.arg) -> None:
         if _is_NoReturn(node.annotation):
@@ -1850,4 +1846,3 @@ Y049 = 'Y049 TypedDict "{typeddict_name}" is not used'
 Y050 = (
     'Y050 Use "typing_extensions.Never" instead of "NoReturn" for argument annotations'
 )
-Y051 = 'Y051 Use "typing.NoReturn" instead of "Never" for return annotations'
