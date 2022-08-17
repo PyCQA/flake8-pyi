@@ -374,6 +374,8 @@ _is_AsyncIterable = partial(
     _is_object, name="AsyncIterable", from_={"collections.abc"} | _TYPING_MODULES
 )
 _is_Protocol = partial(_is_object, name="Protocol", from_=_TYPING_MODULES)
+_is_NoReturn = partial(_is_object, name="NoReturn", from_=_TYPING_MODULES)
+_is_Never = partial(_is_object, name="Never", from_=_TYPING_MODULES)
 
 
 def _get_name_of_class_if_from_modules(
@@ -1627,6 +1629,15 @@ class PyiVisitor(ast.NodeVisitor):
 
         if self.in_class.active:
             self.check_self_typevars(node)
+        return_annotation = node.returns
+        if _is_Never(return_annotation):
+            assert return_annotation
+            self.error(return_annotation, Y051)
+
+    def visit_arg(self, node: ast.arg) -> None:
+        if _is_NoReturn(node.annotation):
+            self.error(node, Y050)
+        self.generic_visit(node)
 
     def visit_arguments(self, node: ast.arguments) -> None:
         self.generic_visit(node)
@@ -1836,3 +1847,7 @@ Y046 = 'Y046 Protocol "{protocol_name}" is not used'
 Y047 = 'Y047 Type alias "{alias_name}" is not used'
 Y048 = "Y048 Function body should contain exactly one statement"
 Y049 = 'Y049 TypedDict "{typeddict_name}" is not used'
+Y050 = (
+    'Y050 Use "typing_extensions.Never" instead of "NoReturn" for argument annotations'
+)
+Y051 = 'Y051 Use "typing.NoReturn" instead of "Never" for return annotations'

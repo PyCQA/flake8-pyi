@@ -83,6 +83,8 @@ currently emitted:
 | Y047 | A private `TypeAlias` should be used at least once in the file in which it is defined.
 | Y048 | Function bodies should contain exactly one statement. (Note that if a function body includes a docstring, the docstring counts as a "statement".)
 | Y049 | A private `TypedDict` should be used at least once in the file in which it is defined.
+| Y050 | Prefer `typing_extensions.Never` over `typing.NoReturn` for argument annotations. This is a purely stylistic choice in the name of readability.
+| Y051 | Prefer `typing.NoReturn` over `typing_extensions.Never` for return annotations. Like Y051, this is a purely stylistic choice.
 
 Many error codes enforce modern conventions, and some cannot yet be used in
 all cases:

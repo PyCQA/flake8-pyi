@@ -5,6 +5,9 @@
 New error codes:
 * Y047: Detect unused `TypeAlias` declarations.
 * Y049: Detect unused `TypedDict` definitions.
+* Y050: Prefer `typing_extensions.Never` for argument annotations over
+  `typing.NoReturn`.
+* Y051: Prefer `typing.NoReturn` for return annotations over `typing_extensions.Never`.
 
 Other enhancements:
 * Support `mypy_extensions.TypedDict`.
