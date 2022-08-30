@@ -639,6 +639,7 @@ def _is_assignment_which_must_have_a_value(
 
 class UnionAnalysis(NamedTuple):
     members_by_dump: defaultdict[str, list[ast.expr]]
+    dupes_in_union: bool
     builtins_classes_in_union: set[str]
     multiple_literals_in_union: bool
     non_literals_in_union: bool
@@ -653,6 +654,8 @@ def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
     >>> analysis = _analyse_union(members)
     >>> len(analysis.members_by_dump["Name(id='memoryview', ctx=Load())"])
     2
+    >>> analysis.dupes_in_union
+    True
     >>> "int" in analysis.builtins_classes_in_union
     True
     >>> "float" in analysis.builtins_classes_in_union
@@ -691,6 +694,7 @@ def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
 
     return UnionAnalysis(
         members_by_dump=members_by_dump,
+        dupes_in_union=any(len(lst) > 1 for lst in members_by_dump.values()),
         builtins_classes_in_union=builtins_classes_in_union,
         multiple_literals_in_union=len(literals_in_union) >= 2,
         non_literals_in_union=non_literals_in_union,
@@ -1078,13 +1082,11 @@ class PyiVisitor(ast.NodeVisitor):
         first_union_member = members[0]
         analysis = _analyse_union(members)
 
-        dupes_in_union = False
         for member_list in analysis.members_by_dump.values():
             if len(member_list) >= 2:
                 self.error(member_list[1], Y016.format(unparse(member_list[1])))
-                dupes_in_union = True
 
-        if not dupes_in_union:
+        if not analysis.dupes_in_union:
             if analysis.multiple_literals_in_union:
                 self._error_for_multiple_literals_in_union(first_union_member, analysis)
             if not self.visiting_TypeAlias.active:
