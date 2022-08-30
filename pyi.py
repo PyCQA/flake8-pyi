@@ -639,7 +639,7 @@ def _is_assignment_which_must_have_a_value(
 
 class UnionAnalysis(NamedTuple):
     members_by_dump: defaultdict[str, list[ast.expr]]
-    builtins_classes_in_union: dict[str, bool]
+    builtins_classes_in_union: set[str]
     multiple_literals_in_union: bool
     non_literals_in_union: bool
     combined_literal_members: list[_ASTSlice]
@@ -651,9 +651,11 @@ def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
     >>> union = _ast_node_for('Union[int, memoryview, memoryview, Literal["foo"], Literal[1]]')
     >>> members = union.slice.elts if sys.version_info >= (3, 9) else union.slice.value.elts
     >>> analysis = _analyse_union(members)
-    >>> analysis.builtins_classes_in_union["int"]
+    >>> len(analysis.members_by_dump["Name(id='memoryview', ctx=Load())"])
+    2
+    >>> "int" in analysis.builtins_classes_in_union
     True
-    >>> analysis.builtins_classes_in_union["float"]
+    >>> "float" in analysis.builtins_classes_in_union
     False
     >>> analysis.multiple_literals_in_union
     True
@@ -665,11 +667,7 @@ def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
 
     non_literals_in_union = False
     members_by_dump: defaultdict[str, list[ast.expr]] = defaultdict(list)
-    interesting_builtins_classes = {
-        "complex": False,
-        "float": False,
-        "int": False,
-    }
+    builtins_classes_in_union: set[str] = set()
     literals_in_union = []
     combined_literal_members: list[_ASTSlice] = []
 
@@ -678,8 +676,8 @@ def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
         name_if_builtins_cls = _get_name_of_class_if_from_modules(
             member, modules={"builtins"}
         )
-        if name_if_builtins_cls in interesting_builtins_classes:
-            interesting_builtins_classes[name_if_builtins_cls] = True
+        if name_if_builtins_cls is not None:
+            builtins_classes_in_union.add(name_if_builtins_cls)
         if isinstance(member, ast.Subscript) and _is_Literal(member.value):
             literals_in_union.append(member.slice)
         else:
@@ -693,7 +691,7 @@ def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
 
     return UnionAnalysis(
         members_by_dump=members_by_dump,
-        builtins_classes_in_union=interesting_builtins_classes,
+        builtins_classes_in_union=builtins_classes_in_union,
         multiple_literals_in_union=len(literals_in_union) >= 2,
         non_literals_in_union=non_literals_in_union,
         combined_literal_members=combined_literal_members,
@@ -1098,12 +1096,12 @@ class PyiVisitor(ast.NodeVisitor):
         builtins_in_union = analysis.builtins_classes_in_union
         errors: list[tuple[str, str]] = []
         add_error = errors.append
-        if builtins_in_union["complex"]:
-            if builtins_in_union["float"]:
+        if "complex" in builtins_in_union:
+            if "float" in builtins_in_union:
                 add_error(("float", "complex"))
-            if builtins_in_union["int"]:
+            if "int" in builtins_in_union:
                 add_error(("int", "complex"))
-        elif builtins_in_union["float"] and builtins_in_union["int"]:
+        elif "float" in builtins_in_union and "int" in builtins_in_union:
             add_error(("int", "float"))
         for subtype, supertype in errors:
             self.error(
