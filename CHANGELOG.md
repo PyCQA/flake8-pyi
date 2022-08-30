@@ -7,6 +7,8 @@ New error codes:
 * Y049: Detect unused `TypedDict` definitions.
 * Y050: Prefer `typing_extensions.Never` for argument annotations over
   `typing.NoReturn`.
+* Y051: Detect redundant unions between `Literal` types and builtin supertypes
+  (e.g. `Literal["foo"] | str`, or `Literal[5] | int`).
 
 Other enhancements:
 * Support `mypy_extensions.TypedDict`.

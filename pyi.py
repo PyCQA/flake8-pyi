@@ -58,9 +58,9 @@ if FLAKE8_MAJOR_VERSION < 5:
 
 
 if sys.version_info >= (3, 9):
-    _ASTSlice: TypeAlias = ast.expr
+    _LiteralMember: TypeAlias = ast.expr
 else:
-    _ASTSlice: TypeAlias = Union[ast.expr, ast.slice]
+    _LiteralMember: TypeAlias = Union[ast.expr, ast.slice]
 
 
 class Error(NamedTuple):
@@ -643,7 +643,7 @@ class UnionAnalysis(NamedTuple):
     builtins_classes_in_union: set[str]
     multiple_literals_in_union: bool
     non_literals_in_union: bool
-    combined_literal_members: list[_ASTSlice]
+    combined_literal_members: list[_LiteralMember]
 
 
 def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
@@ -672,7 +672,7 @@ def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
     members_by_dump: defaultdict[str, list[ast.expr]] = defaultdict(list)
     builtins_classes_in_union: set[str] = set()
     literals_in_union = []
-    combined_literal_members: list[_ASTSlice] = []
+    combined_literal_members: list[_LiteralMember] = []
 
     for member in members:
         members_by_dump[ast.dump(member)].append(member)
@@ -1087,10 +1087,40 @@ class PyiVisitor(ast.NodeVisitor):
                 self.error(member_list[1], Y016.format(unparse(member_list[1])))
 
         if not analysis.dupes_in_union:
+            self._check_for_Y051_violations(analysis)
             if analysis.multiple_literals_in_union:
                 self._error_for_multiple_literals_in_union(first_union_member, analysis)
             if not self.visiting_TypeAlias.active:
                 self._check_for_redundant_numeric_unions(first_union_member, analysis)
+
+    def _check_for_Y051_violations(self, analysis: UnionAnalysis) -> None:
+        """Search for redundant unions fitting the pattern `str | Literal["foo"]`, etc."""
+        literal_classes_present: defaultdict[str, list[_LiteralMember]]
+        literal_classes_present = defaultdict(list)
+        for literal in analysis.combined_literal_members:
+            if isinstance(literal, ast.Str):
+                literal_classes_present["str"].append(literal)
+            elif isinstance(literal, ast.Bytes):
+                literal_classes_present["bytes"].append(literal)
+            elif isinstance(literal, ast.Num):
+                if type(literal.n) is int:
+                    literal_classes_present["int"].append(literal)
+            elif isinstance(literal, ast.NameConstant):
+                if type(literal.value) is bool:
+                    literal_classes_present["bool"].append(literal)
+        for cls in ("str", "bytes", "int", "bool"):
+            if (
+                cls in analysis.builtins_classes_in_union
+                and cls in literal_classes_present
+            ):
+                literal_present = literal_classes_present[cls][0]
+                self.error(
+                    literal_present,
+                    Y051.format(
+                        literal_subtype=f"Literal[{unparse(literal_present)}]",
+                        builtin_supertype=cls,
+                    ),
+                )
 
     def _check_for_redundant_numeric_unions(
         self, first_union_member: ast.expr, analysis: UnionAnalysis
@@ -1881,3 +1911,4 @@ Y049 = 'Y049 TypedDict "{typeddict_name}" is not used'
 Y050 = (
     'Y050 Use "typing_extensions.Never" instead of "NoReturn" for argument annotations'
 )
+Y051 = 'Y051 "{literal_subtype}" is redundant in a union with "{builtin_supertype}"'
