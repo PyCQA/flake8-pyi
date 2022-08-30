@@ -7,7 +7,7 @@ import logging
 import optparse
 import re
 import sys
-from collections import Counter
+from collections import Counter, defaultdict
 from collections.abc import Container, Iterable, Iterator, Sequence
 from contextlib import contextmanager, suppress
 from copy import deepcopy
@@ -16,7 +16,7 @@ from functools import partial
 from itertools import chain
 from keyword import iskeyword
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple
+from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple, Union
 
 import flake8  # type: ignore[import]
 from flake8 import checker
@@ -37,7 +37,7 @@ if TYPE_CHECKING:
     # We don't have typing_extensions as a runtime dependency,
     # but all our annotations are stringized due to __future__ annotations,
     # and mypy thinks typing_extensions is part of the stdlib.
-    from typing_extensions import Literal, TypeGuard
+    from typing_extensions import Literal, TypeAlias, TypeGuard
 
 __version__ = "22.8.1"
 
@@ -55,6 +55,12 @@ if FLAKE8_MAJOR_VERSION < 5:
         ),
         category=FutureWarning,
     )
+
+
+if sys.version_info >= (3, 9):
+    _ASTSlice: TypeAlias = ast.expr
+else:
+    _ASTSlice: TypeAlias = Union[ast.expr, ast.slice]
 
 
 class Error(NamedTuple):
@@ -309,7 +315,6 @@ def _ast_node_for(string: str) -> ast.AST:
 def _is_name(node: ast.expr | None, name: str) -> bool:
     """Return True if `node` is an `ast.Name` node with id `name`
 
-    >>> import ast
     >>> node = ast.Name(id="Any")
     >>> _is_name(node, "Any")
     True
@@ -329,7 +334,6 @@ def _is_object(node: ast.expr | None, name: str, *, from_: Container[str]) -> bo
         where <parent> is a string that can be found within the `from_` collection of
         strings.
 
-    >>> from functools import partial
     >>> _is_AsyncIterator = partial(_is_object, name="AsyncIterator", from_=_TYPING_MODULES | {"collections.abc"})
     >>> _is_AsyncIterator(_ast_node_for("AsyncIterator"))
     True
@@ -630,6 +634,71 @@ def _is_assignment_which_must_have_a_value(
 ) -> bool:
     return (target_name == "__match_args__" and in_class) or (
         target_name == "__all__" and not in_class
+    )
+
+
+class UnionAnalysis(NamedTuple):
+    members_by_dump: defaultdict[str, list[ast.expr]]
+    dupes_in_union: bool
+    builtins_classes_in_union: set[str]
+    multiple_literals_in_union: bool
+    non_literals_in_union: bool
+    combined_literal_members: list[_ASTSlice]
+
+
+def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
+    """Return a tuple providing analysis of a given sequence of union members.
+
+    >>> union = _ast_node_for('Union[int, memoryview, memoryview, Literal["foo"], Literal[1]]')
+    >>> members = union.slice.elts if sys.version_info >= (3, 9) else union.slice.value.elts
+    >>> analysis = _analyse_union(members)
+    >>> len(analysis.members_by_dump["Name(id='memoryview', ctx=Load())"])
+    2
+    >>> analysis.dupes_in_union
+    True
+    >>> "int" in analysis.builtins_classes_in_union
+    True
+    >>> "float" in analysis.builtins_classes_in_union
+    False
+    >>> analysis.multiple_literals_in_union
+    True
+    >>> analysis.non_literals_in_union
+    True
+    >>> unparse(ast.Tuple(analysis.combined_literal_members))
+    "('foo', 1)"
+    """
+
+    non_literals_in_union = False
+    members_by_dump: defaultdict[str, list[ast.expr]] = defaultdict(list)
+    builtins_classes_in_union: set[str] = set()
+    literals_in_union = []
+    combined_literal_members: list[_ASTSlice] = []
+
+    for member in members:
+        members_by_dump[ast.dump(member)].append(member)
+        name_if_builtins_cls = _get_name_of_class_if_from_modules(
+            member, modules={"builtins"}
+        )
+        if name_if_builtins_cls is not None:
+            builtins_classes_in_union.add(name_if_builtins_cls)
+        if isinstance(member, ast.Subscript) and _is_Literal(member.value):
+            literals_in_union.append(member.slice)
+        else:
+            non_literals_in_union = True
+
+    for literal in literals_in_union:
+        if isinstance(literal, ast.Tuple):
+            combined_literal_members.extend(literal.elts)
+        else:
+            combined_literal_members.append(literal)
+
+    return UnionAnalysis(
+        members_by_dump=members_by_dump,
+        dupes_in_union=any(len(lst) > 1 for lst in members_by_dump.values()),
+        builtins_classes_in_union=builtins_classes_in_union,
+        multiple_literals_in_union=len(literals_in_union) >= 2,
+        non_literals_in_union=non_literals_in_union,
+        combined_literal_members=combined_literal_members,
     )
 
 
@@ -1010,83 +1079,50 @@ class PyiVisitor(ast.NodeVisitor):
             self._Y015_error(node)
 
     def _check_union_members(self, members: Sequence[ast.expr]) -> None:
-        members_by_dump: dict[str, list[ast.expr]] = {}
-        for member in members:
-            members_by_dump.setdefault(ast.dump(member), []).append(member)
+        first_union_member = members[0]
+        analysis = _analyse_union(members)
 
-        dupes_in_union = False
-        for member_list in members_by_dump.values():
+        for member_list in analysis.members_by_dump.values():
             if len(member_list) >= 2:
                 self.error(member_list[1], Y016.format(unparse(member_list[1])))
-                dupes_in_union = True
 
-        if not dupes_in_union:
-            self._check_for_multiple_literals(members)
+        if not analysis.dupes_in_union:
+            if analysis.multiple_literals_in_union:
+                self._error_for_multiple_literals_in_union(first_union_member, analysis)
             if not self.visiting_TypeAlias.active:
-                self._check_for_redundant_numeric_unions(members)
+                self._check_for_redundant_numeric_unions(first_union_member, analysis)
 
-    def _Y041_error(
-        self, members: Sequence[ast.expr], subtype: str, supertype: str
+    def _check_for_redundant_numeric_unions(
+        self, first_union_member: ast.expr, analysis: UnionAnalysis
     ) -> None:
-        self.error(
-            members[0],
-            Y041.format(implicit_subtype=subtype, implicit_supertype=supertype),
-        )
+        builtins_in_union = analysis.builtins_classes_in_union
+        errors: list[tuple[str, str]] = []
+        add_error = errors.append
+        if "complex" in builtins_in_union:
+            if "float" in builtins_in_union:
+                add_error(("float", "complex"))
+            if "int" in builtins_in_union:
+                add_error(("int", "complex"))
+        elif "float" in builtins_in_union and "int" in builtins_in_union:
+            add_error(("int", "float"))
+        for subtype, supertype in errors:
+            self.error(
+                first_union_member,
+                Y041.format(implicit_subtype=subtype, implicit_supertype=supertype),
+            )
 
-    def _check_for_redundant_numeric_unions(self, members: Sequence[ast.expr]) -> None:
-        complex_in_union, float_in_union, int_in_union = False, False, False
-
-        for member in members:
-            name = _get_name_of_class_if_from_modules(member, modules={"builtins"})
-
-            if name is None:
-                continue
-
-            if name == "complex":
-                complex_in_union = True
-            elif name == "float":
-                float_in_union = True
-            elif name == "int":
-                int_in_union = True
-
-        if complex_in_union:
-            if float_in_union:
-                self._Y041_error(members, subtype="float", supertype="complex")
-            if int_in_union:
-                self._Y041_error(members, subtype="int", supertype="complex")
-        elif float_in_union and int_in_union:
-            self._Y041_error(members, subtype="int", supertype="float")
-
-    def _check_for_multiple_literals(self, members: Sequence[ast.expr]) -> None:
-        literals_in_union, non_literals_in_union = [], []
-
-        for member in members:
-            if isinstance(member, ast.Subscript) and _is_Literal(member.value):
-                literals_in_union.append(member.slice)
-            else:
-                non_literals_in_union.append(member)
-
-        if len(literals_in_union) < 2:
-            return
-
-        # Contains ast.slice nodes on Python <3.9;
-        # contains ast.expr nodes on Python >= 3.9
-        new_literal_members: list[ast.expr | ast.slice] = []
-
-        for literal in literals_in_union:
-            if isinstance(literal, ast.Tuple):
-                new_literal_members.extend(literal.elts)
-            else:
-                new_literal_members.append(literal)
-
+    def _error_for_multiple_literals_in_union(
+        self, first_union_member: ast.expr, analysis: UnionAnalysis
+    ) -> None:
+        new_literal_members = analysis.combined_literal_members
         new_literal_slice = unparse(ast.Tuple(new_literal_members)).strip("()")
 
-        if non_literals_in_union:
+        if analysis.non_literals_in_union:
             suggestion = f'Combine them into one, e.g. "Literal[{new_literal_slice}]".'
         else:
             suggestion = f'Use a single Literal, e.g. "Literal[{new_literal_slice}]".'
 
-        self.error(members[0], Y030.format(suggestion=suggestion))
+        self.error(first_union_member, Y030.format(suggestion=suggestion))
 
     def visit_BinOp(self, node: ast.BinOp) -> None:
         if not isinstance(node.op, ast.BitOr):
