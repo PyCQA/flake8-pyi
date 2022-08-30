@@ -302,6 +302,7 @@ class LegacyNormalizer(ast.NodeTransformer):
             3.9 and newer:
                 Subscript(value=Name(id='Union'), slice=Tuple(...))
             """
+            self.generic_visit(node)
             return node.value
 
 
