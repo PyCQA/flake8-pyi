@@ -1109,13 +1109,13 @@ class PyiVisitor(ast.NodeVisitor):
             elif isinstance(literal, ast.NameConstant):
                 if type(literal.value) is bool:
                     literal_classes_present["bool"].append(literal)
-        for cls in literal_classes_present:
+        for cls, literals in literal_classes_present.items():
             if cls in analysis.builtins_classes_in_union:
-                literal_present = literal_classes_present[cls][0]
+                first_literal_present = literals[0]
                 self.error(
-                    literal_present,
+                    first_literal_present,
                     Y051.format(
-                        literal_subtype=f"Literal[{unparse(literal_present)}]",
+                        literal_subtype=f"Literal[{unparse(first_literal_present)}]",
                         builtin_supertype=cls,
                     ),
                 )
