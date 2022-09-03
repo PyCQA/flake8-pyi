@@ -4,12 +4,16 @@ combine_as_imports = true
 skip = ["tests/imports.pyi"]
 
 [tool.black]
+target-version = ['py37']
+skip-magic-trailing-comma = true
 force-exclude = ".*\\.pyi"
 
 [tool.mypy]
 show_error_codes = true
+show_traceback = true
+pretty = true
 strict = true
-enable_error_code = "ignore-without-code"
+enable_error_code = "ignore-without-code,redundant-expr"
 warn_unreachable = true
 allow_subclassing_any = true
 allow_untyped_defs = true
