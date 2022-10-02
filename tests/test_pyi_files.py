@@ -19,6 +19,8 @@ def test_pyi_file(path):
         if line.startswith("# flags: "):
             flags.extend(line.split()[2:])
             continue
+        if line.startswith("#"):
+            continue
 
         error_codes = list(re.finditer(r"# ([A-Z]\d\d\d )", line))
 
