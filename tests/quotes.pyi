@@ -55,5 +55,13 @@ class DocstringAndPass:
     pass  # Y012 Class body must not contain "pass"
 
 # These two shouldn't trigger Y020 -- empty strings can't be "quoted annotations"
-k = u""  # Y015 Bad default value. Use "k = ..." instead of "k = u''"
+k = ""  # Y015 Bad default value. Use "k = ..." instead of "k = ''"
 el = r""  # Y015 Bad default value. Use "el = ..." instead of "el = ''"
+
+# The following should also pass,
+# But we can't test for it in CI, because the error message is *very* slightly different on 3.7
+#
+# On 3.7:
+# m = u""  # Y015 Bad default value. Use "m = ..." instead of "m = ''"
+# On 3.8+:
+# m = u""  # Y015 Bad default value. Use "m = ..." instead of "m = u''"
