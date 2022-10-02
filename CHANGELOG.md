@@ -1,5 +1,10 @@
 # Change Log
 
+## Unreleased
+
+New error codes:
+* Y052: f-strings should never be used in stubs.
+
 ## 22.8.2
 
 New error codes:

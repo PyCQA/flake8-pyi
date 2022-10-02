@@ -1717,6 +1717,9 @@ class PyiVisitor(ast.NodeVisitor):
         error_message = Y015.format(old_syntax=old_syntax, new_syntax=new_syntax)
         self.error(node, error_message)
 
+    def visit_JoinedStr(self, node: ast.JoinedStr) -> None:
+        self.error(node, Y052)
+
     def error(self, node: ast.AST, message: str) -> None:
         self.errors.append(Error(node.lineno, node.col_offset, message, PyiTreeChecker))
 
@@ -1910,3 +1913,4 @@ Y050 = (
     'Y050 Use "typing_extensions.Never" instead of "NoReturn" for argument annotations'
 )
 Y051 = 'Y051 "{literal_subtype}" is redundant in a union with "{builtin_supertype}"'
+Y052 = "Y052 f-strings should never be used in stubs"
