@@ -96,6 +96,15 @@ all cases:
   [a few bugs](https://github.com/python/mypy/issues?q=is%3Aopen+is%3Aissue+label%3Atopic-pep-604+label%3Atopic-type-alias)
   regarding PEP 604 type aliases.
 
+Note that several error codes recommend using types from `typing_extensions` or
+`_typeshed`. Strictly speaking, these packages are not part of the standard
+library. However, these packages are included in typeshed's `stdlib/`
+directory, meaning that type checkers believe them to be part of the standard
+library even if this does not reflect the reality at runtime. As such, since
+stubs are never executed at runtime, types from `typing_extensions` and
+`_typeshed` can be used freely in a stubs package, even if the package does not
+have an explicit dependency on either `typing_extensions` or typeshed.
+
 ## License
 
 MIT
