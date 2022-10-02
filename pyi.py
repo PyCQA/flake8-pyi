@@ -1719,6 +1719,7 @@ class PyiVisitor(ast.NodeVisitor):
 
     def visit_JoinedStr(self, node: ast.JoinedStr) -> None:
         self.error(node, Y052)
+        self.generic_visit(node)
 
     def error(self, node: ast.AST, message: str) -> None:
         self.errors.append(Error(node.lineno, node.col_offset, message, PyiTreeChecker))
