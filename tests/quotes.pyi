@@ -53,3 +53,7 @@ class DocstringAndEllipsis:
 class DocstringAndPass:
     """Docstring"""  # Y021 Docstrings should not be included in stubs
     pass  # Y012 Class body must not contain "pass"
+
+# These two shouldn't trigger Y020 -- empty strings can't be "quoted annotations"
+k = u""  # Y015 Bad default value. Use "k = ..." instead of "k = u''"
+el = r""  # Y015 Bad default value. Use "el = ..." instead of "el = ''"
