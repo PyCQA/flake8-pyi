@@ -5,6 +5,10 @@
 Bugfixes:
 * Do not emit Y020 for empty strings. Y020 concerns "quoted annotations",
   but an empty string can never be a quoted annotation.
+* Add special-casing so that Y020 is not emitted for `__slots__` definitions
+  inside `class` blocks.
+* Expand Y035 to cover `__slots__` definitions as well as `__match_args__` and
+  `__all__` definitions.
 
 ## 22.8.2
 

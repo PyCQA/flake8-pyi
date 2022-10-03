@@ -10,6 +10,7 @@ __all__.extend(["i"])
 __all__.append("j")
 __all__.remove("j")
 __match_args__ = ('foo',)  # Y020 Quoted annotations should never be used in stubs
+__slots__ = ('foo',)  # Y020 Quoted annotations should never be used in stubs
 
 def f(x: "int"): ...  # Y020 Quoted annotations should never be used in stubs
 def g(x: list["int"]): ...  # Y020 Quoted annotations should never be used in stubs
@@ -27,6 +28,7 @@ class Child(list["int"]):  # Y020 Quoted annotations should never be used in stu
 
     __all__ = ('foo',)  # Y020 Quoted annotations should never be used in stubs
     __match_args__ = ('foo', 'bar')
+    __slots__ = ('foo', 'bar')
 
 if sys.platform == "linux":
     f: "int"  # Y020 Quoted annotations should never be used in stubs
