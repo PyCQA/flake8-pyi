@@ -633,7 +633,7 @@ def _non_kw_only_args_of(args: ast.arguments) -> list[ast.arg]:
 def _is_assignment_which_must_have_a_value(
     target_name: str | None, *, in_class: bool
 ) -> bool:
-    return (target_name == "__match_args__" and in_class) or (
+    return (target_name in {"__match_args__", "__slots__"} and in_class) or (
         target_name == "__all__" and not in_class
     )
 
