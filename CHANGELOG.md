@@ -1,5 +1,11 @@
 # Change Log
 
+## Unreleased
+
+Bugfixes:
+* Do not emit Y020 for empty strings. Y020 concerns "quoted annotations",
+  but an empty string can never be a quoted annotation.
+
 ## 22.8.2
 
 New error codes:

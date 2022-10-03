@@ -1019,12 +1019,16 @@ class PyiVisitor(ast.NodeVisitor):
 
     # 3.8+
     def visit_Constant(self, node: ast.Constant) -> None:
-        if not self.string_literals_allowed.active and isinstance(node.value, str):
+        if (
+            isinstance(node.value, str)
+            and node.value
+            and not self.string_literals_allowed.active
+        ):
             self.error(node, Y020)
 
     # 3.7 and lower
     def visit_Str(self, node: ast.Str) -> None:
-        if not self.string_literals_allowed.active:
+        if node.s and not self.string_literals_allowed.active:
             self.error(node, Y020)
 
     def visit_Expr(self, node: ast.Expr) -> None:
