@@ -9,6 +9,7 @@ Bugfixes:
   inside `class` blocks.
 * Expand Y035 to cover `__slots__` definitions as well as `__match_args__` and
   `__all__` definitions.
+* Expand Y015 so that errors are emitted for assignments to negative numbers.
 
 ## 22.8.2
 
