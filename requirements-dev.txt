@@ -5,4 +5,4 @@ isort==5.10.1      # Must match .pre-commit-config.yaml
 flake8-bugbear==22.8.23
 flake8-noqa==1.2.9
 types-pyflakes==2.5.0
-ast_decompiler<1.0; python_version < '3.9'
+ast_decompiler>=0.7.0,<1.0; python_version < '3.9'
