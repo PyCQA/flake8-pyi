@@ -12,6 +12,9 @@ field5 = 0  # type: int  # Y033 Do not use type comments in stubs (e.g. use "x: 
 field6 = 0  # Y015 Bad default value. Use "field6 = ..." instead of "field6 = 0"
 field7 = b""  # Y015 Bad default value. Use "field7 = ..." instead of "field7 = b''"
 field8 = False  # Y015 Bad default value. Use "field8 = ..." instead of "field8 = False"
+field81 = -1  # Y015 Bad default value. Use "field81 = ..." instead of "field81 = -1"
+field82: float = -98.43  # Y015 Bad default value. Use "field82: float = ..." instead of "field82: float = -98.43"
+field83 = -42j  # Y015 Bad default value. Use "field83 = ..." instead of "field83 = -42j"
 
 # We don't want this one to trigger Y015 -- it's valid as a TypeAlias
 field9 = None  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "field9: TypeAlias = None"
@@ -25,6 +28,7 @@ field14: Final = True
 field15: Final = ('a', 'b', 'c')
 field16: typing.Final = "foo"
 field17: typing_extensions.Final = "foo"
+field18: Final = -24j
 
 class Foo:
     field1: int

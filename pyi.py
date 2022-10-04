@@ -900,6 +900,40 @@ class PyiVisitor(ast.NodeVisitor):
             else:
                 self.error(node, Y001.format(cls_name))
 
+    def _Y015_error(self, node: ast.Assign | ast.AnnAssign) -> None:
+        old_syntax = unparse(node)
+        copy_of_node = deepcopy(node)
+        copy_of_node.value = ast.Constant(value=...)
+        new_syntax = unparse(copy_of_node)
+        error_message = Y015.format(old_syntax=old_syntax, new_syntax=new_syntax)
+        self.error(node, error_message)
+
+    @staticmethod
+    def _Y015_violation_detected(node: ast.Assign | ast.AnnAssign) -> bool:
+        assignment = node.value
+
+        if isinstance(node, ast.AnnAssign):
+            if assignment and not isinstance(assignment, ast.Ellipsis):
+                return True
+            return False
+
+        if isinstance(assignment, (ast.Num, ast.Str, ast.Bytes)):
+            return True
+        if (
+            isinstance(assignment, ast.UnaryOp)
+            and isinstance(assignment.op, ast.USub)
+            and isinstance(assignment.operand, ast.Num)
+        ):
+            return True
+        if (
+            isinstance(assignment, (ast.Constant, ast.NameConstant))
+            and not isinstance(assignment, ast.Ellipsis)
+            and assignment.value is not None
+        ):
+            return True
+
+        return False
+
     def visit_Assign(self, node: ast.Assign) -> None:
         if self.in_function.active:
             # We error for unexpected things within functions separately.
@@ -927,6 +961,7 @@ class PyiVisitor(ast.NodeVisitor):
             return
         assert isinstance(target, ast.Name)
         assignment = node.value
+
         if isinstance(assignment, ast.Call):
             function = assignment.func
             if _is_TypedDict(function):
@@ -936,15 +971,9 @@ class PyiVisitor(ast.NodeVisitor):
                 self._check_for_typevarlike_assignments(
                     node=node, function=function, object_name=target_name
                 )
+            return
 
-        elif isinstance(assignment, (ast.Num, ast.Str, ast.Bytes)):
-            return self._Y015_error(node)
-
-        if (
-            isinstance(assignment, (ast.Constant, ast.NameConstant))
-            and not isinstance(assignment, ast.Ellipsis)
-            and assignment.value is not None
-        ):
+        if self._Y015_violation_detected(node):
             return self._Y015_error(node)
 
         if not is_special_assignment:
@@ -1063,7 +1092,7 @@ class PyiVisitor(ast.NodeVisitor):
                 self.generic_visit(node)
             return
 
-        node_target, node_value = node.target, node.value
+        node_target = node.target
         if isinstance(node_target, ast.Name):
             target_name = node_target.id
             if _is_assignment_which_must_have_a_value(
@@ -1071,7 +1100,7 @@ class PyiVisitor(ast.NodeVisitor):
             ):
                 with self.string_literals_allowed.enabled():
                     self.generic_visit(node)
-                if node_value is None:
+                if node.value is None:
                     self.error(node, Y035.format(var=target_name))
                 return
 
@@ -1079,8 +1108,7 @@ class PyiVisitor(ast.NodeVisitor):
             return self._check_typealias(node=node, alias_name=target_name)
 
         self.generic_visit(node)
-
-        if node_value and not isinstance(node_value, ast.Ellipsis):
+        if self._Y015_violation_detected(node):
             self._Y015_error(node)
 
     def _check_union_members(self, members: Sequence[ast.expr]) -> None:
@@ -1712,14 +1740,6 @@ class PyiVisitor(ast.NodeVisitor):
                 continue  # keyword-only arg without a default
             if not isinstance(default, ast.Ellipsis):
                 self.error(default, (Y014 if arg.annotation is None else Y011))
-
-    def _Y015_error(self, node: ast.Assign | ast.AnnAssign) -> None:
-        old_syntax = unparse(node)
-        copy_of_node = deepcopy(node)
-        copy_of_node.value = ast.Constant(value=...)
-        new_syntax = unparse(copy_of_node)
-        error_message = Y015.format(old_syntax=old_syntax, new_syntax=new_syntax)
-        self.error(node, error_message)
 
     def error(self, node: ast.AST, message: str) -> None:
         self.errors.append(Error(node.lineno, node.col_offset, message, PyiTreeChecker))
