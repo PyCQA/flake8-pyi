@@ -11,6 +11,14 @@ Bugfixes:
   `__all__` definitions.
 * Expand Y015 so that errors are emitted for assignments to negative numbers.
 
+Other changes:
+* Since v22.8.1, flake8-pyi has emitted a `FutureWarning` if run with flake8<5,
+  warning that the plugin would soon become incompatible with flake8<5. Due to
+  some issues that mean that some users are unable to upgrade to flake8>=5,
+  however, flake8-pyi no longer intends to remove support for running the
+  plugin with flake8<5 before Python 3.7 has reached end-of-life. As such, the
+  `FutureWarning` is no longer emitted.
+
 ## 22.8.2
 
 New error codes:

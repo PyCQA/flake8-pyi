@@ -44,19 +44,6 @@ __version__ = "22.8.2"
 LOG = logging.getLogger("flake8.pyi")
 FLAKE8_MAJOR_VERSION = flake8.__version_info__[0]
 
-if FLAKE8_MAJOR_VERSION < 5:
-    import warnings
-
-    warnings.warn(
-        (
-            "flake8-pyi will drop support for running with flake8 < 5.0.0 "
-            "in a future version. This will not happen until November 2022 "
-            "at the earliest."
-        ),
-        category=FutureWarning,
-    )
-
-
 if sys.version_info >= (3, 9):
     _LiteralMember: TypeAlias = ast.expr
 else:

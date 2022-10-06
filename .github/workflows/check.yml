@@ -57,6 +57,21 @@ jobs:
     - run: pip install -e .
     - run: pip install -r requirements-dev.txt
     - run: python3 -m pytest -vv
+  tests-flake8-v4:
+    name: pytest suite with flake8 v4
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        # Run on Python 3.7, as the importlib_metadata compatibility problems with flake8 v5
+        # are much less on Python 3.8+, where importlib.metadata is available in the stdlib
+        python-version: 3.7
+    - run: pip install "flake8<5"
+    - run: pip install -e .
+    - run: pip install -r requirements-dev.txt
+    - run: python3 -m pytest -vv
   check-typeshed:
     name: typeshed_primer
     timeout-minutes: 5
