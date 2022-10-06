@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## 22.10.0
 
 Bugfixes:
 * Do not emit Y020 for empty strings. Y020 concerns "quoted annotations",
