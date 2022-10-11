@@ -12,7 +12,7 @@ def test_pyi_file(path):
     flags = []
     expected_output = ""
 
-    with open(path) as file:
+    with open(path, encoding="UTF-8") as file:
         file_contents = file.read()
 
     for lineno, line in enumerate(file_contents.splitlines(), start=1):
@@ -26,7 +26,7 @@ def test_pyi_file(path):
 
         for match, next_match in zip_longest(error_codes, error_codes[1:]):
             end_pos = len(line) if next_match is None else next_match.start()
-            message = line[match.end() : end_pos].strip()
+            message = line[match.end(): end_pos].strip()
             expected_output += f"{path}:{lineno}: {match.group(1)}{message}\n"
 
     run_results = [

@@ -11,14 +11,14 @@ assert sys.version_info >= (3, 7, 0), "flake8-pyi requires Python 3.7+"
 
 
 current_dir = os.path.abspath(os.path.dirname(__file__))
-with open(os.path.join(current_dir, "README.md"), encoding="utf8") as ld_file:
+with open(os.path.join(current_dir, "README.md"), encoding="UTF-8") as ld_file:
     long_description = ld_file.read()
 
 
 _version_re = re.compile(r"__version__\s+=\s+(?P<version>.*)")
 
 
-with open(os.path.join(current_dir, "pyi.py"), "r") as f:
+with open(os.path.join(current_dir, "pyi.py"), "r", encoding="UTF-8") as f:
     version = _version_re.search(f.read()).group("version")
     version = str(ast.literal_eval(version))
 
