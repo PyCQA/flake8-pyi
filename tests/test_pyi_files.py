@@ -12,7 +12,7 @@ def test_pyi_file(path):
     flags = []
     expected_output = ""
 
-    with open(path) as file:
+    with open(path, encoding="UTF-8") as file:
         file_contents = file.read()
 
     for lineno, line in enumerate(file_contents.splitlines(), start=1):

@@ -1774,7 +1774,7 @@ _TYPE_COMMENT_REGEX = re.compile(r"#\s*type:\s*(?!\s?ignore)([^#]+)(\s*#.*?)?$")
 
 
 def _check_for_type_comments(path: Path) -> Iterator[Error]:
-    stublines = path.read_text().splitlines()
+    stublines = path.read_text(encoding="UTF-8").splitlines()
     for lineno, line in enumerate(stublines, start=1):
         cleaned_line = line.strip()
 

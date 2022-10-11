@@ -1,5 +1,12 @@
 # Change Log
 
+## Unreleased
+
+Bugfixes:
+* Specify encoding when opening files. Prevents `UnicodeDecodeError` on Windows
+  when the file contains non-CP1252 characters.
+  Contributed by [Avasam](https://github.com/Avasam).
+
 ## 22.10.0
 
 Bugfixes:
@@ -149,7 +156,7 @@ Features:
 
 * extend Y001 to cover `ParamSpec` and `TypeVarTuple` in addition to `TypeVar`
 * detect usage of non-integer indices in `sys.version_info` checks
-* extend Y010 to check async functions in addition to normal functions 
+* extend Y010 to check async functions in addition to normal functions
 * extend Y010 to cover what was previously included in Y090 (disallow
   assignments in `__init__` methods) and Y091 (disallow `raise`
   statements). The previous checks were disabled by default.
