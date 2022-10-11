@@ -233,9 +233,9 @@ class PyiAwareFlakesChecker(FlakesChecker):
         # doctest does not process doctest within a doctest
         # classes within classes are processed.
         if (
-            self.withDoctest
-            and not self._in_doctest()
-            and not isinstance(self.scope, FunctionScope)
+            self.withDoctest and
+            not self._in_doctest() and
+            not isinstance(self.scope, FunctionScope)
         ):
             self.deferFunction(lambda: self.handleDoctests(node))
         for stmt in node.body:
@@ -340,9 +340,9 @@ def _is_object(node: ast.expr | None, name: str, *, from_: Container[str]) -> bo
     if isinstance(node_value, ast.Name):
         return node_value.id in from_
     return (
-        isinstance(node_value, ast.Attribute)
-        and isinstance(node_value.value, ast.Name)
-        and f"{node_value.value.id}.{node_value.attr}" in from_
+        isinstance(node_value, ast.Attribute) and
+        isinstance(node_value.value, ast.Name) and
+        f"{node_value.value.id}.{node_value.attr}" in from_
     )
 
 
@@ -395,9 +395,9 @@ def _get_name_of_class_if_from_modules(
         if isinstance(module_node, ast.Name) and module_node.id in modules:
             return classnode.attr
         if (
-            isinstance(module_node, ast.Attribute)
-            and isinstance(module_node.value, ast.Name)
-            and f"{module_node.value.id}.{module_node.attr}" in modules
+            isinstance(module_node, ast.Attribute) and
+            isinstance(module_node.value, ast.Name) and
+            f"{module_node.value.id}.{module_node.attr}" in modules
         ):
             return classnode.attr
     return None
@@ -542,9 +542,9 @@ def _has_bad_hardcoded_returns(
 
     if isinstance(method, ast.AsyncFunctionDef):
         return (
-            method_name == "__aenter__"
-            and _is_name(returns, classdef.name)
-            and not _is_decorated_with_final(classdef)
+            method_name == "__aenter__" and
+            _is_name(returns, classdef.name) and
+            not _is_decorated_with_final(classdef)
         )
 
     if method_name in _INPLACE_BINOP_METHODS:
@@ -562,8 +562,8 @@ def _has_bad_hardcoded_returns(
         return return_obj_name in {"Iterable", "Iterator"} and "Iterator" in bases
     elif method_name == "__aiter__":
         return (
-            return_obj_name in {"AsyncIterable", "AsyncIterator"}
-            and "AsyncIterator" in bases
+            return_obj_name in {"AsyncIterable", "AsyncIterator"} and
+            "AsyncIterator" in bases
         )
     return False
 
@@ -852,8 +852,8 @@ class PyiVisitor(ast.NodeVisitor):
 
         if module_name == "collections.abc":
             if (
-                "Set" in imported_names
-                and imported_names["Set"].asname != "AbstractSet"
+                "Set" in imported_names and
+                imported_names["Set"].asname != "AbstractSet"
             ):
                 self.error(node, Y025)
             return
@@ -907,15 +907,15 @@ class PyiVisitor(ast.NodeVisitor):
         if isinstance(assignment, (ast.Num, ast.Str, ast.Bytes)):
             return True
         if (
-            isinstance(assignment, ast.UnaryOp)
-            and isinstance(assignment.op, ast.USub)
-            and isinstance(assignment.operand, ast.Num)
+            isinstance(assignment, ast.UnaryOp) and
+            isinstance(assignment.op, ast.USub) and
+            isinstance(assignment.operand, ast.Num)
         ):
             return True
         if (
-            isinstance(assignment, (ast.Constant, ast.NameConstant))
-            and not isinstance(assignment, ast.Ellipsis)
-            and assignment.value is not None
+            isinstance(assignment, (ast.Constant, ast.NameConstant)) and
+            not isinstance(assignment, ast.Ellipsis) and
+            assignment.value is not None
         ):
             return True
 
@@ -997,9 +997,9 @@ class PyiVisitor(ast.NodeVisitor):
         and `X = None` (special-cased because it is so special).
         """
         if (
-            isinstance(assignment, (ast.Subscript, ast.BinOp))
-            or _is_Any(assignment)
-            or _is_None(assignment)
+            isinstance(assignment, (ast.Subscript, ast.BinOp)) or
+            _is_Any(assignment) or
+            _is_None(assignment)
         ):
             new_node = ast.AnnAssign(
                 target=target,
@@ -1036,9 +1036,9 @@ class PyiVisitor(ast.NodeVisitor):
     # 3.8+
     def visit_Constant(self, node: ast.Constant) -> None:
         if (
-            isinstance(node.value, str)
-            and node.value
-            and not self.string_literals_allowed.active
+            isinstance(node.value, str) and
+            node.value and
+            not self.string_literals_allowed.active
         ):
             self.error(node, Y020)
 
@@ -1283,9 +1283,9 @@ class PyiVisitor(ast.NodeVisitor):
                     return
                 elif (
                     # allow only [:1] and [:2]
-                    isinstance(slc.upper, ast.Num)
-                    and isinstance(slc.upper.n, int)
-                    and slc.upper.n in (1, 2)
+                    isinstance(slc.upper, ast.Num) and
+                    isinstance(slc.upper.n, int) and
+                    slc.upper.n in (1, 2)
                 ):
                     can_have_strict_equals = slc.upper.n
                 else:
@@ -1404,8 +1404,8 @@ class PyiVisitor(ast.NodeVisitor):
             if varargs:
                 varargs_annotation = varargs.annotation
                 if not (
-                    varargs_annotation is None
-                    or _is_builtins_object(varargs_annotation)
+                    varargs_annotation is None or
+                    _is_builtins_object(varargs_annotation)
                 ):
                     error_for_bad_exit_method(
                         f"Star-args in an {method_name} method "
@@ -1459,10 +1459,10 @@ class PyiVisitor(ast.NodeVisitor):
                     arg1_annotation
                 )
                 if not (
-                    is_union_with_None
-                    and isinstance(non_None_part, ast.Subscript)
-                    and _is_type_or_Type(non_None_part.value)
-                    and _is_BaseException(non_None_part.slice)
+                    is_union_with_None and
+                    isinstance(non_None_part, ast.Subscript) and
+                    _is_type_or_Type(non_None_part.value) and
+                    _is_BaseException(non_None_part.slice)
                 ):
                     error_for_bad_annotation(arg1_annotation, arg_number=1)
             else:
@@ -1571,9 +1571,9 @@ class PyiVisitor(ast.NodeVisitor):
         # 2). The method has the exact same signature as object.__str__/object.__repr__
         if method_name in {"__repr__", "__str__"}:
             if (
-                len(non_kw_only_args) == 1
-                and _is_object(returns, "str", from_={"builtins"})
-                and not any(_is_abstractmethod(deco) for deco in node.decorator_list)
+                len(non_kw_only_args) == 1 and
+                _is_object(returns, "str", from_={"builtins"}) and
+                not any(_is_abstractmethod(deco) for deco in node.decorator_list)
             ):
                 self.error(node, Y029)
 
@@ -1704,8 +1704,8 @@ class PyiVisitor(ast.NodeVisitor):
             # Ellipsis is fine. Str (docstrings) is not but we produce
             # tailored error message for it elsewhere.
             elif not (
-                isinstance(statement, ast.Expr)
-                and isinstance(statement.value, (ast.Ellipsis, ast.Str))
+                isinstance(statement, ast.Expr) and
+                isinstance(statement.value, (ast.Ellipsis, ast.Str))
             ):
                 self.error(statement, Y010)
 
@@ -1719,7 +1719,7 @@ class PyiVisitor(ast.NodeVisitor):
 
     def visit_arguments(self, node: ast.arguments) -> None:
         self.generic_visit(node)
-        args = node.args[-len(node.defaults) :]
+        args = node.args[-len(node.defaults):]
         for arg, default in chain(
             zip(args, node.defaults), zip(node.kwonlyargs, node.kw_defaults)
         ):
@@ -1774,7 +1774,7 @@ _TYPE_COMMENT_REGEX = re.compile(r"#\s*type:\s*(?!\s?ignore)([^#]+)(\s*#.*?)?$")
 
 
 def _check_for_type_comments(path: Path) -> Iterator[Error]:
-    stublines = path.read_text().splitlines()
+    stublines = path.read_text(encoding="UTF-8").splitlines()
     for lineno, line in enumerate(stublines, start=1):
         cleaned_line = line.strip()
 
