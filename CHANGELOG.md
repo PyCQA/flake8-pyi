@@ -4,7 +4,8 @@
 
 Bugfixes:
 * Specify encoding when opening files. Prevents `UnicodeDecodeError` on Windows
-  when the file contains non-CP1252 characters. (by @Avasam)
+  when the file contains non-CP1252 characters.
+  Contributed by [Avasam](https://github.com/Avasam).
 
 ## 22.10.0
 
