@@ -10,6 +10,9 @@ end will be warmly received.
 The plugin consists of a single file: `pyi.py`. Tests are run using `pytest`, and can be
 found in the `tests` folder.
 
+PRs that make user-visible changes should generally add a short description of the change
+to the `CHANGELOG.md` file in the repository root. 
+
 
 ## Tests and formatting
 
