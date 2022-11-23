@@ -25,19 +25,19 @@ just_literals_pipe_union: TypeAlias = Literal[True] | Literal['idk']  # Y042 Typ
 _mixed_pipe_union: TypeAlias = Union[Literal[966], bytes, Literal['baz']]  # Y042 Type aliases should use the CamelCase naming convention  # Y047 Type alias "_mixed_pipe_union" is not used  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal[966, 'baz']".
 ManyLiteralMembersButNeedsCombining: TypeAlias = int | Literal['a', 'b'] | Literal['baz']  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal['a', 'b', 'baz']".
 
-a: int | float  # Y041 Use "float" instead of "int | float" (see "The numeric tower" in PEP 484)
-b: Union[builtins.float, str, bytes, builtins.int]  # Y041 Use "float" instead of "int | float" (see "The numeric tower" in PEP 484)
+a: int | float  # No error here, Y041 only applies to argument annotations
+b: Union[builtins.float, str, bytes, builtins.int]  # No error here, Y041 only applies to argument annotations
 def func(arg: float | list[str] | type[bool] | complex) -> None: ...  # Y041 Use "complex" instead of "float | complex" (see "The numeric tower" in PEP 484)
 
 class Foo:
     def method(self, arg: int | builtins.float | complex) -> None: ...  # Y041 Use "complex" instead of "float | complex" (see "The numeric tower" in PEP 484)  # Y041 Use "complex" instead of "int | complex" (see "The numeric tower" in PEP 484)
 
-c: Union[builtins.complex, memoryview, slice, int]  # Y041 Use "complex" instead of "int | complex" (see "The numeric tower" in PEP 484)
+c: Union[builtins.complex, memoryview, slice, int]  # No error here, Y041 only applies to argument annotations
 
 # Don't error with Y041 here, the two error messages combined are quite confusing
-d: int | int | float  # Y016 Duplicate union member "int"
+def foo(d: int | int | float) -> None: ...  # Y016 Duplicate union member "int"
 
-f: Literal["foo"] | Literal["bar"] | int | float | builtins.bool  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal['foo', 'bar']".  # Y041 Use "float" instead of "int | float" (see "The numeric tower" in PEP 484)
+def bar(f: Literal["foo"] | Literal["bar"] | int | float | builtins.bool) -> None: ...  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal['foo', 'bar']".  # Y041 Use "float" instead of "int | float" (see "The numeric tower" in PEP 484)
 
 # Type aliases are special-cased to be excluded from Y041
 MyTypeAlias: TypeAlias = int | float | bool
@@ -52,5 +52,5 @@ class Four:
     var: builtins.bool | Literal[True]  # Y051 "Literal[True]" is redundant in a union with "bool"
 
 DupesHereSoNoY051: TypeAlias = int | int | Literal[42]  # Y016 Duplicate union member "int"
-NightmareAlias1 = int | float | Literal[4, b"bar"] | Literal["foo"]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "NightmareAlias1: TypeAlias = int | float | Literal[4, b'bar'] | Literal['foo']"  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal[4, b'bar', 'foo']".  # Y041 Use "float" instead of "int | float" (see "The numeric tower" in PEP 484)  # Y051 "Literal[4]" is redundant in a union with "int"
+NightmareAlias1 = int | float | Literal[4, b"bar"] | Literal["foo"]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "NightmareAlias1: TypeAlias = int | float | Literal[4, b'bar'] | Literal['foo']"  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal[4, b'bar', 'foo']".  # Y051 "Literal[4]" is redundant in a union with "int"
 nightmare_alias2: TypeAlias = int | float | Literal[True, 4] | Literal["foo"]  # Y042 Type aliases should use the CamelCase naming convention  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal[True, 4, 'foo']".  # Y051 "Literal[4]" is redundant in a union with "int"

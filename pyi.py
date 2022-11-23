@@ -730,7 +730,7 @@ class PyiVisitor(ast.NodeVisitor):
         self.string_literals_allowed = NestingCounter()
         self.in_function = NestingCounter()
         self.in_class = NestingCounter()
-        self.visiting_TypeAlias = NestingCounter()
+        self.visiting_arg = NestingCounter()
         # This is only relevant for visiting classes
         self.current_class_node: ast.ClassDef | None = None
 
@@ -1063,8 +1063,7 @@ class PyiVisitor(ast.NodeVisitor):
     _Y043_REGEX = re.compile(r"^_.*[a-z]T\d?$")
 
     def _check_typealias(self, node: ast.AnnAssign, alias_name: str) -> None:
-        with self.visiting_TypeAlias.enabled():
-            self.generic_visit(node)
+        self.generic_visit(node)
         if alias_name.startswith("_"):
             self.typealias_decls[alias_name] = node
         if self._Y042_REGEX.match(alias_name):
@@ -1110,7 +1109,7 @@ class PyiVisitor(ast.NodeVisitor):
             self._check_for_Y051_violations(analysis)
             if analysis.multiple_literals_in_union:
                 self._error_for_multiple_literals_in_union(first_union_member, analysis)
-            if not self.visiting_TypeAlias.active:
+            if self.visiting_arg.active:
                 self._check_for_redundant_numeric_unions(first_union_member, analysis)
 
     def _check_for_Y051_violations(self, analysis: UnionAnalysis) -> None:
@@ -1715,7 +1714,8 @@ class PyiVisitor(ast.NodeVisitor):
     def visit_arg(self, node: ast.arg) -> None:
         if _is_NoReturn(node.annotation):
             self.error(node, Y050)
-        self.generic_visit(node)
+        with self.visiting_arg.enabled():
+            self.generic_visit(node)
 
     def visit_arguments(self, node: ast.arguments) -> None:
         self.generic_visit(node)
