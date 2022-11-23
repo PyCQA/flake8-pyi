@@ -7,6 +7,9 @@ Bugfixes:
   when the file contains non-CP1252 characters.
   Contributed by [Avasam](https://github.com/Avasam).
 
+Other changes:
+* Support running with flake8 v6.
+
 ## 22.10.0
 
 Bugfixes:
