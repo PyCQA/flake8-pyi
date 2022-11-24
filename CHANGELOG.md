@@ -14,6 +14,9 @@ Bugfixes:
   methods. Y041 has therefore been revised to only emit errors on "redundant
   numeric unions" in the context of parameter annotations.
 
+Other changes:
+* Support running with flake8 v6.
+
 ## 22.10.0
 
 Bugfixes:
