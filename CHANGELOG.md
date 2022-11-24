@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## 22.11.0
 
 Bugfixes:
 * Specify encoding when opening files. Prevents `UnicodeDecodeError` on Windows
