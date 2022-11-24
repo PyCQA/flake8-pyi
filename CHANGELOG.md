@@ -6,6 +6,13 @@ Bugfixes:
 * Specify encoding when opening files. Prevents `UnicodeDecodeError` on Windows
   when the file contains non-CP1252 characters.
   Contributed by [Avasam](https://github.com/Avasam).
+* Significant changes have been made to the Y041 check. Previously, Y041 flagged
+  "redundant numeric unions" (e.g. `float | int`, `complex | float` or `complex | int`)
+  in all contexts outside of type aliases. This was incorrect. PEP 484 only
+  specifies that type checkers should treat `int` as an implicit subtype of
+  `float` in the specific context of parameter annotations for functions and
+  methods. Y041 has therefore been revised to only emit errors on "redundant
+  numeric unions" in the context of parameter annotations.
 
 ## 22.10.0
 
