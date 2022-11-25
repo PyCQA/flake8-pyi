@@ -1,5 +1,6 @@
-# flags: --extend-ignore=F723,E261,E262
+# flags: --extend-ignore=F401,F723,E261,E262
 #
+# F401: 'foo' imported but unused (collections.abc.Sequence is only used in a type comment -- flake8>=6 has dropped support for type comments)
 # F723: syntax error in type comment
 # E261: at least two spaces before inline comment
 # E262: inline comment should start with '# '
