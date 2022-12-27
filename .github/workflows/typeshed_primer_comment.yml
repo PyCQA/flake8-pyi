@@ -1,0 +1,37 @@
+name: Post typeshed_primer comment
+
+on:
+  workflow_run:
+    workflows:
+      - tests
+    types:
+      - completed
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  comment:
+    name: Comment PR from typeshed_primer
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Download errors
+        uses: actions/github-script@v6
+        with:
+          script: await require('.github/scripts/typeshed_primer_download_errors.js')({github, context})
+      - run: unzip errors.zip
+      - name: Post comment
+        id: post-comment
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: await require('.github/scripts/typeshed_primer_post_comment.js')({github, context})
+      - name: Hide old comments
+        # v0.3.0
+        uses: kanga333/comment-hider@bbdf5b562fbec24e6f60572d8f712017428b92e0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          leave_visible: 1
+          issue_number: ${{ steps.post-comment.outputs.result }}
