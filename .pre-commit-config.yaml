@@ -5,7 +5,7 @@ repos:
       - id: black
         language_version: python3.9
   - repo: https://github.com/pycqa/isort
-    rev: v5.11.3  # must match requirements-dev.txt
+    rev: 5.11.4  # must match requirements-dev.txt
     hooks:
       - id: isort
         name: isort (python)
