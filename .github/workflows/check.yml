@@ -102,25 +102,25 @@ jobs:
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/checkout@v3
-      with:
-        repository: python/typeshed
-        path: typeshed
-    - uses: actions/setup-python@v4
-      with:
-        python-version: "3.11"
-        cache: pip
-        cache-dependency-path: setup.py
-    - run: pip install -e .
-    - run: |
-        cd typeshed
-        flake8 --exit-zero --color never --output-file errors.txt
-        echo ${{ github.event.pull_request.number }} | tee pr_number.txt
-    - name: Upload Flake8 errors and PR number
-      uses: actions/upload-artifact@v3
-      with:
-        name: typeshed_primer_errors
-        path: |
-          typeshed/errors.txt
-          typeshed/pr_number.txt
+      - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
+        with:
+          repository: python/typeshed
+          path: typeshed
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: setup.py
+      - run: pip install -e .
+      - run: |
+          cd typeshed
+          flake8 --exit-zero --color never --output-file errors.txt
+          echo ${{ github.event.pull_request.number }} | tee pr_number.txt
+      - name: Upload Flake8 errors and PR number
+        uses: actions/upload-artifact@v3
+        with:
+          name: typeshed_primer_errors
+          path: |
+            typeshed/errors.txt
+            typeshed/pr_number.txt
