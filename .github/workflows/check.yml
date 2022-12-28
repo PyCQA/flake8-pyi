@@ -1,17 +1,22 @@
 name: tests
+
 on:
   push:
     branches:
       - master
   pull_request:
   workflow_dispatch:
+
 permissions:
   contents: read
+
 env:
   PIP_DISABLE_PIP_VERSION_CHECK: 1
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
+
 jobs:
   mypy:
     name: mypy
@@ -49,6 +54,7 @@ jobs:
     - run: pip install -r requirements-dev.txt
     - run: |
         flake8 $(git ls-files | grep 'py$')
+
   tests:
     name: pytest suite
     timeout-minutes: 10
