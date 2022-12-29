@@ -130,7 +130,7 @@ jobs:
           flake8 --exit-zero --color never --output-file errors_old.txt
       - run: |
           echo ${{ github.event.pull_request.number }} | tee pr_number.txt
-          diff typeshed/errors_old.txt typeshed/errors_new.txt > errors_diff.txt
+          diff typeshed/errors_old.txt typeshed/errors_new.txt | tee errors_diff.txt
       - name: Upload Flake8 errors and PR number
         uses: actions/upload-artifact@v3
         with:
