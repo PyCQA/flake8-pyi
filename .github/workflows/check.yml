@@ -105,6 +105,10 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/checkout@v3
         with:
+          ref: ${{ github.base_ref }}
+          path: old
+      - uses: actions/checkout@v3
+        with:
           repository: python/typeshed
           path: typeshed
       - uses: actions/setup-python@v4
@@ -117,16 +121,13 @@ jobs:
         run: |
           pip install -e .
           cd typeshed
-          flake8 typeshed --exit-zero --color never --output-file errors_new.txt
-      - uses: actions/checkout@v3
-        with:
-          ref: ${{ github.base_ref }}
+          flake8 --exit-zero --color never --output-file errors_new.txt
       - name: Run on target branch
         run: |
+          cd ../old
           pip install -e .
-          cd typeshed
+          cd ../typeshed
           flake8 --exit-zero --color never --output-file errors_old.txt
-
       - run: |
           echo ${{ github.event.pull_request.number }} | tee pr_number.txt
           diff errors_old.txt errors_new.txt > errors_diff.txt
@@ -135,5 +136,5 @@ jobs:
         with:
           name: typeshed_primer_errors
           path: |
-            errors_*.txt
-            pr_number.txt
+            typeshed/errors_*.txt
+            typeshed/pr_number.txt
