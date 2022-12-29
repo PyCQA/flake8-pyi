@@ -116,7 +116,7 @@ jobs:
           python-version: "3.11"
           cache: pip
           cache-dependency-path: setup.py
-      # We CD so that "typeshed" doesn't appear in the error path
+      # We CD so that "old" and "typeshed" dont appear in the error path
       - name: Run on current branch
         run: |
           pip install -e .
@@ -124,17 +124,17 @@ jobs:
           flake8 --exit-zero --color never --output-file errors_new.txt
       - name: Run on target branch
         run: |
-          cd ../old
+          cd old
           pip install -e .
           cd ../typeshed
           flake8 --exit-zero --color never --output-file errors_old.txt
       - run: |
           echo ${{ github.event.pull_request.number }} | tee pr_number.txt
-          diff errors_old.txt errors_new.txt > errors_diff.txt
+          diff typeshed/errors_old.txt typeshed/errors_new.txt > errors_diff.txt
       - name: Upload Flake8 errors and PR number
         uses: actions/upload-artifact@v3
         with:
           name: typeshed_primer_errors
           path: |
-            typeshed/errors_*.txt
-            typeshed/pr_number.txt
+            errors_diff.txt
+            pr_number.txt
