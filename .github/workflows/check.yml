@@ -102,12 +102,12 @@ jobs:
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout flake8-pyi master
+      - name: Checkout flake8-pyi on target branch
         uses: actions/checkout@v3
         with:
           ref: ${{ github.base_ref }}
           path: old_plugin
-      - name: Checkout PR branch
+      - name: Checkout flake8-pyi on PR branch
         uses: actions/checkout@v3
         with:
           path: new_plugin
