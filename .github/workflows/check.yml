@@ -121,7 +121,7 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
-          cache-dependency-path: setup.py
+          cache-dependency-path: new_plugin/setup.py
       # We cd so that "old_plugin"/"new_plugin"/typeshed" don't appear in the error path
       - name: flake8 typeshed using master branch
         run: |
