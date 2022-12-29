@@ -1,7 +1,9 @@
 module.exports = async ({ github, context }) => {
   const fs = require('fs')
 
-  let data = fs.readFileSync('errors.txt', { encoding: 'utf8' })
+  let data = fs.readFileSync('errors_diff.txt', { encoding: 'utf8' })
+  // Remove the first which contains extra diff info
+  data = data.substring(data.indexOf("\n") + 1)
   // posting comment fails if too long, so truncate
   if (data.length > 30000) {
     let truncated_data = data.substring(0, 30000)
@@ -10,7 +12,7 @@ module.exports = async ({ github, context }) => {
   }
 
   const body = data.trim()
-    ? '⚠ This change produces Flake8 errors in typeshed: \n```' + data + '```'
+    ? '⚠ Flake8 diff showing the effect of this PR on typeshed: \n```diff\n' + data + '```'
     : 'This change has no effect on typeshed. 🤖🎉'
   const issue_number = parseInt(fs.readFileSync("pr_number.txt", { encoding: "utf8" }))
   await github.rest.issues.createComment({
