@@ -123,7 +123,6 @@ jobs:
           ref: ${{ github.base_ref }}
       - name: Run on target branch
         run: |
-          cd ..
           pip install -e .
           cd typeshed
           flake8 --exit-zero --color never --output-file errors_old.txt
