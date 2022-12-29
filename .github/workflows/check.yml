@@ -112,18 +112,17 @@ jobs:
           python-version: "3.11"
           cache: pip
           cache-dependency-path: setup.py
-
-      # Run on current branch
       # We CD so that "typeshed" doesn't appear in the error path
-      - run: |
+      - name: Run on current branch
+        run: |
           pip install -e .
           cd typeshed
           flake8 typeshed --exit-zero --color never --output-file errors_new.txt
-      # Run on target branch
       - uses: actions/checkout@v3
         with:
-          ref: ${{ github.base_ref == 'main' }}
-      - run: |
+          ref: ${{ github.base_ref }}
+      - name: Run on target branch
+        run: |
           cd ..
           pip install -e .
           cd typeshed
