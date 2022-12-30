@@ -123,7 +123,7 @@ jobs:
           cache: pip
           cache-dependency-path: new_plugin/setup.py
       # We cd so that "old_plugin"/"new_plugin"/typeshed" don't appear in the error path
-      - name: flake8 typeshed using master branch
+      - name: flake8 typeshed using target branch
         run: |
           cd old_plugin
           pip install -e .
