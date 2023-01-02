@@ -19,36 +19,44 @@ jobs:
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/checkout@v3
+      - name: Checkout flake8-pyi on target branch
+        uses: actions/checkout@v3
         with:
           ref: ${{ github.base_ref }}
-          path: old
-      - uses: actions/checkout@v3
+          path: old_plugin
+      - name: Checkout flake8-pyi on PR branch
+        uses: actions/checkout@v3
+        with:
+          path: new_plugin
+      - name: Checkout typeshed
+        uses: actions/checkout@v3
         with:
           repository: python/typeshed
           path: typeshed
-      - uses: actions/setup-python@v4
+      - name: Setup Python
+        uses: actions/setup-python@v4
         with:
           python-version: "3.11"
           cache: pip
-          cache-dependency-path: setup.py
-      # We CD so that "old" and "typeshed" dont appear in the error path
-      - name: Run on current branch
+          cache-dependency-path: new_plugin/setup.py
+      # We cd so that "old_plugin"/"new_plugin"/typeshed" don't appear in the error path
+      - name: flake8 typeshed using target branch
         run: |
-          pip install -e .
-          cd typeshed
-          flake8 --exit-zero --color never --output-file errors_new.txt
-      - name: Run on target branch
-        run: |
-          cd old
+          cd old_plugin
           pip install -e .
           cd ../typeshed
-          flake8 --exit-zero --color never --output-file errors_old.txt
-      - run: |
+          flake8 --exit-zero --color never --output-file ../old_errors.txt
+      - name: flake8 typeshed using PR branch
+        run: |
+          cd new_plugin
+          pip install -e .
+          cd ../typeshed
+          flake8 --exit-zero --color never --output-file ../new_errors.txt
+      - name: Get diff between the two runs
+        run: |
           echo ${{ github.event.pull_request.number }} | tee pr_number.txt
-          diff typeshed/errors_old.txt typeshed/errors_new.txt | tee errors_diff.txt
-      - name: Upload Flake8 errors and PR number
+          diff old_errors.txt new_errors.txt | tee errors_diff.txt
+      - name: Upload diff and PR number
         uses: actions/upload-artifact@v3
         with:
           name: typeshed_primer_errors
