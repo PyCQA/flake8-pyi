@@ -1,0 +1,65 @@
+name: typeshed_primer
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: 1
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  typeshed_primer:
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout flake8-pyi on target branch
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.base_ref }}
+          path: old_plugin
+      - name: Checkout flake8-pyi on PR branch
+        uses: actions/checkout@v3
+        with:
+          path: new_plugin
+      - name: Checkout typeshed
+        uses: actions/checkout@v3
+        with:
+          repository: python/typeshed
+          path: typeshed
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: new_plugin/setup.py
+      # We cd so that "old_plugin"/"new_plugin"/typeshed" don't appear in the error path
+      - name: flake8 typeshed using target branch
+        run: |
+          cd old_plugin
+          pip install -e .
+          cd ../typeshed
+          flake8 --exit-zero --color never --output-file ../old_errors.txt
+      - name: flake8 typeshed using PR branch
+        run: |
+          cd new_plugin
+          pip install -e .
+          cd ../typeshed
+          flake8 --exit-zero --color never --output-file ../new_errors.txt
+      - name: Get diff between the two runs
+        run: |
+          echo ${{ github.event.pull_request.number }} | tee pr_number.txt
+          diff old_errors.txt new_errors.txt | tee errors_diff.txt
+      - name: Upload diff and PR number
+        uses: actions/upload-artifact@v3
+        with:
+          name: typeshed_primer_errors
+          path: |
+            errors_diff.txt
+            pr_number.txt
