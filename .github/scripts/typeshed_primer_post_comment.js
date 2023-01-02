@@ -1,9 +1,13 @@
 module.exports = async ({ github, context }) => {
   const fs = require('fs')
+  const DIFF_LINE = { ">": true, "<": true }
 
   let data = fs.readFileSync('errors_diff.txt', { encoding: 'utf8' })
-  // Remove the first which contains extra diff info
-  data = data.substring(data.indexOf("\n") + 1)
+  // Only keep diff lines
+  data = data
+    .split("\n")
+    .filter(line => line[0] in DIFF_LINE)
+    .join("\n")
   // posting comment fails if too long, so truncate
   if (data.length > 30000) {
     let truncated_data = data.substring(0, 30000)

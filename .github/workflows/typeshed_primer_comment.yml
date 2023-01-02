@@ -3,7 +3,7 @@ name: Post typeshed_primer comment
 on:
   workflow_run:
     workflows:
-      - tests
+      - typeshed_primer
     types:
       - completed
 
@@ -14,6 +14,7 @@ permissions:
 jobs:
   comment:
     name: Comment PR from typeshed_primer
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
