@@ -9,7 +9,7 @@ import pytest
 
 
 @pytest.mark.parametrize("path", glob.glob("tests/*.pyi"))
-def test_pyi_file(path: str):
+def test_pyi_file(path: str) -> None:
     flags = []
     expected_output = ""
 
