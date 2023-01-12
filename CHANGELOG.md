@@ -1,5 +1,11 @@
 # Change Log
 
+## Unreleased
+
+Bugfixes:
+* Do not emit Y020 (quoted annotations) for strings in parameter defaults.
+* Fix checking of defaults for functions with positional-only parameters.
+
 ## 22.11.0
 
 Bugfixes:
