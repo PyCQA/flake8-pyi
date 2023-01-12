@@ -6,6 +6,10 @@ Bugfixes:
 * Do not emit Y020 (quoted annotations) for strings in parameter defaults.
 * Fix checking of defaults for functions with positional-only parameters.
 
+Other changes:
+* Hatchling is now used as the build backend. This should have minimal, if any,
+  user-facing impact.
+
 ## 22.11.0
 
 Bugfixes:
