@@ -1718,9 +1718,7 @@ class PyiVisitor(ast.NodeVisitor):
             self.generic_visit(node)
 
     def visit_arguments(self, node: ast.arguments) -> None:
-        args = node.args
-        if sys.version_info >= (3, 8):
-            args = node.posonlyargs + args
+        args = _non_kw_only_args_of(node)
         defaults = [None] * (len(args) - len(node.defaults)) + node.defaults
         assert len(args) == len(defaults)
         for arg, default in zip(args, defaults):
