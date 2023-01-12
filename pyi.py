@@ -13,7 +13,7 @@ from contextlib import contextmanager, suppress
 from copy import deepcopy
 from dataclasses import dataclass
 from functools import partial
-from itertools import chain
+from itertools import chain, zip_longest
 from keyword import iskeyword
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple, Union
@@ -1718,15 +1718,27 @@ class PyiVisitor(ast.NodeVisitor):
             self.generic_visit(node)
 
     def visit_arguments(self, node: ast.arguments) -> None:
-        self.generic_visit(node)
-        args = node.args[-len(node.defaults) :]
-        for arg, default in chain(
-            zip(args, node.defaults), zip(node.kwonlyargs, node.kw_defaults)
-        ):
-            if default is None:
-                continue  # keyword-only arg without a default
-            if not isinstance(default, ast.Ellipsis):
-                self.error(default, (Y014 if arg.annotation is None else Y011))
+        args = node.args
+        if sys.version_info >= (3, 8):
+            args = node.posonlyargs + args
+        defaults = [None] * (len(args) - len(node.defaults)) + node.defaults
+        assert len(args) == len(defaults)
+        for arg, default in zip(args, defaults):
+            self.check_arg_default(arg, default)
+        if node.vararg is not None:
+            self.visit(node.vararg)
+        for arg, default in zip_longest(node.kwonlyargs, node.kw_defaults):
+            self.check_arg_default(arg, default)
+        if node.kwarg is not None:
+            self.visit(node.kwarg)
+
+    def check_arg_default(self, arg: ast.arg, default: ast.expr | None) -> None:
+        self.visit(arg)
+        if default is not None:
+            with self.string_literals_allowed.enabled():
+                self.visit(default)
+        if default is not None and not isinstance(default, ast.Ellipsis):
+            self.error(default, (Y014 if arg.annotation is None else Y011))
 
     def error(self, node: ast.AST, message: str) -> None:
         self.errors.append(Error(node.lineno, node.col_offset, message, PyiTreeChecker))

@@ -6,3 +6,7 @@ def f5(x=3) -> None: ...  # Y014 Default values for arguments must be "..."
 def f6(*, x: int) -> None: ...
 def f7(x, y: int = 3) -> None: ...  # Y011 Default values for typed arguments must be "..."
 def f8(x, y: int = ...) -> None: ...
+def f9(x, y: str = "x") -> None: ...  # Y011 Default values for typed arguments must be "..."
+def f10(x, y: str = ..., *args: "int") -> None: ...  # Y020 Quoted annotations should never be used in stubs
+def f11(*, x: str = "x") -> None: ...  # Y011 Default values for typed arguments must be "..."
+def f12(*, x: str = ..., **kwargs: "int") -> None: ...  # Y020 Quoted annotations should never be used in stubs

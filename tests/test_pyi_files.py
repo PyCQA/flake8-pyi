@@ -2,15 +2,21 @@ import glob
 import os
 import re
 import subprocess
+import sys
 from itertools import zip_longest
 
 import pytest
 
 
 @pytest.mark.parametrize("path", glob.glob("tests/*.pyi"))
-def test_pyi_file(path):
+def test_pyi_file(path: str):
     flags = []
     expected_output = ""
+
+    match = re.search(r"_py3(\d+)\.pyi$", path)
+    if match is not None:
+        if sys.version_info < (3, int(match.group(1))):
+            pytest.skip(f"Python {sys.version_info} is too old for {path}")
 
     with open(path, encoding="UTF-8") as file:
         file_contents = file.read()
