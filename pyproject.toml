@@ -1,3 +1,69 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "flake8-pyi"
+dynamic = ["version"]
+authors = [
+  { name="Łukasz Langa", email="=lukasz@langa.pl" },
+]
+maintainers = [
+  { name="Jelle Zijlstra", email="jelle.zijlstra@gmail.com" },
+  { name="Alex Waygood", email="alex.waygood@gmail.com" },
+  { name="Sebastian Rittau" },
+  { name="Akuli" },
+  { name="Shantanu" },
+]
+description = "A plugin for flake8 to enable linting .pyi stub files."
+license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.7"
+keywords = [
+    "flake8",
+    "pyi",
+    "bugs",
+    "pyflakes",
+    "linter",
+    "qa",
+    "stubs",
+    "typing",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Framework :: Flake8",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Quality Assurance",
+]
+dependencies = [
+    "flake8 >= 3.2.1, < 7.0.0",
+    "pyflakes >= 2.1.1",
+    "ast-decompiler >= 0.7.0, < 1.0; python_version < '3.9'",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/PyCQA/flake8-pyi"
+"Source" = "https://github.com/PyCQA/flake8-pyi"
+"Bug Tracker" = "https://github.com/PyCQA/flake8-pyi/issues"
+"Changelog" = "https://github.com/PyCQA/flake8-pyi/blob/master/CHANGELOG.md"
+
+[project.entry-points]
+"flake8.extension" = {Y0 = "pyi:PyiTreeChecker"}
+
+[tool.hatch.version]
+path = "pyi.py"
+
 [tool.isort]
 profile = "black"
 combine_as_imports = true

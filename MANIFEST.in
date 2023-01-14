@@ -1,5 +1,0 @@
-include LICENSE
-include *.md
-include *.rst
-include .flake8
-recursive-include tests *.pyi *.py

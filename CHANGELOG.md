@@ -1,8 +1,14 @@
 # Change Log
 
-# unreleased
+## Unreleased
+
+Bugfixes:
+* Do not emit Y020 (quoted annotations) for strings in parameter defaults.
+* Fix checking of defaults for functions with positional-only parameters.
 
 Other changes:
+* Hatchling is now used as the build backend. This should have minimal, if any,
+  user-facing impact.
 * Special-case support for `_typeshed.Unused` as a `builtins.object` alias.
   Contributed by [Avasam](https://github.com/Avasam)
 
