@@ -1,5 +1,11 @@
 # Change Log
 
+# unreleased
+
+Other changes:
+* Special-case support for `_typeshed.Unused` as a `builtins.object` alias.
+  Contributed by [Avasam](https://github.com/Avasam)
+
 ## 22.11.0
 
 Bugfixes:

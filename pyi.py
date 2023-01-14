@@ -346,6 +346,12 @@ def _is_object(node: ast.expr | None, name: str, *, from_: Container[str]) -> bo
     )
 
 
+def _is_builtins_object(node: ast.expr | None) -> bool:
+    return _is_object(node, name="object", from_={"builtins"}) or _is_object(
+        node, name="Unused", from_={"_typeshed"}
+    )
+
+
 _is_BaseException = partial(_is_object, name="BaseException", from_={"builtins"})
 _is_TypeAlias = partial(_is_object, name="TypeAlias", from_=_TYPING_MODULES)
 _is_NamedTuple = partial(_is_object, name="NamedTuple", from_=_TYPING_MODULES)
@@ -360,7 +366,6 @@ _is_final = partial(_is_object, name="final", from_=_TYPING_MODULES)
 _is_Final = partial(_is_object, name="Final", from_=_TYPING_MODULES)
 _is_Self = partial(_is_object, name="Self", from_=({"_typeshed"} | _TYPING_MODULES))
 _is_TracebackType = partial(_is_object, name="TracebackType", from_={"types"})
-_is_builtins_object = partial(_is_object, name="object", from_={"builtins"})
 _is_Iterable = partial(_is_object, name="Iterable", from_={"typing", "collections.abc"})
 _is_AsyncIterable = partial(
     _is_object, name="AsyncIterable", from_={"collections.abc"} | _TYPING_MODULES
