@@ -7,8 +7,8 @@ from collections.abc import Awaitable
 from types import TracebackType
 from typing import Any, Type
 
-import typing_extensions
 import _typeshed
+import typing_extensions
 from _typeshed import Unused
 
 # Good __(a)exit__ methods
