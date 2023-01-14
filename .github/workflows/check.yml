@@ -51,8 +51,8 @@ jobs:
           cache: pip
           cache-dependency-path: |
             requirements-dev.txt
-            setup.py
-      # flake8 not in requirements-dev.txt, because versions specified in setup.py are complicated
+            pyproject.toml
+      # flake8 not in requirements-dev.txt, because versions specified in pyproject.toml are complicated
       - run: pip install -e .
       - run: pip install -r requirements-dev.txt
       - run: |
@@ -75,7 +75,7 @@ jobs:
           cache: pip
           cache-dependency-path: |
             requirements-dev.txt
-            setup.py
+            pyproject.toml
       - run: pip install -e .
       - run: pip install -r requirements-dev.txt
       - run: python3 -m pytest -vv
@@ -94,7 +94,7 @@ jobs:
           cache: pip
           cache-dependency-path: |
             requirements-dev.txt
-            setup.py
+            pyproject.toml
       - run: pip install "flake8<5"
       - run: pip install -e .
       - run: pip install -r requirements-dev.txt
