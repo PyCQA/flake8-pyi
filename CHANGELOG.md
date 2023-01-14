@@ -9,6 +9,9 @@ Bugfixes:
 Other changes:
 * Hatchling is now used as the build backend. This should have minimal, if any,
   user-facing impact.
+* Modify Y036 so that `_typeshed.Unused` is allowed as an annotation for
+  parameters in `__(a)exit__` methods. Contributed by
+  [Avasam](https://github.com/Avasam)
 
 ## 22.11.0
 

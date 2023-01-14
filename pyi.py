@@ -361,12 +361,17 @@ _is_Final = partial(_is_object, name="Final", from_=_TYPING_MODULES)
 _is_Self = partial(_is_object, name="Self", from_=({"_typeshed"} | _TYPING_MODULES))
 _is_TracebackType = partial(_is_object, name="TracebackType", from_={"types"})
 _is_builtins_object = partial(_is_object, name="object", from_={"builtins"})
+_is_Unused = partial(_is_object, name="Unused", from_={"_typeshed"})
 _is_Iterable = partial(_is_object, name="Iterable", from_={"typing", "collections.abc"})
 _is_AsyncIterable = partial(
     _is_object, name="AsyncIterable", from_={"collections.abc"} | _TYPING_MODULES
 )
 _is_Protocol = partial(_is_object, name="Protocol", from_=_TYPING_MODULES)
 _is_NoReturn = partial(_is_object, name="NoReturn", from_=_TYPING_MODULES)
+
+
+def _is_object_or_Unused(node: ast.expr | None) -> bool:
+    return _is_builtins_object(node) or _is_Unused(node)
 
 
 def _get_name_of_class_if_from_modules(
@@ -1404,7 +1409,7 @@ class PyiVisitor(ast.NodeVisitor):
                 varargs_annotation = varargs.annotation
                 if not (
                     varargs_annotation is None
-                    or _is_builtins_object(varargs_annotation)
+                    or _is_object_or_Unused(varargs_annotation)
                 ):
                     error_for_bad_exit_method(
                         f"Star-args in an {method_name} method "
@@ -1451,7 +1456,7 @@ class PyiVisitor(ast.NodeVisitor):
 
         if num_args >= 2:
             arg1_annotation = non_kw_only_args[1].annotation
-            if arg1_annotation is None or _is_builtins_object(arg1_annotation):
+            if arg1_annotation is None or _is_object_or_Unused(arg1_annotation):
                 pass
             elif _is_PEP_604_union(arg1_annotation):
                 is_union_with_None, non_None_part = _analyse_exit_method_arg(
@@ -1469,7 +1474,7 @@ class PyiVisitor(ast.NodeVisitor):
 
         if num_args >= 3:
             arg2_annotation = non_kw_only_args[2].annotation
-            if arg2_annotation is None or _is_builtins_object(arg2_annotation):
+            if arg2_annotation is None or _is_object_or_Unused(arg2_annotation):
                 pass
             elif _is_PEP_604_union(arg2_annotation):
                 is_union_with_None, non_None_part = _analyse_exit_method_arg(
@@ -1482,7 +1487,7 @@ class PyiVisitor(ast.NodeVisitor):
 
         if num_args >= 4:
             arg3_annotation = non_kw_only_args[3].annotation
-            if arg3_annotation is None or _is_builtins_object(arg3_annotation):
+            if arg3_annotation is None or _is_object_or_Unused(arg3_annotation):
                 pass
             elif _is_PEP_604_union(arg3_annotation):
                 is_union_with_None, non_None_part = _analyse_exit_method_arg(
