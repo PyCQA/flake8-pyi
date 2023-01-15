@@ -37,7 +37,7 @@ jobs:
           cache: pip
           cache-dependency-path: requirements-dev.txt
       - run: pip install -r requirements-dev.txt
-      - run: mypy pyi.py
+      - run: mypy
 
   flake8:
     name: flake8

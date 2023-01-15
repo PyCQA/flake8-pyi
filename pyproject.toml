@@ -75,6 +75,7 @@ skip-magic-trailing-comma = true
 force-exclude = ".*\\.pyi"
 
 [tool.mypy]
+files = ["pyi.py", "tests/test_pyi_files.py"]
 show_error_codes = true
 show_traceback = true
 pretty = true
