@@ -48,7 +48,7 @@ currently emitted:
 | Y012 | Class body must not contain `pass`.
 | Y013 | Non-empty class body must not contain `...`.
 | Y014 | Only simple default values are allowed for any function arguments. A stronger version of Y011 that includes arguments without type annotations.
-| Y015 | Only simple default values are allowed for assignments. The same as Y011, but for assignments rather than parameter annotations.
+| Y015 | Only simple default values are allowed for assignments. Similar to Y011, but for assignments rather than parameter annotations.
 | Y016 | Unions shouldn't contain duplicates, e.g. `str \| str` is not allowed.
 | Y017 | Stubs should not contain assignments with multiple targets or non-name targets.
 | Y018 | A private `TypeVar` should be used at least once in the file in which it is defined.
