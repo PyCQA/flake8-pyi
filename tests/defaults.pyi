@@ -24,3 +24,5 @@ def f13(x: list[str] = ["foo", "bar", "baz"]) -> None: ...  # Y011 Only simple d
 def f14(x: tuple[str, ...] = ("foo", "bar", "baz")) -> None: ...  # Y011 Only simple default values allowed for typed arguments
 def f15(x: set[str] = {"foo", "bar", "baz"}) -> None: ...  # Y011 Only simple default values allowed for typed arguments
 def f16(x: frozenset[bytes] = frozenset({b"foo", b"bar", b"baz"})) -> None: ...  # Y011 Only simple default values allowed for typed arguments
+def f17(x: str = "foo" + "bar") -> None: ...  # Y011 Only simple default values allowed for typed arguments
+def f18(x: str = b"foo" + b"bar") -> None: ...  # Y011 Only simple default values allowed for typed arguments

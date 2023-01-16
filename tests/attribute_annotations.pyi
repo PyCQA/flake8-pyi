@@ -37,7 +37,10 @@ field18: Final = -24j
 field19 = [1, 2, 3]  # Y015 Only simple default values are allowed for assignments
 field20 = (1, 2, 3)  # Y015 Only simple default values are allowed for assignments
 field21 = {1, 2, 3}  # Y015 Only simple default values are allowed for assignments
-field1801: Final = {"foo": 5}  # Y015 Only simple default values are allowed for assignments  # Y020 Quoted annotations should never be used in stubs
+field22: Final = {"foo": 5}  # Y015 Only simple default values are allowed for assignments  # Y020 Quoted annotations should never be used in stubs
+field23 = "foo" + "bar"  # Y015 Only simple default values are allowed for assignments  # Y020 Quoted annotations should never be used in stubs  # Y020 Quoted annotations should never be used in stubs
+field24 = b"foo" + b"bar"  # Y015 Only simple default values are allowed for assignments
+field25 = 5 * 5  # Y015 Only simple default values are allowed for assignments
 
 class Foo:
     field1: int
@@ -71,3 +74,6 @@ class Foo:
     field21 = (1, 2, 3)  # Y015 Only simple default values are allowed for assignments
     field22 = {1, 2, 3}  # Y015 Only simple default values are allowed for assignments
     field23: Final = {"foo": 5}  # Y015 Only simple default values are allowed for assignments  # Y020 Quoted annotations should never be used in stubs
+    field24 = "foo" + "bar"  # Y015 Only simple default values are allowed for assignments  # Y020 Quoted annotations should never be used in stubs  # Y020 Quoted annotations should never be used in stubs
+    field25 = b"foo" + b"bar"  # Y015 Only simple default values are allowed for assignments
+    field26 = 5 * 5  # Y015 Only simple default values are allowed for assignments
