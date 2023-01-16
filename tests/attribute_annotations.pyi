@@ -1,6 +1,6 @@
 import sys
 import typing
-from typing import Final, TypeAlias
+from typing import Final, Final as _Final, TypeAlias
 
 import typing_extensions
 
@@ -28,6 +28,7 @@ field11: Final = 1
 field12: Final = "foo"
 field13: Final = b"foo"
 field14: Final = True
+field15: _Final = True
 field16: typing.Final = "foo"
 field17: typing_extensions.Final = "foo"
 field18: Final = -24j
@@ -54,6 +55,7 @@ class Foo:
     field10: Final = "foo"
     field11: Final = b"foo"
     field12: Final = True
+    field13: _Final = True
     field14: typing.Final = "foo"
     field15: typing_extensions.Final = "foo"
     # Standalone strings used to cause issues
