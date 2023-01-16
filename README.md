@@ -44,11 +44,11 @@ currently emitted:
 | Y008 | Unrecognized platform. To prevent you from typos, we warn if you use a platform name outside a small set of known platforms (e.g. `"linux"` and `"win32"`).
 | Y009 | Empty body should contain `...`, not `pass`. This is just a stylistic choice, but it's the one typeshed made.
 | Y010 | Function body must contain only `...`. Stub files should not contain code, so function bodies should be empty.
-| Y011 | All default values for typed function arguments must be `...`. Type checkers ignore the default value, so the default value is not useful information in a stub file.
+| Y011 | Only simple default values (`int`, `float`, `complex`, `bytes`, `str`, `bool`, `None` or `...`) are allowed for typed function arguments. Type checkers ignore the default value, so the default value is not useful information for type-checking, but it may be useful information for other users of stubs such as IDEs. If you're writing a stub for a function that has a more complex default value, use `...` instead of trying to reproduce the runtime default exactly in the stub.
 | Y012 | Class body must not contain `pass`.
 | Y013 | Non-empty class body must not contain `...`.
-| Y014 | All default values for arguments must be `...`. A stronger version of Y011 that includes arguments without type annotations.
-| Y015 | Attribute must not have a default value other than `...`.
+| Y014 | Only simple default values are allowed for any function arguments. A stronger version of Y011 that includes arguments without type annotations.
+| Y015 | Only simple default values are allowed for assignments. Similar to Y011, but for assignments rather than parameter annotations.
 | Y016 | Unions shouldn't contain duplicates, e.g. `str \| str` is not allowed.
 | Y017 | Stubs should not contain assignments with multiple targets or non-name targets.
 | Y018 | A private `TypeVar` should be used at least once in the file in which it is defined.

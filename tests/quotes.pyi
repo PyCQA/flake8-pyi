@@ -9,8 +9,8 @@ __all__ += ["h"]
 __all__.extend(["i"])
 __all__.append("j")
 __all__.remove("j")
-__match_args__ = ('foo',)  # Y020 Quoted annotations should never be used in stubs
-__slots__ = ('foo',)  # Y020 Quoted annotations should never be used in stubs
+__match_args__ = ('foo',)  # Y015 Only simple default values are allowed for assignments  # Y020 Quoted annotations should never be used in stubs
+__slots__ = ('foo',)  # Y015 Only simple default values are allowed for assignments  # Y020 Quoted annotations should never be used in stubs
 
 def f(x: "int"): ...  # Y020 Quoted annotations should never be used in stubs
 def g(x: list["int"]): ...  # Y020 Quoted annotations should never be used in stubs
@@ -26,7 +26,7 @@ Alias: TypeAlias = list["int"]  # Y020 Quoted annotations should never be used i
 class Child(list["int"]):  # Y020 Quoted annotations should never be used in stubs
     """Documented and guaranteed useful."""  # Y021 Docstrings should not be included in stubs
 
-    __all__ = ('foo',)  # Y020 Quoted annotations should never be used in stubs
+    __all__ = ('foo',)  # Y015 Only simple default values are allowed for assignments  # Y020 Quoted annotations should never be used in stubs
     __match_args__ = ('foo', 'bar')
     __slots__ = ('foo', 'bar')
 
@@ -57,8 +57,8 @@ class DocstringAndPass:
     pass  # Y012 Class body must not contain "pass"
 
 # These two shouldn't trigger Y020 -- empty strings can't be "quoted annotations"
-k = ""  # Y015 Bad default value. Use "k = ..." instead of "k = ''"
-el = r""  # Y015 Bad default value. Use "el = ..." instead of "el = ''"
+k = ""
+el = r""
 
 # The following should also pass,
 # But we can't test for it in CI, because the error message is *very* slightly different on 3.7

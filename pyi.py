@@ -359,7 +359,6 @@ _is_abstractmethod = partial(_is_object, name="abstractmethod", from_={"abc"})
 _is_Any = partial(_is_object, name="Any", from_={"typing"})
 _is_overload = partial(_is_object, name="overload", from_=_TYPING_MODULES)
 _is_final = partial(_is_object, name="final", from_=_TYPING_MODULES)
-_is_Final = partial(_is_object, name="Final", from_=_TYPING_MODULES)
 _is_Self = partial(_is_object, name="Self", from_=({"_typeshed"} | _TYPING_MODULES))
 _is_TracebackType = partial(_is_object, name="TracebackType", from_={"types"})
 _is_builtins_object = partial(_is_object, name="object", from_={"builtins"})
@@ -852,39 +851,28 @@ class PyiVisitor(ast.NodeVisitor):
             else:
                 self.error(node, Y001.format(cls_name))
 
-    def _Y015_error(self, node: ast.Assign | ast.AnnAssign) -> None:
-        old_syntax = unparse(node)
-        copy_of_node = deepcopy(node)
-        copy_of_node.value = ast.Constant(value=...)
-        new_syntax = unparse(copy_of_node)
-        error_message = Y015.format(old_syntax=old_syntax, new_syntax=new_syntax)
-        self.error(node, error_message)
+    def _is_valid_pep_604_union_member(self, node: ast.expr) -> bool:
+        return _is_None(node) or isinstance(
+            node, (ast.Name, ast.Attribute, ast.Subscript)
+        )
 
-    @staticmethod
-    def _Y015_violation_detected(node: ast.Assign | ast.AnnAssign) -> bool:
-        assignment = node.value
+    def _is_valid_pep_604_union(self, node: ast.expr) -> bool:
+        return (
+            isinstance(node, ast.BinOp)
+            and isinstance(node.op, ast.BitOr)
+            and (
+                self._is_valid_pep_604_union_member(node.left)
+                or self._is_valid_pep_604_union(node.left)
+            )
+            and self._is_valid_pep_604_union_member(node.right)
+        )
 
-        if isinstance(node, ast.AnnAssign):
-            if assignment and not isinstance(assignment, ast.Ellipsis):
-                return True
-            return False
-
-        if isinstance(assignment, (ast.Num, ast.Str, ast.Bytes)):
-            return True
-        if (
-            isinstance(assignment, ast.UnaryOp)
-            and isinstance(assignment.op, ast.USub)
-            and isinstance(assignment.operand, ast.Num)
-        ):
-            return True
-        if (
-            isinstance(assignment, (ast.Constant, ast.NameConstant))
-            and not isinstance(assignment, ast.Ellipsis)
-            and assignment.value is not None
-        ):
-            return True
-
-        return False
+    def _is_valid_assignment_value(self, node: ast.expr) -> bool:
+        return (
+            isinstance(node, (ast.Call, ast.Name, ast.Attribute, ast.Subscript))
+            or self._is_valid_pep_604_union(node)
+            or self._is_valid_stub_default(node)
+        )
 
     def visit_Assign(self, node: ast.Assign) -> None:
         if self.in_function.active:
@@ -904,7 +892,8 @@ class PyiVisitor(ast.NodeVisitor):
         is_special_assignment = _is_assignment_which_must_have_a_value(
             target_name, in_class=self.in_class.active
         )
-        if is_special_assignment:
+        assignment = node.value
+        if is_special_assignment or isinstance(assignment, ast.Str):
             with self.string_literals_allowed.enabled():
                 self.generic_visit(node)
         else:
@@ -912,8 +901,6 @@ class PyiVisitor(ast.NodeVisitor):
         if target_name is None:
             return
         assert isinstance(target, ast.Name)
-        assignment = node.value
-
         if isinstance(assignment, ast.Call):
             function = assignment.func
             if _is_TypedDict(function):
@@ -925,11 +912,10 @@ class PyiVisitor(ast.NodeVisitor):
                 )
             return
 
-        if self._Y015_violation_detected(node):
-            return self._Y015_error(node)
-
         if not is_special_assignment:
             self._check_for_type_aliases(node, target, assignment)
+            if not self._is_valid_assignment_value(assignment):
+                self.error(node, Y015)
 
     def visit_AugAssign(self, node: ast.AugAssign) -> None:
         """Allow `__all__ += ['foo', 'bar']` in a stub file"""
@@ -962,7 +948,11 @@ class PyiVisitor(ast.NodeVisitor):
         and `X = None` (special-cased because it is so special).
         """
         if (
-            isinstance(assignment, (ast.Subscript, ast.BinOp))
+            isinstance(assignment, ast.Subscript)
+            or (
+                isinstance(assignment, ast.BinOp)
+                and isinstance(assignment.op, ast.BitOr)
+            )
             or _is_Any(assignment)
             or _is_None(assignment)
         ):
@@ -1028,7 +1018,6 @@ class PyiVisitor(ast.NodeVisitor):
     _Y043_REGEX = re.compile(r"^_.*[a-z]T\d?$")
 
     def _check_typealias(self, node: ast.AnnAssign, alias_name: str) -> None:
-        self.generic_visit(node)
         if alias_name.startswith("_"):
             self.typealias_decls[alias_name] = node
         if self._Y042_REGEX.match(alias_name):
@@ -1038,29 +1027,35 @@ class PyiVisitor(ast.NodeVisitor):
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         node_annotation = node.annotation
-        if _is_Final(node_annotation):
-            with self.string_literals_allowed.enabled():
-                self.generic_visit(node)
+        node_target = node.target
+        node_value = node.value
+
+        is_special_assignment = isinstance(
+            node_target, ast.Name
+        ) and _is_assignment_which_must_have_a_value(
+            node_target.id, in_class=self.in_class.active
+        )
+
+        self.visit(node_target)
+        self.visit(node_annotation)
+        if node_value is not None:
+            if isinstance(node_value, ast.Str) or is_special_assignment:
+                with self.string_literals_allowed.enabled():
+                    self.visit(node_value)
+            else:
+                self.visit(node_value)
+
+        if is_special_assignment:
+            if node_value is None:
+                assert isinstance(node_target, ast.Name)
+                self.error(node, Y035.format(var=node_target.id))
             return
 
-        node_target = node.target
-        if isinstance(node_target, ast.Name):
-            target_name = node_target.id
-            if _is_assignment_which_must_have_a_value(
-                target_name, in_class=self.in_class.active
-            ):
-                with self.string_literals_allowed.enabled():
-                    self.generic_visit(node)
-                if node.value is None:
-                    self.error(node, Y035.format(var=target_name))
-                return
-
         if _is_TypeAlias(node_annotation) and isinstance(node_target, ast.Name):
-            return self._check_typealias(node=node, alias_name=target_name)
+            self._check_typealias(node=node, alias_name=node_target.id)
 
-        self.generic_visit(node)
-        if self._Y015_violation_detected(node):
-            self._Y015_error(node)
+        if node_value and not self._is_valid_assignment_value(node_value):
+            self.error(node, Y015)
 
     def _check_union_members(self, members: Sequence[ast.expr]) -> None:
         first_union_member = members[0]
@@ -1695,12 +1690,35 @@ class PyiVisitor(ast.NodeVisitor):
         if node.kwarg is not None:
             self.visit(node.kwarg)
 
+    def _is_valid_stub_default(self, default: ast.expr) -> bool:
+        # `...`, strings, bytes, ints, floats, complex numbers like `3j`, bools, None
+        if isinstance(
+            default, (ast.Ellipsis, ast.Str, ast.Bytes, ast.Num, ast.NameConstant)
+        ):
+            return True
+        # Complex numbers such as `4+3j` or `4-3j`
+        if (
+            isinstance(default, ast.BinOp)
+            and isinstance(default.op, (ast.Add, ast.Sub))
+            and self._is_valid_stub_default(default.left)
+            and isinstance(default.right, ast.Num)
+        ):
+            return True
+        # Negative ints, negative floats, complex numbers such as `-4+3j` or `-4-3j`
+        if (
+            isinstance(default, ast.UnaryOp)
+            and isinstance(default.op, ast.USub)
+            and isinstance(default.operand, ast.Num)
+        ):
+            return True
+        return False
+
     def check_arg_default(self, arg: ast.arg, default: ast.expr | None) -> None:
         self.visit(arg)
         if default is not None:
             with self.string_literals_allowed.enabled():
                 self.visit(default)
-        if default is not None and not isinstance(default, ast.Ellipsis):
+        if default is not None and not self._is_valid_stub_default(default):
             self.error(default, (Y014 if arg.annotation is None else Y011))
 
     def error(self, node: ast.AST, message: str) -> None:
@@ -1832,11 +1850,11 @@ Y007 = "Y007 Unrecognized sys.platform check"
 Y008 = 'Y008 Unrecognized platform "{platform}"'
 Y009 = 'Y009 Empty body should contain "...", not "pass"'
 Y010 = 'Y010 Function body must contain only "..."'
-Y011 = 'Y011 Default values for typed arguments must be "..."'
+Y011 = "Y011 Only simple default values allowed for typed arguments"
 Y012 = 'Y012 Class body must not contain "pass"'
 Y013 = 'Y013 Non-empty class body must not contain "..."'
-Y014 = 'Y014 Default values for arguments must be "..."'
-Y015 = 'Y015 Bad default value. Use "{new_syntax}" instead of "{old_syntax}"'
+Y014 = "Y014 Only simple default values allowed for arguments"
+Y015 = "Y015 Only simple default values are allowed for assignments"
 Y016 = 'Y016 Duplicate union member "{}"'
 Y017 = "Y017 Only simple assignments allowed"
 Y018 = 'Y018 {typevarlike_cls} "{typevar_name}" is not used'
