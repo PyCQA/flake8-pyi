@@ -25,8 +25,7 @@ however, we advise setting up a virtual environment first:
 
     $ python3 -m venv env
     $ source env/bin/activate
-    $ pip install -r requirements-dev.txt
-    $ pip install -e .
+    $ pip install -e .[dev]
 
 To format your code with `isort` and `black`, run:
 

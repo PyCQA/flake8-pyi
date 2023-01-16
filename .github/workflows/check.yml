@@ -35,8 +35,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
-          cache-dependency-path: requirements-dev.txt
-      - run: pip install -r requirements-dev.txt
+          cache-dependency-path: pyproject.toml
+      - run: pip install -e .[dev]
       - run: mypy pyi.py
 
   flake8:
@@ -49,12 +49,8 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
-          cache-dependency-path: |
-            requirements-dev.txt
-            pyproject.toml
-      # flake8 not in requirements-dev.txt, because versions specified in pyproject.toml are complicated
-      - run: pip install -e .
-      - run: pip install -r requirements-dev.txt
+          cache-dependency-path: pyproject.toml
+      - run: pip install -e .[dev]
       - run: |
           flake8 $(git ls-files | grep 'py$') --color always
 
@@ -73,11 +69,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
-          cache-dependency-path: |
-            requirements-dev.txt
-            pyproject.toml
-      - run: pip install -e .
-      - run: pip install -r requirements-dev.txt
+          cache-dependency-path: pyproject.toml
+      - run: pip install -e .[dev]
       - run: python3 -m pytest -vv
 
   tests-flake8-v4:
@@ -92,10 +85,7 @@ jobs:
           # are much less on Python 3.8+, where importlib.metadata is available in the stdlib
           python-version: 3.7
           cache: pip
-          cache-dependency-path: |
-            requirements-dev.txt
-            pyproject.toml
+          cache-dependency-path: pyproject.toml
       - run: pip install "flake8<5"
-      - run: pip install -e .
-      - run: pip install -r requirements-dev.txt
+      - run: pip install -e .[dev]
       - run: python3 -m pytest -vv
