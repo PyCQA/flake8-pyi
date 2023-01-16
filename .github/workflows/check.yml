@@ -35,8 +35,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
-          cache-dependency-path: requirements-dev.txt
-      - run: pip install -r requirements-dev.txt
+          cache-dependency-path: pyproject.toml
+      - run: pip install -e .[dev]
       - run: mypy pyi.py
 
   flake8:
