@@ -1685,14 +1685,14 @@ class PyiVisitor(ast.NodeVisitor):
             isinstance(default, ast.BinOp)
             and isinstance(default.op, (ast.Add, ast.Sub))
             and self._is_valid_stub_default(default.left)
-            and self._is_valid_stub_default(default.right)
+            and isinstance(default.right, ast.Num)
         ):
             return True
         # Negative ints, negative floats, complex numbers such as `-4+3j` or `-4-3j`
         if (
             isinstance(default, ast.UnaryOp)
             and isinstance(default.op, ast.USub)
-            and self._is_valid_stub_default(default.operand)
+            and isinstance(default.operand, ast.Num)
         ):
             return True
         return False
