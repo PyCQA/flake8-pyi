@@ -1,3 +1,4 @@
+import builtins
 import sys
 import typing
 from typing import Final, Final as _Final, TypeAlias
@@ -21,7 +22,9 @@ field83 = -42j
 field84 = 5 + 42j
 field85 = -5 - 42j
 field9 = None  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "field9: TypeAlias = None"
-Field10: TypeAlias = None
+Field95: TypeAlias = None
+Field96: TypeAlias = int | None
+Field97: TypeAlias = None | typing.SupportsInt | builtins.str
 
 # Tests for Final
 field11: Final = 1
@@ -77,3 +80,7 @@ class Foo:
     field24 = "foo" + "bar"  # Y015 Only simple default values are allowed for assignments  # Y020 Quoted annotations should never be used in stubs  # Y020 Quoted annotations should never be used in stubs
     field25 = b"foo" + b"bar"  # Y015 Only simple default values are allowed for assignments
     field26 = 5 * 5  # Y015 Only simple default values are allowed for assignments
+
+    Field95: TypeAlias = None
+    Field96: TypeAlias = int | None
+    Field97: TypeAlias = None | typing.SupportsInt | builtins.str

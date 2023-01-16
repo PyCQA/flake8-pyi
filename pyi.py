@@ -851,10 +851,25 @@ class PyiVisitor(ast.NodeVisitor):
             else:
                 self.error(node, Y001.format(cls_name))
 
+    def _is_valid_pep_604_union_member(self, node: ast.expr) -> bool:
+        return (
+            isinstance(node, (ast.Name, ast.Attribute, ast.Subscript))
+            or _is_None(node)
+            or self._is_valid_pep_604_union(node)
+        )
+
+    def _is_valid_pep_604_union(self, node: ast.expr) -> bool:
+        return (
+            isinstance(node, ast.BinOp)
+            and isinstance(node.op, ast.BitOr)
+            and self._is_valid_pep_604_union_member(node.left)
+            and self._is_valid_pep_604_union_member(node.right)
+        )
+
     def _is_valid_assignment_value(self, node: ast.expr) -> bool:
         return (
             isinstance(node, (ast.Call, ast.Name, ast.Attribute, ast.Subscript))
-            or (isinstance(node, ast.BinOp) and isinstance(node.op, ast.BitOr))
+            or self._is_valid_pep_604_union(node)
             or self._is_valid_stub_default(node)
         )
 
