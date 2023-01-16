@@ -807,6 +807,7 @@ class PyiVisitor(ast.NodeVisitor):
         )
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
+        self.generic_visit(node)
         module_name = node.module
 
         if module_name is None:
