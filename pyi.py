@@ -428,10 +428,6 @@ def _is_type_or_Type(node: ast.expr) -> bool:
     return cls_name in {"type", "Type"}
 
 
-def _is_PEP_604_union(node: ast.expr | None) -> TypeGuard[ast.BinOp]:
-    return isinstance(node, ast.BinOp) and isinstance(node.op, ast.BitOr)
-
-
 def _is_None(node: ast.expr) -> bool:
     # <=3.7: `BaseException | None` parses as:
     #     BinOp(left=Name(id='BaseException'), op=BitOr(), right=NameConstant(value=None))`
@@ -851,12 +847,13 @@ class PyiVisitor(ast.NodeVisitor):
             else:
                 self.error(node, Y001.format(cls_name))
 
-    def _is_valid_pep_604_union_member(self, node: ast.expr) -> bool:
+    @staticmethod
+    def _is_valid_pep_604_union_member(node: ast.expr) -> bool:
         return _is_None(node) or isinstance(
             node, (ast.Name, ast.Attribute, ast.Subscript)
         )
 
-    def _is_valid_pep_604_union(self, node: ast.expr) -> bool:
+    def _is_valid_pep_604_union(self, node: ast.expr) -> TypeGuard[ast.BinOp]:
         return (
             isinstance(node, ast.BinOp)
             and isinstance(node.op, ast.BitOr)
@@ -949,10 +946,7 @@ class PyiVisitor(ast.NodeVisitor):
         """
         if (
             isinstance(assignment, ast.Subscript)
-            or (
-                isinstance(assignment, ast.BinOp)
-                and isinstance(assignment.op, ast.BitOr)
-            )
+            or self._is_valid_pep_604_union(assignment)
             or _is_Any(assignment)
             or _is_None(assignment)
         ):
@@ -1413,7 +1407,7 @@ class PyiVisitor(ast.NodeVisitor):
             arg1_annotation = non_kw_only_args[1].annotation
             if arg1_annotation is None or _is_object_or_Unused(arg1_annotation):
                 pass
-            elif _is_PEP_604_union(arg1_annotation):
+            elif self._is_valid_pep_604_union(arg1_annotation):
                 is_union_with_None, non_None_part = _analyse_exit_method_arg(
                     arg1_annotation
                 )
@@ -1431,7 +1425,7 @@ class PyiVisitor(ast.NodeVisitor):
             arg2_annotation = non_kw_only_args[2].annotation
             if arg2_annotation is None or _is_object_or_Unused(arg2_annotation):
                 pass
-            elif _is_PEP_604_union(arg2_annotation):
+            elif self._is_valid_pep_604_union(arg2_annotation):
                 is_union_with_None, non_None_part = _analyse_exit_method_arg(
                     arg2_annotation
                 )
@@ -1444,7 +1438,7 @@ class PyiVisitor(ast.NodeVisitor):
             arg3_annotation = non_kw_only_args[3].annotation
             if arg3_annotation is None or _is_object_or_Unused(arg3_annotation):
                 pass
-            elif _is_PEP_604_union(arg3_annotation):
+            elif self._is_valid_pep_604_union(arg3_annotation):
                 is_union_with_None, non_None_part = _analyse_exit_method_arg(
                     arg3_annotation
                 )
