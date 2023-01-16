@@ -18,12 +18,12 @@
 #       E704 multiple statements on one line (def) -- disallows function body on the same line as the def
 #
 # flake8-bugbear rules that cause too many false positives:
+#       B028 "Use !r inside f-strings instead of manual quotes" --
+#           produces false positives if you're surrounding things with double quotes
 #       B905 "`zip()` without an explicit `strict=True` parameter --
 #           the `strict` parameter was introduced in Python 3.10; we support Python 3.7
 #       B906 "`visit_` function with no further calls to a visit function" --
 #           there's no reason to call generic_visit(node) inside visit_Name, visit_Str, etc.
-#       B028 "Use !r inside f-strings instead of manual quotes" --
-#           produces false positives if you're surrounding things with double quotes
 
 [flake8]
 max-line-length = 80
