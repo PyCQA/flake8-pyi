@@ -935,7 +935,7 @@ class PyiVisitor(ast.NodeVisitor):
             isinstance(assignment, ast.Subscript)
             or (
                 isinstance(assignment, ast.BinOp)
-                and not self._is_valid_stub_default(assignment)
+                and isinstance(assignment.op, ast.BitOr)
             )
             or _is_Any(assignment)
             or _is_None(assignment)
