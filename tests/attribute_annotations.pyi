@@ -4,19 +4,20 @@ from typing import Final, TypeAlias
 
 import typing_extensions
 
+# We shouldn't emit Y015 for simple default values
 field1: int
 field2: int = ...
 field3 = ...  # type: int  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")
-field4: int = 0  # Y015 Bad default value. Use "field4: int = ..." instead of "field4: int = 0"
-field5 = 0  # type: int  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")  # Y015 Bad default value. Use "field5 = ..." instead of "field5 = 0"
-field6 = 0  # Y015 Bad default value. Use "field6 = ..." instead of "field6 = 0"
-field7 = b""  # Y015 Bad default value. Use "field7 = ..." instead of "field7 = b''"
-field8 = False  # Y015 Bad default value. Use "field8 = ..." instead of "field8 = False"
-field81 = -1  # Y015 Bad default value. Use "field81 = ..." instead of "field81 = -1"
-field82: float = -98.43  # Y015 Bad default value. Use "field82: float = ..." instead of "field82: float = -98.43"
-field83 = -42j  # Y015 Bad default value. Use "field83 = ..." instead of "field83 = -42j"
-
-# We don't want this one to trigger Y015 -- it's valid as a TypeAlias
+field4: int = 0
+field5 = 0  # type: int  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")
+field6 = 0
+field7 = b""
+field8 = False
+field81 = -1
+field82: float = -98.43
+field83 = -42j
+field84 = 5 + 42j
+field85 = -5 - 42j
 field9 = None  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "field9: TypeAlias = None"
 Field10: TypeAlias = None
 
@@ -30,15 +31,20 @@ field16: typing.Final = "foo"
 field17: typing_extensions.Final = "foo"
 field18: Final = -24j
 
+# We *should* emit Y015 for more complex default values
+field19 = [1, 2, 3]  # Y015 Only simple default values are allowed for assignments
+field20 = (1, 2, 3)  # Y015 Only simple default values are allowed for assignments
+field21 = {1, 2, 3}  # Y015 Only simple default values are allowed for assignments
+
 class Foo:
     field1: int
     field2: int = ...
     field3 = ...  # type: int  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")
-    field4: int = 0  # Y015 Bad default value. Use "field4: int = ..." instead of "field4: int = 0"
-    field5 = 0  # type: int  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")  # Y015 Bad default value. Use "field5 = ..." instead of "field5 = 0"
-    field6 = 0  # Y015 Bad default value. Use "field6 = ..." instead of "field6 = 0"
-    field7 = b""  # Y015 Bad default value. Use "field7 = ..." instead of "field7 = b''"
-    field8 = False  # Y015 Bad default value. Use "field8 = ..." instead of "field8 = False"
+    field4: int = 0
+    field5 = 0  # type: int  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")
+    field6 = 0
+    field7 = b""
+    field8 = False
     # Tests for Final
     field9: Final = 1
     field10: Final = "foo"
@@ -48,10 +54,14 @@ class Foo:
     field14: typing.Final = "foo"
     field15: typing_extensions.Final = "foo"
     # Standalone strings used to cause issues
-    field16 = "x"  # Y015 Bad default value. Use "field16 = ..." instead of "field16 = 'x'"  # Y020 Quoted annotations should never be used in stubs
+    field16 = "x"
     if sys.platform == "linux":
-        field17 = "y"  # Y015 Bad default value. Use "field17 = ..." instead of "field17 = 'y'"  # Y020 Quoted annotations should never be used in stubs
+        field17 = "y"
     elif sys.platform == "win32":
-        field18 = "z"  # Y015 Bad default value. Use "field18 = ..." instead of "field18 = 'z'"  # Y020 Quoted annotations should never be used in stubs
+        field18 = "z"
     else:
-        field19 = "w"  # Y015 Bad default value. Use "field19 = ..." instead of "field19 = 'w'"  # Y020 Quoted annotations should never be used in stubs
+        field19 = "w"
+
+    field20 = [1, 2, 3]  # Y015 Only simple default values are allowed for assignments
+    field21 = (1, 2, 3)  # Y015 Only simple default values are allowed for assignments
+    field22 = {1, 2, 3}  # Y015 Only simple default values are allowed for assignments

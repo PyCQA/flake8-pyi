@@ -22,6 +22,9 @@ Other changes:
       banned by Y022. Use `re.Match` and `re.Pattern` instead.
 * flake8-pyi no longer supports stub files that aim to support Python 2. If your
   stubs need to support Python 2, pin flake8-pyi to 22.11.0 or lower.
+* Y011, Y014 and Y015 have all been significantly relaxed. `None`, `bool`s,
+  `int`s, `float`s, `complex` numbers, strings and `bytes` are all now allowed
+  as default values for parameter annotations or assignments.
 
 ## 22.11.0
 
