@@ -1,14 +1,12 @@
 # Change Log
 
-## Unreleased
+## 23.1.0
 
 Bugfixes:
 * Do not emit Y020 (quoted annotations) for strings in parameter defaults.
 * Fix checking of defaults for functions with positional-only parameters.
 
 Other changes:
-* Hatchling is now used as the build backend. This should have minimal, if any,
-  user-facing impact.
 * Modify Y036 so that `_typeshed.Unused` is allowed as an annotation for
   parameters in `__(a)exit__` methods. Contributed by
   [Avasam](https://github.com/Avasam)
@@ -25,6 +23,8 @@ Other changes:
 * Y011, Y014 and Y015 have all been significantly relaxed. `None`, `bool`s,
   `int`s, `float`s, `complex` numbers, strings and `bytes` are all now allowed
   as default values for parameter annotations or assignments.
+* Hatchling is now used as the build backend. This should have minimal, if any,
+  user-facing impact.
 
 ## 22.11.0
 
