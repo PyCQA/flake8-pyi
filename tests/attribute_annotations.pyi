@@ -24,7 +24,7 @@ field85 = -5 - 42j
 field9 = None  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "field9: TypeAlias = None"
 Field95: TypeAlias = None
 Field96: TypeAlias = int | None
-Field97: TypeAlias = None | typing.SupportsInt | builtins.str
+Field97: TypeAlias = None | typing.SupportsInt | builtins.str | float | bool
 
 # Tests for Final
 field11: Final = 1
