@@ -1014,11 +1014,10 @@ class PyiVisitor(ast.NodeVisitor):
         node_target = node.target
         node_value = node.value
 
-        is_special_assignment = (
-            isinstance(node_target, ast.Name)
-            and _is_assignment_which_must_have_a_value(
-                node_target.id, in_class=self.in_class.active
-            )
+        is_special_assignment = isinstance(
+            node_target, ast.Name
+        ) and _is_assignment_which_must_have_a_value(
+            node_target.id, in_class=self.in_class.active
         )
 
         self.visit(node_target)
