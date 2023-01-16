@@ -83,9 +83,12 @@ _BAD_Y022_IMPORTS: dict[str, tuple[str, str | None]] = {
     "typing.Set": ("set", "T"),
     "typing.Tuple": ("tuple", "Foo, Bar"),
     "typing.Type": ("type", _TYPE_SLICE),
-    # Typing aliases for contextlib
+    # typing aliases for contextlib
     "typing.ContextManager": ("contextlib.AbstractContextManager", "T"),
     "typing.AsyncContextManager": ("contextlib.AbstractAsyncContextManager", "T"),
+    # typing aliases for re
+    "typing.Match": ("re.Match", "T"),
+    "typing.Pattern": ("re.Pattern", "T"),
     # typing_extensions aliases for collections
     "typing_extensions.Counter": ("collections.Counter", _COUNTER_SLICE),
     "typing_extensions.Deque": ("collections.deque", "T"),

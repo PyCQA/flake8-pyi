@@ -7,6 +7,7 @@
 from __future__ import annotations  # Y044 "from __future__ import annotations" has no effect in stub files.
 
 # GOOD IMPORTS
+import re
 import typing
 import typing_extensions
 import collections
@@ -38,6 +39,7 @@ from collections.abc import (
     MutableSequence,
     ByteString
 )
+from re import Match, Pattern
 # Things that are of no use for stub files are intentionally omitted.
 from typing import (
     Any,
@@ -55,8 +57,6 @@ from typing import (
     BinaryIO,
     IO,
     NamedTuple,
-    Match,
-    Pattern,
     TextIO,
     AnyStr,
     NewType,
@@ -116,6 +116,8 @@ from typing import Collection  # Y022 Use "collections.abc.Collection[T]" instea
 from typing import AsyncGenerator  # Y022 Use "collections.abc.AsyncGenerator[YieldType, SendType]" instead of "typing.AsyncGenerator[YieldType, SendType]" (PEP 585 syntax)
 from typing import Reversible  # Y022 Use "collections.abc.Reversible[T]" instead of "typing.Reversible[T]" (PEP 585 syntax)
 from typing import Generator  # Y022 Use "collections.abc.Generator[YieldType, SendType, ReturnType]" instead of "typing.Generator[YieldType, SendType, ReturnType]" (PEP 585 syntax)
+from typing import Match  # Y022 Use "re.Match[T]" instead of "typing.Match[T]" (PEP 585 syntax)
+from typing import Pattern  # Y022 Use "re.Pattern[T]" instead of "typing.Pattern[T]" (PEP 585 syntax)
 
 # BAD IMPORTS (Y023 code)
 from typing_extensions import ClassVar  # Y023 Use "typing.ClassVar[T]" instead of "typing_extensions.ClassVar[T]"
@@ -129,6 +131,7 @@ from typing import Text  # Y039 Use "str" instead of "typing.Text"
 
 # GOOD ATTRIBUTE ACCESS
 foo: typing.SupportsIndex
+baz: re.Pattern[str]
 
 @typing_extensions.final
 def bar(arg: collections.abc.Sized) -> typing_extensions.Literal[True]: ...
@@ -143,6 +146,7 @@ h: typing_extensions.Awaitable[float]  # Y022 Use "collections.abc.Awaitable[T]"
 i: typing_extensions.ContextManager[None]  # Y022 Use "contextlib.AbstractContextManager[T]" instead of "typing_extensions.ContextManager[T]" (PEP 585 syntax)
 k: typing_extensions.OrderedDict[int, str]  # Y022 Use "collections.OrderedDict[KeyType, ValueType]" instead of "typing_extensions.OrderedDict[KeyType, ValueType]" (PEP 585 syntax)
 l: typing.ContextManager  # Y022 Use "contextlib.AbstractContextManager[T]" instead of "typing.ContextManager[T]" (PEP 585 syntax)
+n: typing.Match[bytes]  # Y022 Use "re.Match[T]" instead of "typing.Match[T]" (PEP 585 syntax)
 
 def func1() -> typing.Counter[float]: ...  # Y022 Use "collections.Counter[KeyType]" instead of "typing.Counter[KeyType]" (PEP 585 syntax)
 def func2(c: typing.AsyncContextManager[None]) -> None: ...  # Y022 Use "contextlib.AbstractAsyncContextManager[T]" instead of "typing.AsyncContextManager[T]" (PEP 585 syntax)
