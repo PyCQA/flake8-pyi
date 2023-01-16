@@ -12,6 +12,8 @@ field4: int = 0
 field5 = 0  # type: int  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")
 field6 = 0
 field7 = b""
+field71 = "foo"
+field72: str = "foo"
 field8 = False
 field81 = -1
 field82: float = -98.43
@@ -26,7 +28,6 @@ field11: Final = 1
 field12: Final = "foo"
 field13: Final = b"foo"
 field14: Final = True
-field15: Final = ('a', 'b', 'c')
 field16: typing.Final = "foo"
 field17: typing_extensions.Final = "foo"
 field18: Final = -24j
@@ -35,6 +36,7 @@ field18: Final = -24j
 field19 = [1, 2, 3]  # Y015 Only simple default values are allowed for assignments
 field20 = (1, 2, 3)  # Y015 Only simple default values are allowed for assignments
 field21 = {1, 2, 3}  # Y015 Only simple default values are allowed for assignments
+field1801: Final = {"foo": 5}  # Y015 Only simple default values are allowed for assignments  # Y020 Quoted annotations should never be used in stubs
 
 class Foo:
     field1: int
@@ -44,13 +46,14 @@ class Foo:
     field5 = 0  # type: int  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")
     field6 = 0
     field7 = b""
+    field71 = "foo"
+    field72: str = "foo"
     field8 = False
     # Tests for Final
     field9: Final = 1
     field10: Final = "foo"
     field11: Final = b"foo"
     field12: Final = True
-    field13: Final = ('a', 'b', 'c')
     field14: typing.Final = "foo"
     field15: typing_extensions.Final = "foo"
     # Standalone strings used to cause issues
@@ -65,3 +68,4 @@ class Foo:
     field20 = [1, 2, 3]  # Y015 Only simple default values are allowed for assignments
     field21 = (1, 2, 3)  # Y015 Only simple default values are allowed for assignments
     field22 = {1, 2, 3}  # Y015 Only simple default values are allowed for assignments
+    field23: Final = {"foo": 5}  # Y015 Only simple default values are allowed for assignments  # Y020 Quoted annotations should never be used in stubs

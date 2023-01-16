@@ -359,7 +359,6 @@ _is_abstractmethod = partial(_is_object, name="abstractmethod", from_={"abc"})
 _is_Any = partial(_is_object, name="Any", from_={"typing"})
 _is_overload = partial(_is_object, name="overload", from_=_TYPING_MODULES)
 _is_final = partial(_is_object, name="final", from_=_TYPING_MODULES)
-_is_Final = partial(_is_object, name="Final", from_=_TYPING_MODULES)
 _is_Self = partial(_is_object, name="Self", from_=({"_typeshed"} | _TYPING_MODULES))
 _is_TracebackType = partial(_is_object, name="TracebackType", from_={"types"})
 _is_builtins_object = partial(_is_object, name="object", from_={"builtins"})
@@ -852,6 +851,13 @@ class PyiVisitor(ast.NodeVisitor):
             else:
                 self.error(node, Y001.format(cls_name))
 
+    def _is_valid_assignment_value(self, node: ast.expr) -> bool:
+        return (
+            isinstance(node, (ast.Call, ast.Name, ast.Attribute, ast.Subscript))
+            or (isinstance(node, ast.BinOp) and isinstance(node.op, ast.BitOr))
+            or self._is_valid_stub_default(node)
+        )
+
     def visit_Assign(self, node: ast.Assign) -> None:
         if self.in_function.active:
             # We error for unexpected things within functions separately.
@@ -892,9 +898,7 @@ class PyiVisitor(ast.NodeVisitor):
 
         if not is_special_assignment:
             self._check_for_type_aliases(node, target, assignment)
-            if isinstance(
-                assignment, (ast.Dict, ast.List, ast.Tuple, ast.Set, ast.JoinedStr)
-            ):
+            if not self._is_valid_assignment_value(assignment):
                 self.error(node, Y015)
 
     def visit_AugAssign(self, node: ast.AugAssign) -> None:
@@ -998,7 +1002,6 @@ class PyiVisitor(ast.NodeVisitor):
     _Y043_REGEX = re.compile(r"^_.*[a-z]T\d?$")
 
     def _check_typealias(self, node: ast.AnnAssign, alias_name: str) -> None:
-        self.generic_visit(node)
         if alias_name.startswith("_"):
             self.typealias_decls[alias_name] = node
         if self._Y042_REGEX.match(alias_name):
@@ -1008,28 +1011,35 @@ class PyiVisitor(ast.NodeVisitor):
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         node_annotation = node.annotation
-        if _is_Final(node_annotation):
-            with self.string_literals_allowed.enabled():
-                self.generic_visit(node)
+        node_target = node.target
+        node_value = node.value
+
+        is_special_assignment = (
+            isinstance(node_target, ast.Name)
+            and _is_assignment_which_must_have_a_value(
+                node_target.id, in_class=self.in_class.active
+            )
+        )
+
+        self.visit(node_target)
+        self.visit(node_annotation)
+        if node_value is not None:
+            if isinstance(node_value, ast.Str) or is_special_assignment:
+                with self.string_literals_allowed.enabled():
+                    self.visit(node_value)
+            else:
+                self.visit(node_value)
+
+        if is_special_assignment:
+            if node_value is None:
+                assert isinstance(node_target, ast.Name)
+                self.error(node, Y035.format(var=node_target.id))
             return
 
-        node_target = node.target
-        if isinstance(node_target, ast.Name):
-            target_name = node_target.id
-            if _is_assignment_which_must_have_a_value(
-                target_name, in_class=self.in_class.active
-            ):
-                with self.string_literals_allowed.enabled():
-                    self.generic_visit(node)
-                if node.value is None:
-                    self.error(node, Y035.format(var=target_name))
-                return
-
         if _is_TypeAlias(node_annotation) and isinstance(node_target, ast.Name):
-            return self._check_typealias(node=node, alias_name=target_name)
+            self._check_typealias(node=node, alias_name=node_target.id)
 
-        self.generic_visit(node)
-        if node.value and not self._is_valid_stub_default(node.value):
+        if node_value and not self._is_valid_assignment_value(node_value):
             self.error(node, Y015)
 
     def _check_union_members(self, members: Sequence[ast.expr]) -> None:
