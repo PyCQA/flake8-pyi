@@ -37,7 +37,7 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
       - run: pip install -e .[dev]
-      - run: mypy pyi.py
+      - run: mypy
 
   flake8:
     name: flake8
