@@ -12,6 +12,14 @@ Other changes:
 * Modify Y036 so that `_typeshed.Unused` is allowed as an annotation for
   parameters in `__(a)exit__` methods. Contributed by
   [Avasam](https://github.com/Avasam)
+* Several changes have been made to error codes relating to imports:
+    * The Y027 error code has been removed.
+    * Errors that used to result in Y027 being emitted will now result in Y022
+      being emitted.
+    * Some errors that used to result in Y023 being emitted will also now result
+      in Y022 being emitted.
+* flake8-pyi no longer supports stub files that aim to support Python 2. If your
+  stubs need to support Python 2, pin flake8-pyi to 22.11.0 or lower.
 
 ## 22.11.0
 
