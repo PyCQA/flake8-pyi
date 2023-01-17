@@ -43,13 +43,13 @@ jobs:
       - name: flake8 typeshed using target branch
         run: |
           cd old_plugin
-          pip install -e .
+          pip install flake8-noqa -e .
           cd ../typeshed
           flake8 --exit-zero --color never --output-file ../old_errors.txt
       - name: flake8 typeshed using PR branch
         run: |
           cd new_plugin
-          pip install -e .
+          pip install flake8-noqa -e .
           cd ../typeshed
           flake8 --exit-zero --color never --output-file ../new_errors.txt
       - name: Get diff between the two runs
