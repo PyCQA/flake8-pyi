@@ -1685,26 +1685,38 @@ class PyiVisitor(ast.NodeVisitor):
             self.visit(node.kwarg)
 
     def _is_valid_stub_default(self, default: ast.expr) -> bool:
-        # `...`, strings, bytes, ints, floats, complex numbers like `3j`, bools, None
-        if isinstance(
-            default, (ast.Ellipsis, ast.Str, ast.Bytes, ast.Num, ast.NameConstant)
-        ):
+        # `...`, strings, bytes, bools, None
+        if isinstance(default, (ast.Ellipsis, ast.Str, ast.Bytes, ast.NameConstant)):
             return True
-        # Complex numbers such as `4+3j` or `4-3j`
-        if (
-            isinstance(default, ast.BinOp)
-            and isinstance(default.op, (ast.Add, ast.Sub))
-            and self._is_valid_stub_default(default.left)
-            and isinstance(default.right, ast.Num)
-        ):
+        # Positive ints, positive floats, positive complex numbers with no real part
+        if isinstance(default, ast.Num):
             return True
-        # Negative ints, negative floats, complex numbers such as `-4+3j` or `-4-3j`
+        # Negative ints, negative floats, negative complex numbers with no real part
         if (
             isinstance(default, ast.UnaryOp)
             and isinstance(default.op, ast.USub)
             and isinstance(default.operand, ast.Num)
         ):
             return True
+        # Complex numbers with a real part and an imaginary part...
+        if (
+            isinstance(default, ast.BinOp)
+            and isinstance(default.op, (ast.Add, ast.Sub))
+            and isinstance(default.right, ast.Num)
+            and type(default.right.n) is complex
+        ):
+            left = default.left
+            # ...Where the real part is positive:
+            if isinstance(left, ast.Num) and type(left.n) is not complex:
+                return True
+            # ...Where the real part is negative:
+            if (
+                isinstance(left, ast.UnaryOp)
+                and isinstance(left.op, ast.USub)
+                and isinstance(left.operand, ast.Num)
+                and type(left.operand.n) is not complex
+            ):
+                return True
         return False
 
     def check_arg_default(self, arg: ast.arg, default: ast.expr | None) -> None:
