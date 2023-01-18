@@ -26,3 +26,6 @@ def f15(x: set[str] = {"foo", "bar", "baz"}) -> None: ...  # Y011 Only simple de
 def f16(x: frozenset[bytes] = frozenset({b"foo", b"bar", b"baz"})) -> None: ...  # Y011 Only simple default values allowed for typed arguments
 def f17(x: str = "foo" + "bar") -> None: ...  # Y011 Only simple default values allowed for typed arguments
 def f18(x: str = b"foo" + b"bar") -> None: ...  # Y011 Only simple default values allowed for typed arguments
+def f19(x: object = "foo" + 4) -> None: ...  # Y011 Only simple default values allowed for typed arguments
+def f20(x: int = 5 + 5) -> None: ...  # Y011 Only simple default values allowed for typed arguments
+def f21(x: complex = 3j - 3j) -> None: ...  # Y011 Only simple default values allowed for typed arguments
