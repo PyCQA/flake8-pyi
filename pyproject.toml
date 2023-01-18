@@ -56,7 +56,7 @@ dependencies = [
 "Homepage" = "https://github.com/PyCQA/flake8-pyi"
 "Source" = "https://github.com/PyCQA/flake8-pyi"
 "Bug Tracker" = "https://github.com/PyCQA/flake8-pyi/issues"
-"Changelog" = "https://github.com/PyCQA/flake8-pyi/blob/master/CHANGELOG.md"
+"Changelog" = "https://github.com/PyCQA/flake8-pyi/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = [
