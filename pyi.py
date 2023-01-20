@@ -692,6 +692,103 @@ def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
     )
 
 
+_ALLOWED_ATTRIBUTES_IN_DEFAULTS = frozenset(
+    {
+        "sys.base_prefix",
+        "sys.byteorder",
+        "sys.exec_prefix",
+        "sys.executable",
+        "sys.hexversion",
+        "sys.maxsize",
+        "sys.platform",
+        "sys.prefix",
+        "sys.stdin",
+        "sys.stdout",
+        "sys.stderr",
+        "sys.version",
+        "sys.version_info",
+        "sys.winver",
+    }
+)
+
+
+def _is_valid_stub_default(node: ast.expr) -> bool:
+    """Is `node` valid as a default value for a function or method parameter in a stub?"""
+    # `...`, bools, None
+    if isinstance(node, (ast.Ellipsis, ast.NameConstant)):
+        return True
+
+    # strings, bytes
+    if isinstance(node, (ast.Str, ast.Bytes)):
+        return len(str(node.s)) <= 50
+
+    def _is_valid_Num(node: ast.expr) -> TypeGuard[ast.Num]:
+        return isinstance(node, ast.Num) and len(str(node.n)) <= 7
+
+    # Positive ints, positive floats, positive complex numbers with no real part
+    if _is_valid_Num(node):
+        return True
+    # Negative ints, negative floats, negative complex numbers with no real part
+    if (
+        isinstance(node, ast.UnaryOp)
+        and isinstance(node.op, ast.USub)
+        and _is_valid_Num(node.operand)
+    ):
+        return True
+    # Complex numbers with a real part and an imaginary part...
+    if (
+        isinstance(node, ast.BinOp)
+        and isinstance(node.op, (ast.Add, ast.Sub))
+        and _is_valid_Num(node.right)
+        and type(node.right.n) is complex
+    ):
+        left = node.left
+        # ...Where the real part is positive:
+        if isinstance(left, ast.Num) and type(left.n) is not complex:
+            return True
+        # ...Where the real part is negative:
+        if (
+            isinstance(left, ast.UnaryOp)
+            and isinstance(left.op, ast.USub)
+            and _is_valid_Num(left.operand)
+            and type(left.operand.n) is not complex
+        ):
+            return True
+    # Special cases
+    if (
+        isinstance(node, ast.Attribute)
+        and isinstance(node.value, ast.Name)
+        and f"{node.value.id}.{node.attr}" in _ALLOWED_ATTRIBUTES_IN_DEFAULTS
+    ):
+        return True
+    return False
+
+
+def _is_valid_pep_604_union_member(node: ast.expr) -> bool:
+    return _is_None(node) or isinstance(node, (ast.Name, ast.Attribute, ast.Subscript))
+
+
+def _is_valid_pep_604_union(node: ast.expr) -> TypeGuard[ast.BinOp]:
+    return (
+        isinstance(node, ast.BinOp)
+        and isinstance(node.op, ast.BitOr)
+        and (
+            _is_valid_pep_604_union_member(node.left)
+            or _is_valid_pep_604_union(node.left)
+        )
+        and _is_valid_pep_604_union_member(node.right)
+    )
+
+
+def _is_valid_assignment_value(node: ast.expr) -> bool:
+    """Is `node` valid as the default value for an assignment in a stub?"""
+    return (
+        isinstance(node, (ast.Call, ast.Name, ast.Attribute, ast.Subscript))
+        or _is_valid_pep_604_union(node)
+        or _is_valid_stub_default(node)
+    )
+
+
 @dataclass
 class NestingCounter:
     """Class to help the PyiVisitor keep track of internal state"""
@@ -847,30 +944,6 @@ class PyiVisitor(ast.NodeVisitor):
             else:
                 self.error(node, Y001.format(cls_name))
 
-    @staticmethod
-    def _is_valid_pep_604_union_member(node: ast.expr) -> bool:
-        return _is_None(node) or isinstance(
-            node, (ast.Name, ast.Attribute, ast.Subscript)
-        )
-
-    def _is_valid_pep_604_union(self, node: ast.expr) -> TypeGuard[ast.BinOp]:
-        return (
-            isinstance(node, ast.BinOp)
-            and isinstance(node.op, ast.BitOr)
-            and (
-                self._is_valid_pep_604_union_member(node.left)
-                or self._is_valid_pep_604_union(node.left)
-            )
-            and self._is_valid_pep_604_union_member(node.right)
-        )
-
-    def _is_valid_assignment_value(self, node: ast.expr) -> bool:
-        return (
-            isinstance(node, (ast.Call, ast.Name, ast.Attribute, ast.Subscript))
-            or self._is_valid_pep_604_union(node)
-            or self._is_valid_stub_default(node)
-        )
-
     def visit_Assign(self, node: ast.Assign) -> None:
         if self.in_function.active:
             # We error for unexpected things within functions separately.
@@ -911,7 +984,7 @@ class PyiVisitor(ast.NodeVisitor):
 
         if not is_special_assignment:
             self._check_for_type_aliases(node, target, assignment)
-            if not self._is_valid_assignment_value(assignment):
+            if not _is_valid_assignment_value(assignment):
                 self.error(node, Y015)
 
     def visit_AugAssign(self, node: ast.AugAssign) -> None:
@@ -946,7 +1019,7 @@ class PyiVisitor(ast.NodeVisitor):
         """
         if (
             isinstance(assignment, ast.Subscript)
-            or self._is_valid_pep_604_union(assignment)
+            or _is_valid_pep_604_union(assignment)
             or _is_Any(assignment)
             or _is_None(assignment)
         ):
@@ -1048,7 +1121,7 @@ class PyiVisitor(ast.NodeVisitor):
         if _is_TypeAlias(node_annotation) and isinstance(node_target, ast.Name):
             self._check_typealias(node=node, alias_name=node_target.id)
 
-        if node_value and not self._is_valid_assignment_value(node_value):
+        if node_value and not _is_valid_assignment_value(node_value):
             self.error(node, Y015)
 
     def _check_union_members(self, members: Sequence[ast.expr]) -> None:
@@ -1407,7 +1480,7 @@ class PyiVisitor(ast.NodeVisitor):
             arg1_annotation = non_kw_only_args[1].annotation
             if arg1_annotation is None or _is_object_or_Unused(arg1_annotation):
                 pass
-            elif self._is_valid_pep_604_union(arg1_annotation):
+            elif _is_valid_pep_604_union(arg1_annotation):
                 is_union_with_None, non_None_part = _analyse_exit_method_arg(
                     arg1_annotation
                 )
@@ -1425,7 +1498,7 @@ class PyiVisitor(ast.NodeVisitor):
             arg2_annotation = non_kw_only_args[2].annotation
             if arg2_annotation is None or _is_object_or_Unused(arg2_annotation):
                 pass
-            elif self._is_valid_pep_604_union(arg2_annotation):
+            elif _is_valid_pep_604_union(arg2_annotation):
                 is_union_with_None, non_None_part = _analyse_exit_method_arg(
                     arg2_annotation
                 )
@@ -1438,7 +1511,7 @@ class PyiVisitor(ast.NodeVisitor):
             arg3_annotation = non_kw_only_args[3].annotation
             if arg3_annotation is None or _is_object_or_Unused(arg3_annotation):
                 pass
-            elif self._is_valid_pep_604_union(arg3_annotation):
+            elif _is_valid_pep_604_union(arg3_annotation):
                 is_union_with_None, non_None_part = _analyse_exit_method_arg(
                     arg3_annotation
                 )
@@ -1684,47 +1757,12 @@ class PyiVisitor(ast.NodeVisitor):
         if node.kwarg is not None:
             self.visit(node.kwarg)
 
-    def _is_valid_stub_default(self, default: ast.expr) -> bool:
-        # `...`, strings, bytes, bools, None
-        if isinstance(default, (ast.Ellipsis, ast.Str, ast.Bytes, ast.NameConstant)):
-            return True
-        # Positive ints, positive floats, positive complex numbers with no real part
-        if isinstance(default, ast.Num):
-            return True
-        # Negative ints, negative floats, negative complex numbers with no real part
-        if (
-            isinstance(default, ast.UnaryOp)
-            and isinstance(default.op, ast.USub)
-            and isinstance(default.operand, ast.Num)
-        ):
-            return True
-        # Complex numbers with a real part and an imaginary part...
-        if (
-            isinstance(default, ast.BinOp)
-            and isinstance(default.op, (ast.Add, ast.Sub))
-            and isinstance(default.right, ast.Num)
-            and type(default.right.n) is complex
-        ):
-            left = default.left
-            # ...Where the real part is positive:
-            if isinstance(left, ast.Num) and type(left.n) is not complex:
-                return True
-            # ...Where the real part is negative:
-            if (
-                isinstance(left, ast.UnaryOp)
-                and isinstance(left.op, ast.USub)
-                and isinstance(left.operand, ast.Num)
-                and type(left.operand.n) is not complex
-            ):
-                return True
-        return False
-
     def check_arg_default(self, arg: ast.arg, default: ast.expr | None) -> None:
         self.visit(arg)
         if default is not None:
             with self.string_literals_allowed.enabled():
                 self.visit(default)
-        if default is not None and not self._is_valid_stub_default(default):
+        if default is not None and not _is_valid_stub_default(default):
             self.error(default, (Y014 if arg.annotation is None else Y011))
 
     def error(self, node: ast.AST, message: str) -> None:

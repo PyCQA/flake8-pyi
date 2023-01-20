@@ -1,5 +1,16 @@
 # Change Log
 
+## Unreleased
+
+* Disallow numeric default values where `len(str(default)) > 7`. If a function
+  has a default value where the string representation is greater than 7
+  characters, it is likely to be an implementation detail or a constant that
+  varies depending on the system you're running on, such as `sys.maxsize`.
+* Disallow `str` or `bytes` defaults where the default is >50 characters long,
+  for similar reasons.
+* Allow `ast.Attribute` nodes as default values for a small number of special
+  cases, such as `sys.maxsize` and `sys.executable`.
+
 ## 23.1.0
 
 Bugfixes:
