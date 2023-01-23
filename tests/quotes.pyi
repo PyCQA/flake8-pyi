@@ -57,8 +57,8 @@ class DocstringAndPass:
     pass  # Y012 Class body must not contain "pass"
 
 # These two shouldn't trigger Y020 -- empty strings can't be "quoted annotations"
-k = ""
-el = r""
+k = ""  # Y052 Need type annotation for "k"
+el = r""  # Y052 Need type annotation for "el"
 
 # The following should also pass,
 # But we can't test for it in CI, because the error message is *very* slightly different on 3.7

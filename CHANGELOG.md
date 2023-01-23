@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+New error codes:
+* Y052: Disallow default values in global or class namespaces where the
+  assignment does not have a type annotation. Stubs should be explicit about
+  the type of all variables in the stub; without type annotations, the type
+  checker is forced to make inferences, which may have unpredictable
+  consequences.
+
+Other enhancements:
 * Disallow numeric default values where `len(str(default)) > 7`. If a function
   has a default value where the string representation is greater than 7
   characters, it is likely to be an implementation detail or a constant that

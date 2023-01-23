@@ -10,17 +10,17 @@ field1: int
 field2: int = ...
 field3 = ...  # type: int  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")
 field4: int = 0
-field5 = 0  # type: int  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")
-field6 = 0
-field7 = b""
-field71 = "foo"
+field5 = 0  # type: int  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")  # Y052 Need type annotation for "field5"
+field6 = 0  # Y052 Need type annotation for "field6"
+field7 = b""  # Y052 Need type annotation for "field7"
+field71 = "foo"  # Y052 Need type annotation for "field71"
 field72: str = "foo"
-field8 = False
-field81 = -1
+field8 = False  # Y052 Need type annotation for "field8"
+field81 = -1  # Y052 Need type annotation for "field81"
 field82: float = -98.43
-field83 = -42j
-field84 = 5 + 42j
-field85 = -5 - 42j
+field83 = -42j  # Y052 Need type annotation for "field83"
+field84 = 5 + 42j  # Y052 Need type annotation for "field84"
+field85 = -5 - 42j  # Y052 Need type annotation for "field85"
 field9 = None  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "field9: TypeAlias = None"
 Field95: TypeAlias = None
 Field96: TypeAlias = int | None
@@ -50,12 +50,12 @@ class Foo:
     field2: int = ...
     field3 = ...  # type: int  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")
     field4: int = 0
-    field5 = 0  # type: int  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")
-    field6 = 0
-    field7 = b""
-    field71 = "foo"
+    field5 = 0  # type: int  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")  # Y052 Need type annotation for "field5"
+    field6 = 0  # Y052 Need type annotation for "field6"
+    field7 = b""  # Y052 Need type annotation for "field7"
+    field71 = "foo"  # Y052 Need type annotation for "field71"
     field72: str = "foo"
-    field8 = False
+    field8 = False  # Y052 Need type annotation for "field8"
     # Tests for Final
     field9: Final = 1
     field10: Final = "foo"
@@ -65,13 +65,13 @@ class Foo:
     field14: typing.Final = "foo"
     field15: typing_extensions.Final = "foo"
     # Standalone strings used to cause issues
-    field16 = "x"
+    field16 = "x"  # Y052 Need type annotation for "field16"
     if sys.platform == "linux":
-        field17 = "y"
+        field17 = "y"  # Y052 Need type annotation for "field17"
     elif sys.platform == "win32":
-        field18 = "z"
+        field18 = "z"  # Y052 Need type annotation for "field18"
     else:
-        field19 = "w"
+        field19 = "w"  # Y052 Need type annotation for "field19"
 
     field20 = [1, 2, 3]  # Y015 Only simple default values are allowed for assignments
     field21 = (1, 2, 3)  # Y015 Only simple default values are allowed for assignments
