@@ -16,7 +16,7 @@ module.exports = async ({ github, context }) => {
   }
 
   const body = data.trim()
-    ? '⚠ Flake8 diff showing the effect of this PR on typeshed: \n```diff\n' + data + '```'
+    ? '⚠ Flake8 diff showing the effect of this PR on typeshed: \n```diff\n' + data + '\n```'
     : 'This change has no effect on typeshed. 🤖🎉'
   const issue_number = parseInt(fs.readFileSync("pr_number.txt", { encoding: "utf8" }))
   await github.rest.issues.createComment({
