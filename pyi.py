@@ -789,7 +789,9 @@ def _is_valid_pep_604_union(node: ast.expr) -> TypeGuard[ast.BinOp]:
 def _is_valid_default_value_without_annotation(node: ast.expr) -> bool:
     """Is `node` a valid default for an assignment without an annotation?"""
     return (
-        isinstance(node, (ast.Call, ast.Name, ast.Attribute, ast.Subscript, ast.Ellipsis))
+        isinstance(
+            node, (ast.Call, ast.Name, ast.Attribute, ast.Subscript, ast.Ellipsis)
+        )
         or _is_None(node)
         or _is_valid_pep_604_union(node)
     )
