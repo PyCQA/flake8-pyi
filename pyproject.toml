@@ -80,6 +80,7 @@ path = "pyi.py"
 profile = "black"
 combine_as_imports = true
 skip = ["tests/imports.pyi"]
+skip_gitignore = true
 
 [tool.black]
 target-version = ['py37']
