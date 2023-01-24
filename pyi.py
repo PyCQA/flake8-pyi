@@ -369,6 +369,7 @@ _is_AsyncIterable = partial(
 )
 _is_Protocol = partial(_is_object, name="Protocol", from_=_TYPING_MODULES)
 _is_NoReturn = partial(_is_object, name="NoReturn", from_=_TYPING_MODULES)
+_is_Final = partial(_is_object, name="Final", from_=_TYPING_MODULES)
 
 
 def _is_object_or_Unused(node: ast.expr | None) -> bool:
@@ -1137,6 +1138,10 @@ class PyiVisitor(ast.NodeVisitor):
             return
 
         if node_value and not _is_valid_default_value_with_annotation(node_value):
+            if _is_Final(node_annotation) and isinstance(
+                node_value, (ast.Attribute, ast.Name)
+            ):
+                return
             self.error(node, Y015)
 
     def _check_union_members(self, members: Sequence[ast.expr]) -> None:

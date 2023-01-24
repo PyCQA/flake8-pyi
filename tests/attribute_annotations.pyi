@@ -1,4 +1,5 @@
 import builtins
+import os
 import sys
 import typing
 from typing import Final, Final as _Final, TypeAlias
@@ -35,6 +36,9 @@ field15: _Final = True
 field16: typing.Final = "foo"
 field17: typing_extensions.Final = "foo"
 field18: Final = -24j
+field181: Final = field18
+field182: Final = os.pathsep
+field183: Final = None
 
 # We *should* emit Y015 for more complex default values
 field19 = [1, 2, 3]  # Y015 Only simple default values are allowed for assignments
