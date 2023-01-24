@@ -1137,11 +1137,12 @@ class PyiVisitor(ast.NodeVisitor):
             # Type checkers will emit errors for those.
             return
 
+        if _is_Final(node_annotation) and isinstance(
+            node_value, (ast.Attribute, ast.Name)
+        ):
+            return
+
         if node_value and not _is_valid_default_value_with_annotation(node_value):
-            if _is_Final(node_annotation) and isinstance(
-                node_value, (ast.Attribute, ast.Name)
-            ):
-                return
             self.error(node, Y015)
 
     def _check_union_members(self, members: Sequence[ast.expr]) -> None:
