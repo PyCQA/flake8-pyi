@@ -10,7 +10,7 @@ New error codes:
   consequences. Enum members are excluded from this check, as are various
   special assignments such as `__all__` and `__match_args__`.
 
-Other enhancements:
+Other changes:
 * Disallow numeric default values where `len(str(default)) > 7`. If a function
   has a default value where the string representation is greater than 7
   characters, it is likely to be an implementation detail or a constant that
@@ -19,6 +19,8 @@ Other enhancements:
   for similar reasons.
 * Allow `ast.Attribute` nodes as default values for a small number of special
   cases, such as `sys.maxsize` and `sys.executable`.
+* Fewer Y020 false positives are now emitted when encountering default values
+  in stub files.
 
 ## 23.1.0
 
