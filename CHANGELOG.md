@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## 23.1.1
 
 New error codes:
 * Y052: Disallow default values in global or class namespaces where the
