@@ -3,7 +3,7 @@ import enum
 import os
 import sys
 import typing
-from enum import Enum, Flag, StrEnum, ReprEnum
+from enum import Enum, Flag, ReprEnum, StrEnum
 from typing import Final, Final as _Final, TypeAlias
 
 import typing_extensions
