@@ -798,6 +798,26 @@ def _is_valid_default_value_without_annotation(node: ast.expr) -> bool:
     )
 
 
+_KNOWN_ENUM_BASES = frozenset(
+    {"Enum", "Flag", "IntEnum", "IntFlag", "StrEnum", "ReprEnum"}
+)
+
+
+def _is_enum_base(node: ast.expr) -> bool:
+    if isinstance(node, ast.Name):
+        return node.id in _KNOWN_ENUM_BASES
+    return (
+        isinstance(node, ast.Attribute)
+        and isinstance(node.value, ast.Name)
+        and node.value.id == "enum"
+        and node.attr in _KNOWN_ENUM_BASES
+    )
+
+
+def _is_enum_class(node: ast.ClassDef) -> bool:
+    return any(_is_enum_base(base) for base in node.bases)
+
+
 @dataclass
 class NestingCounter:
     """Class to help the PyiVisitor keep track of internal state"""
@@ -953,6 +973,22 @@ class PyiVisitor(ast.NodeVisitor):
             else:
                 self.error(node, Y001.format(cls_name))
 
+    def _check_default_value_without_type_annotation(
+        self, node: ast.Assign, assignment: ast.expr, target_name: str
+    ) -> None:
+        if _is_valid_default_value_without_annotation(assignment):
+            return
+        if _is_valid_default_value_with_annotation(assignment):
+            # Annoying special-casing to exclude enums from Y052
+            if self.in_class.active:
+                assert self.current_class_node is not None
+                if not _is_enum_class(self.current_class_node):
+                    self.error(node, Y052.format(variable=target_name))
+            else:
+                self.error(node, Y052.format(variable=target_name))
+        else:
+            self.error(node, Y015)
+
     def visit_Assign(self, node: ast.Assign) -> None:
         if self.in_function.active:
             # We error for unexpected things within functions separately.
@@ -993,11 +1029,9 @@ class PyiVisitor(ast.NodeVisitor):
 
         if not is_special_assignment:
             self._check_for_type_aliases(node, target, assignment)
-            if not _is_valid_default_value_without_annotation(assignment):
-                if _is_valid_default_value_with_annotation(assignment):
-                    self.error(node, Y052.format(variable=target_name))
-                else:
-                    self.error(node, Y015)
+            self._check_default_value_without_type_annotation(
+                node, assignment, target_name
+            )
 
     def visit_AugAssign(self, node: ast.AugAssign) -> None:
         """Allow `__all__ += ['foo', 'bar']` in a stub file"""

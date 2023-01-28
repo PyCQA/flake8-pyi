@@ -1,7 +1,9 @@
 import builtins
+import enum
 import os
 import sys
 import typing
+from enum import Enum, Flag, StrEnum, ReprEnum
 from typing import Final, Final as _Final, TypeAlias
 
 import typing_extensions
@@ -88,3 +90,25 @@ class Foo:
     Field95: TypeAlias = None
     Field96: TypeAlias = int | None
     Field97: TypeAlias = None | typing.SupportsInt | builtins.str
+
+# Enums are excluded from Y052
+class Enum1(Enum):
+    FOO = "foo"
+
+class Enum2(enum.IntEnum):
+    FOO = 1
+
+class Enum3(Flag):
+    FOO = 1
+
+class Enum4(enum.IntFlag):
+    FOO = 1
+
+class Enum5(StrEnum):
+    FOO = "foo"
+
+class Enum6(ReprEnum):
+    FOO = "foo"
+
+class Enum7(enum.Enum):
+    FOO = "foo"
