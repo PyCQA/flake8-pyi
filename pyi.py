@@ -369,6 +369,7 @@ _is_AsyncIterable = partial(
 )
 _is_Protocol = partial(_is_object, name="Protocol", from_=_TYPING_MODULES)
 _is_NoReturn = partial(_is_object, name="NoReturn", from_=_TYPING_MODULES)
+_is_Final = partial(_is_object, name="Final", from_=_TYPING_MODULES)
 
 
 def _is_object_or_Unused(node: ast.expr | None) -> bool:
@@ -712,8 +713,13 @@ _ALLOWED_ATTRIBUTES_IN_DEFAULTS = frozenset(
 )
 
 
-def _is_valid_stub_default(node: ast.expr) -> bool:
-    """Is `node` valid as a default value for a function or method parameter in a stub?"""
+def _is_valid_default_value_with_annotation(node: ast.expr) -> bool:
+    """Is `node` valid as a default value for a function or method parameter in a stub?
+
+    Note that this function is *also* used to determine
+    the validity of default values for ast.AnnAssign nodes.
+    (E.g. `foo: int = 5` is OK, but `foo: TypeVar = TypeVar("foo")` is not.)
+    """
     # `...`, bools, None
     if isinstance(node, (ast.Ellipsis, ast.NameConstant)):
         return True
@@ -769,6 +775,7 @@ def _is_valid_pep_604_union_member(node: ast.expr) -> bool:
 
 
 def _is_valid_pep_604_union(node: ast.expr) -> TypeGuard[ast.BinOp]:
+    """Does `node` represent a valid PEP-604 union (e.g. `int | str`)?"""
     return (
         isinstance(node, ast.BinOp)
         and isinstance(node.op, ast.BitOr)
@@ -780,13 +787,35 @@ def _is_valid_pep_604_union(node: ast.expr) -> TypeGuard[ast.BinOp]:
     )
 
 
-def _is_valid_assignment_value(node: ast.expr) -> bool:
-    """Is `node` valid as the default value for an assignment in a stub?"""
+def _is_valid_default_value_without_annotation(node: ast.expr) -> bool:
+    """Is `node` a valid default for an assignment without an annotation?"""
     return (
-        isinstance(node, (ast.Call, ast.Name, ast.Attribute, ast.Subscript))
+        isinstance(
+            node, (ast.Call, ast.Name, ast.Attribute, ast.Subscript, ast.Ellipsis)
+        )
+        or _is_None(node)
         or _is_valid_pep_604_union(node)
-        or _is_valid_stub_default(node)
     )
+
+
+_KNOWN_ENUM_BASES = frozenset(
+    {"Enum", "Flag", "IntEnum", "IntFlag", "StrEnum", "ReprEnum"}
+)
+
+
+def _is_enum_base(node: ast.expr) -> bool:
+    if isinstance(node, ast.Name):
+        return node.id in _KNOWN_ENUM_BASES
+    return (
+        isinstance(node, ast.Attribute)
+        and isinstance(node.value, ast.Name)
+        and node.value.id == "enum"
+        and node.attr in _KNOWN_ENUM_BASES
+    )
+
+
+def _is_enum_class(node: ast.ClassDef) -> bool:
+    return any(_is_enum_base(base) for base in node.bases)
 
 
 @dataclass
@@ -944,6 +973,22 @@ class PyiVisitor(ast.NodeVisitor):
             else:
                 self.error(node, Y001.format(cls_name))
 
+    def _check_default_value_without_type_annotation(
+        self, node: ast.Assign, assignment: ast.expr, target_name: str
+    ) -> None:
+        if _is_valid_default_value_without_annotation(assignment):
+            return
+        if _is_valid_default_value_with_annotation(assignment):
+            # Annoying special-casing to exclude enums from Y052
+            if self.in_class.active:
+                assert self.current_class_node is not None
+                if not _is_enum_class(self.current_class_node):
+                    self.error(node, Y052.format(variable=target_name))
+            else:
+                self.error(node, Y052.format(variable=target_name))
+        else:
+            self.error(node, Y015)
+
     def visit_Assign(self, node: ast.Assign) -> None:
         if self.in_function.active:
             # We error for unexpected things within functions separately.
@@ -984,8 +1029,9 @@ class PyiVisitor(ast.NodeVisitor):
 
         if not is_special_assignment:
             self._check_for_type_aliases(node, target, assignment)
-            if not _is_valid_assignment_value(assignment):
-                self.error(node, Y015)
+            self._check_default_value_without_type_annotation(
+                node, assignment, target_name
+            )
 
     def visit_AugAssign(self, node: ast.AugAssign) -> None:
         """Allow `__all__ += ['foo', 'bar']` in a stub file"""
@@ -1120,8 +1166,17 @@ class PyiVisitor(ast.NodeVisitor):
 
         if _is_TypeAlias(node_annotation) and isinstance(node_target, ast.Name):
             self._check_typealias(node=node, alias_name=node_target.id)
+            # Don't bother checking whether
+            # nodes marked as TypeAliases have valid assignment values.
+            # Type checkers will emit errors for those.
+            return
 
-        if node_value and not _is_valid_assignment_value(node_value):
+        if _is_Final(node_annotation) and isinstance(
+            node_value, (ast.Attribute, ast.Name)
+        ):
+            return
+
+        if node_value and not _is_valid_default_value_with_annotation(node_value):
             self.error(node, Y015)
 
     def _check_union_members(self, members: Sequence[ast.expr]) -> None:
@@ -1762,7 +1817,7 @@ class PyiVisitor(ast.NodeVisitor):
         if default is not None:
             with self.string_literals_allowed.enabled():
                 self.visit(default)
-        if default is not None and not _is_valid_stub_default(default):
+        if default is not None and not _is_valid_default_value_with_annotation(default):
             self.error(default, (Y014 if arg.annotation is None else Y011))
 
     def error(self, node: ast.AST, message: str) -> None:
@@ -1957,3 +2012,4 @@ Y050 = (
     'Y050 Use "typing_extensions.Never" instead of "NoReturn" for argument annotations'
 )
 Y051 = 'Y051 "{literal_subtype}" is redundant in a union with "{builtin_supertype}"'
+Y052 = 'Y052 Need type annotation for "{variable}"'
