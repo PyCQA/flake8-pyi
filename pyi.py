@@ -1008,11 +1008,14 @@ class PyiVisitor(ast.NodeVisitor):
             target_name, in_class=self.in_class.active
         )
         assignment = node.value
-        if is_special_assignment or isinstance(assignment, ast.Str):
+        if isinstance(assignment, ast.Call):
+            # For constructs like `T = TypeVar("T"),
+            # we check each parameter individually in visit_Call
+            # for whether string-literals are okay
+            self.generic_visit(node)
+        else:
             with self.string_literals_allowed.enabled():
                 self.generic_visit(node)
-        else:
-            self.generic_visit(node)
         if target_name is None:
             return
         assert isinstance(target, ast.Name)
@@ -1149,14 +1152,18 @@ class PyiVisitor(ast.NodeVisitor):
             node_target.id, in_class=self.in_class.active
         )
 
+        is_typealias = _is_TypeAlias(node_annotation) and isinstance(
+            node_target, ast.Name
+        )
+
         self.visit(node_target)
         self.visit(node_annotation)
         if node_value is not None:
-            if isinstance(node_value, ast.Str) or is_special_assignment:
+            if is_typealias:
+                self.visit(node_value)
+            else:
                 with self.string_literals_allowed.enabled():
                     self.visit(node_value)
-            else:
-                self.visit(node_value)
 
         if is_special_assignment:
             if node_value is None:
@@ -1164,7 +1171,8 @@ class PyiVisitor(ast.NodeVisitor):
                 self.error(node, Y035.format(var=node_target.id))
             return
 
-        if _is_TypeAlias(node_annotation) and isinstance(node_target, ast.Name):
+        if is_typealias:
+            assert isinstance(node_target, ast.Name)
             self._check_typealias(node=node, alias_name=node_target.id)
             # Don't bother checking whether
             # nodes marked as TypeAliases have valid assignment values.
