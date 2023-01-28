@@ -7,7 +7,8 @@ New error codes:
   assignment does not have a type annotation. Stubs should be explicit about
   the type of all variables in the stub; without type annotations, the type
   checker is forced to make inferences, which may have unpredictable
-  consequences.
+  consequences. Enum members are excluded from this check, as are various
+  special assignments such as `__all__` and `__match_args__`.
 
 Other enhancements:
 * Disallow numeric default values where `len(str(default)) > 7`. If a function
