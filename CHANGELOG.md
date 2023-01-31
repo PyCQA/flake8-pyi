@@ -1,10 +1,9 @@
 # Change Log
 
-## Unreleased
+## 23.1.2
 
-Other changes:
-* Y015: Increase the maximum character length of literal numbers from 7 to 10.
-  Allowing hexadecimal representation of 32-bit integers.
+* Y015: Increase the maximum character length of literal numbers from 7 to 10,
+  allowing hexadecimal representation of 32-bit integers.
   Contributed by [Avasam](https://github.com/Avasam).
 
 ## 23.1.1
