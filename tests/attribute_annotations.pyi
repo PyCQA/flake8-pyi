@@ -54,10 +54,10 @@ field22: Final = {"foo": 5}  # Y015 Only simple default values are allowed for a
 field23 = "foo" + "bar"  # Y015 Only simple default values are allowed for assignments
 field24 = b"foo" + b"bar"  # Y015 Only simple default values are allowed for assignments
 field25 = 5 * 5  # Y015 Only simple default values are allowed for assignments
-field26: int = 0xFFFFFFFFF # Y015 Only simple default values are allowed for assignments
-field27: int = 12345678901 # Y015 Only simple default values are allowed for assignments
-field28: int = -0xFFFFFFFFF # Y015 Only simple default values are allowed for assignments
-field29: int = -12345678901 # Y015 Only simple default values are allowed for assignments
+field26: int = 0xFFFFFFFFF  # Y015 Only simple default values are allowed for assignments
+field27: int = 12345678901  # Y015 Only simple default values are allowed for assignments
+field28: int = -0xFFFFFFFFF  # Y015 Only simple default values are allowed for assignments
+field29: int = -12345678901  # Y015 Only simple default values are allowed for assignments
 
 class Foo:
     field1: int
