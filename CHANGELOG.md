@@ -2,9 +2,9 @@
 
 ## 23.1.2
 
-* Y015: Increase the maximum character length of literal numbers from 7 to 10,
-  allowing hexadecimal representation of 32-bit integers.
-  Contributed by [Avasam](https://github.com/Avasam).
+* Y011/Y014/Y015: Increase the maximum character length of literal numbers
+  in default values from 7 to 10, allowing hexadecimal representation of
+  32-bit integers. Contributed by [Avasam](https://github.com/Avasam).
 
 ## 23.1.1
 
