@@ -13,6 +13,10 @@ field1: int
 field2: int = ...
 field3 = ...  # type: int  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")
 field4: int = 0
+field41: int = 0xFFFFFFFF
+field42: int = 1234567890
+field43: int = -0xFFFFFFFF
+field44: int = -1234567890
 field5 = 0  # type: int  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")  # Y052 Need type annotation for "field5"
 field6 = 0  # Y052 Need type annotation for "field6"
 field7 = b""  # Y052 Need type annotation for "field7"
@@ -50,12 +54,20 @@ field22: Final = {"foo": 5}  # Y015 Only simple default values are allowed for a
 field23 = "foo" + "bar"  # Y015 Only simple default values are allowed for assignments
 field24 = b"foo" + b"bar"  # Y015 Only simple default values are allowed for assignments
 field25 = 5 * 5  # Y015 Only simple default values are allowed for assignments
+field26: int = 0xFFFFFFFFF # Y015 Only simple default values are allowed for assignments
+field27: int = 12345678901 # Y015 Only simple default values are allowed for assignments
+field28: int = -0xFFFFFFFFF # Y015 Only simple default values are allowed for assignments
+field29: int = -12345678901 # Y015 Only simple default values are allowed for assignments
 
 class Foo:
     field1: int
     field2: int = ...
     field3 = ...  # type: int  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")
     field4: int = 0
+    field41: int = 0xFFFFFFFF
+    field42: int = 1234567890
+    field43: int = -0xFFFFFFFF
+    field44: int = -1234567890
     field5 = 0  # type: int  # Y033 Do not use type comments in stubs (e.g. use "x: int" instead of "x = ... # type: int")  # Y052 Need type annotation for "field5"
     field6 = 0  # Y052 Need type annotation for "field6"
     field7 = b""  # Y052 Need type annotation for "field7"
@@ -86,6 +98,10 @@ class Foo:
     field24 = "foo" + "bar"  # Y015 Only simple default values are allowed for assignments
     field25 = b"foo" + b"bar"  # Y015 Only simple default values are allowed for assignments
     field26 = 5 * 5  # Y015 Only simple default values are allowed for assignments
+    field27 = 0xFFFFFFFFF  # Y015 Only simple default values are allowed for assignments
+    field28 = 12345678901  # Y015 Only simple default values are allowed for assignments
+    field29 = -0xFFFFFFFFF  # Y015 Only simple default values are allowed for assignments
+    field30 = -12345678901  # Y015 Only simple default values are allowed for assignments
 
     Field95: TypeAlias = None
     Field96: TypeAlias = int | None

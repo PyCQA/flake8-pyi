@@ -729,7 +729,11 @@ def _is_valid_default_value_with_annotation(node: ast.expr) -> bool:
         return len(str(node.s)) <= 50
 
     def _is_valid_Num(node: ast.expr) -> TypeGuard[ast.Num]:
-        return isinstance(node, ast.Num) and len(str(node.n)) <= 7
+        # The maximum character limit is arbitrary, but here's what it's based on:
+        # Hex representation of 32-bit integers tend to be 10 chars.
+        # So is the decimal representation of the maximum positive signed 32-bit integer.
+        # 0xFFFFFFFF --> 4294967295
+        return isinstance(node, ast.Num) and len(str(node.n)) <= 10
 
     # Positive ints, positive floats, positive complex numbers with no real part
     if _is_valid_Num(node):
