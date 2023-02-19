@@ -999,7 +999,7 @@ class PyiVisitor(ast.NodeVisitor):
             self.generic_visit(node)
             return
         if len(node.targets) == 1:
-            target = node.targets[0]
+            target: ast.expr | None = node.targets[0]
             if isinstance(target, ast.Name):
                 target_name = target.id
             else:
@@ -1007,7 +1007,7 @@ class PyiVisitor(ast.NodeVisitor):
                 target_name = None
         else:
             self.error(node, Y017)
-            target_name = None
+            target = target_name = None
         is_special_assignment = _is_assignment_which_must_have_a_value(
             target_name, in_class=self.in_class.active
         )
@@ -1085,6 +1085,7 @@ class PyiVisitor(ast.NodeVisitor):
             self.error(node, Y026.format(suggestion=unparse(new_node)))
 
     def visit_Name(self, node: ast.Name) -> None:
+        self.generic_visit(node)
         self.all_name_occurrences[node.id] += 1
 
     def visit_Call(self, node: ast.Call) -> None:
