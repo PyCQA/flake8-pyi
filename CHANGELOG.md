@@ -1,5 +1,11 @@
 # Change Log
 
+## Unreleased
+
+* Y027: No longer recommend replacing `typing.ByteString` with
+  `collections.abc.ByteString`, since their semantics do not correspond
+  and `collections.abc.ByteString`'s semantics are terrible to begin with.
+
 ## 23.1.2
 
 * Y011/Y014/Y015: Increase the maximum character length of literal numbers

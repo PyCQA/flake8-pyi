@@ -39,6 +39,7 @@ from collections.abc import (
     MutableSequence,
     ByteString
 )
+from typing import ByteString
 from re import Match, Pattern
 # Things that are of no use for stub files are intentionally omitted.
 from typing import (
@@ -93,7 +94,6 @@ from typing import ContextManager  # Y022 Use "contextlib.AbstractContextManager
 from typing import OrderedDict  # Y022 Use "collections.OrderedDict[KeyType, ValueType]" instead of "typing.OrderedDict[KeyType, ValueType]" (PEP 585 syntax)
 from typing_extensions import OrderedDict  # Y022 Use "collections.OrderedDict[KeyType, ValueType]" instead of "typing_extensions.OrderedDict[KeyType, ValueType]" (PEP 585 syntax)
 from typing import Callable  # Y022 Use "collections.abc.Callable" instead of "typing.Callable" (PEP 585 syntax)
-from typing import ByteString
 from typing import Container  # Y022 Use "collections.abc.Container[T]" instead of "typing.Container[T]" (PEP 585 syntax)
 from typing import Hashable  # Y022 Use "collections.abc.Hashable" instead of "typing.Hashable" (PEP 585 syntax)
 from typing import ItemsView  # Y022 Use "collections.abc.ItemsView[KeyType, ValueType]" instead of "typing.ItemsView[KeyType, ValueType]" (PEP 585 syntax)
