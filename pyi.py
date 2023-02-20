@@ -105,8 +105,8 @@ _BAD_Y022_IMPORTS: dict[str, tuple[str, str | None]] = {
     ),
     # typing aliases for collections.abc
     # typing.AbstractSet is deliberately omitted (special-cased elsewhere)
+    # typing.ByteString is also deliberately omitted (https://github.com/python/cpython/issues/102092)
     # If the second element of the tuple is `None`, it signals that the object shouldn't be parameterized
-    "typing.ByteString": ("collections.abc.ByteString", None),
     "typing.Collection": ("collections.abc.Collection", "T"),
     "typing.ItemsView": ("collections.abc.ItemsView", _MAPPING_SLICE),
     "typing.KeysView": ("collections.abc.KeysView", "KeyType"),
