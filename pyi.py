@@ -2037,5 +2037,6 @@ Y051 = 'Y051 "{literal_subtype}" is redundant in a union with "{builtin_supertyp
 Y052 = 'Y052 Need type annotation for "{variable}"'
 Y053 = "Y053 Only string and bytes literals <=50 characters long are permitted"
 Y054 = (
-    "Y054 Only numbers with a string representation <=10 characters long are permitted"
+    "Y054 Only numeric literals with a string representation "
+    "<=10 characters long are permitted"
 )
