@@ -51,8 +51,8 @@ def f34(x: str = sys.version) -> None: ...
 def f35(x: tuple[int, ...] = sys.version_info) -> None: ...
 def f36(x: str = sys.winver) -> None: ...
 
-def f37(x: str = "a_very_long_stringgggggggggggggggggggggggggggggggggggggggggggggg") -> None: ...  # Y053 Only string and bytes literals <=50 characters long are permitted
-def f38(x: bytes = b"a_very_long_byte_stringggggggggggggggggggggggggggggggggggggg") -> None: ...  # Y053 Only string and bytes literals <=50 characters long are permitted
+def f37(x: str = "a_very_long_stringgggggggggggggggggggggggggggggggggggggggggggggg") -> None: ...  # Y053 String and bytes literals >50 characters long are not permitted
+def f38(x: bytes = b"a_very_long_byte_stringggggggggggggggggggggggggggggggggggggg") -> None: ...  # Y053 String and bytes literals >50 characters long are not permitted
 
-foo: str = "a_very_long_stringgggggggggggggggggggggggggggggggggggggggggggggg"  # Y053 Only string and bytes literals <=50 characters long are permitted
-bar: bytes = b"a_very_long_byte_stringggggggggggggggggggggggggggggggggggggg"  # Y053 Only string and bytes literals <=50 characters long are permitted
+foo: str = "a_very_long_stringgggggggggggggggggggggggggggggggggggggggggggggg"  # Y053 String and bytes literals >50 characters long are not permitted
+bar: bytes = b"a_very_long_byte_stringggggggggggggggggggggggggggggggggggggg"  # Y053 String and bytes literals >50 characters long are not permitted
