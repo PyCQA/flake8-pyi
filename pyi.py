@@ -34,6 +34,7 @@ else:
 
 
 if TYPE_CHECKING:
+    from _ast import _Slice
     # We don't have typing_extensions as a runtime dependency,
     # but all our annotations are stringized due to __future__ annotations,
     # and mypy thinks typing_extensions is part of the stdlib.
@@ -165,7 +166,7 @@ class PyiAwareFlakesChecker(FlakesChecker):
     def deferHandleNode(self, node: ast.AST | None, parent) -> None:
         self.deferFunction(lambda: self.handleNode(node, parent))
 
-    def ASSIGN(self, node: ast.Assign) -> None:
+    def ASSIGN(self, tree: ast.Assign, omit: str | tuple[str, ...] | None = None) -> None:
         """This is a custom implementation of ASSIGN derived from
         handleChildren() in pyflakes 1.3.0.
 
@@ -174,13 +175,13 @@ class PyiAwareFlakesChecker(FlakesChecker):
         assignments (the type aliases might have forward references).
         """
         if not isinstance(self.scope, ModuleScope):
-            super().ASSIGN(node)
+            super().ASSIGN(tree)
             return
 
-        for target in node.targets:
-            self.handleNode(target, node)
+        for target in tree.targets:
+            self.handleNode(target, tree)
 
-        self.deferHandleNode(node.value, node)
+        self.deferHandleNode(tree.value, tree)
 
     def ANNASSIGN(self, node: ast.AnnAssign) -> None:
         """
@@ -302,7 +303,7 @@ def _ast_node_for(string: str) -> ast.AST:
     return expr.value
 
 
-def _is_name(node: ast.expr | None, name: str) -> bool:
+def _is_name(node: ast.AST | None, name: str) -> bool:
     """Return True if `node` is an `ast.Name` node with id `name`
 
     >>> node = ast.Name(id="Any")
@@ -315,7 +316,7 @@ def _is_name(node: ast.expr | None, name: str) -> bool:
 _TYPING_MODULES = frozenset({"typing", "typing_extensions"})
 
 
-def _is_object(node: ast.expr | None, name: str, *, from_: Container[str]) -> bool:
+def _is_object(node: ast.AST | None, name: str, *, from_: Container[str]) -> bool:
     """Determine whether `node` is an ast representation of `name`.
 
     Return True if `node` is either:
@@ -662,7 +663,7 @@ def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
     non_literals_in_union = False
     members_by_dump: defaultdict[str, list[ast.expr]] = defaultdict(list)
     builtins_classes_in_union: set[str] = set()
-    literals_in_union = []
+    literals_in_union: list[_Slice] = []
     combined_literal_members: list[_LiteralMember] = []
 
     for member in members:
@@ -1272,7 +1273,7 @@ class PyiVisitor(ast.NodeVisitor):
 
         # str|int|None parses as BinOp(BinOp(str, |, int), |, None)
         current: ast.expr = node
-        members = []
+        members: list[ast.expr] = []
         while isinstance(current, ast.BinOp) and isinstance(current.op, ast.BitOr):
             members.append(current.right)
             current = current.left

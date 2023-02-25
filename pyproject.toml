@@ -100,3 +100,35 @@ allow_incomplete_defs = true
 
 [tool.pytest.ini_options]
 addopts = "--doctest-modules"
+
+[tool.pyright]
+include = ["*.py"]
+venv = "env"
+pythonVersion = "3.7"
+typeCheckingMode = "strict"
+
+# Extra strict settings
+reportMissingModuleSource = "error"
+reportShadowedImports = "error"
+reportCallInDefaultInitializer = "error"
+reportUninitializedInstanceVariable = "error"
+reportUnnecessaryTypeIgnoreComment = "error"
+
+# Leave "type: ignore" comments to mypy
+enableTypeIgnoreComments = false
+
+# Runtime libraries used are not all py.typed
+useLibraryCodeForTypes = true
+
+# Overly strict settings with false positives
+reportMissingSuperCall = "none"
+reportImplicitStringConcatenation = "none"
+
+# Already flagged by mypy
+reportMissingTypeStubs = "none"
+
+# Strict settings we might want to work towards enabling at some point
+reportUnknownParameterType = false
+reportMissingParameterType = false
+reportUnknownMemberType = false
+reportUnknownArgumentType = false
