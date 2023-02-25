@@ -34,8 +34,6 @@ else:
 
 
 if TYPE_CHECKING:
-    from _ast import _Slice
-
     # We don't have typing_extensions as a runtime dependency,
     # but all our annotations are stringized due to __future__ annotations,
     # and mypy thinks typing_extensions is part of the stdlib.
@@ -666,7 +664,7 @@ def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
     non_literals_in_union = False
     members_by_dump: defaultdict[str, list[ast.expr]] = defaultdict(list)
     builtins_classes_in_union: set[str] = set()
-    literals_in_union: list[_Slice] = []
+    literals_in_union = []
     combined_literal_members: list[_LiteralMember] = []
 
     for member in members:
