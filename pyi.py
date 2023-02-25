@@ -35,6 +35,7 @@ else:
 
 if TYPE_CHECKING:
     from _ast import _Slice
+
     # We don't have typing_extensions as a runtime dependency,
     # but all our annotations are stringized due to __future__ annotations,
     # and mypy thinks typing_extensions is part of the stdlib.
@@ -166,7 +167,9 @@ class PyiAwareFlakesChecker(FlakesChecker):
     def deferHandleNode(self, node: ast.AST | None, parent) -> None:
         self.deferFunction(lambda: self.handleNode(node, parent))
 
-    def ASSIGN(self, tree: ast.Assign, omit: str | tuple[str, ...] | None = None) -> None:
+    def ASSIGN(
+        self, tree: ast.Assign, omit: str | tuple[str, ...] | None = None
+    ) -> None:
         """This is a custom implementation of ASSIGN derived from
         handleChildren() in pyflakes 1.3.0.
 
