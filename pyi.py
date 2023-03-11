@@ -214,9 +214,9 @@ class PyiAwareFlakesChecker(FlakesChecker):
         to LAMBDA visiting the function's body is already deferred and the
         only eager calls to `handleNode` are for annotations.
         """
-        self.handleNode, self.deferHandleNode = self.deferHandleNode, self.handleNode  # type: ignore[assignment]
+        self.handleNode, self.deferHandleNode = self.deferHandleNode, self.handleNode  # type: ignore[method-assign]
         super().LAMBDA(node)
-        self.handleNode, self.deferHandleNode = self.deferHandleNode, self.handleNode  # type: ignore[assignment]
+        self.handleNode, self.deferHandleNode = self.deferHandleNode, self.handleNode  # type: ignore[method-assign]
 
     def CLASSDEF(self, node: ast.ClassDef) -> None:
         if not isinstance(self.scope, ModuleScope):
