@@ -2,10 +2,10 @@
 
 ## Unreleased
 
-* Y011: Allow `math` constant `math.inf`, `math.e`, `math.pi`, `math.tau`, and
-  their negatives in default values. Some other semantically equivalents, such
+* Y011/Y014/Y015: Allow `math` constants `math.inf`, `math.e`, `math.pi`, `math.tau`, and
+  their negatives in default values. Some other semantically equivalent values, such
   as `x = inf` (`from math import inf`), or `x = np.inf` (`import numpy as np`),
-  should be rewrite to `x = math.inf`. Contributed by
+  should be rewritten to `x = math.inf`. Contributed by
   [XuehaiPan](https://github.com/XuehaiPan).
 
 ## 23.1.2
