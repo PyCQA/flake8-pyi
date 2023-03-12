@@ -695,6 +695,10 @@ def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
     )
 
 
+_ALLOWED_MATH_ATTRIBUTES_IN_DEFAULTS = frozenset(
+    {"math.inf", "math.e", "math.pi", "math.tau"}
+)
+
 _ALLOWED_ATTRIBUTES_IN_DEFAULTS = frozenset(
     {
         "sys.base_prefix",
@@ -737,14 +741,22 @@ def _is_valid_default_value_with_annotation(node: ast.expr) -> bool:
         # 0xFFFFFFFF --> 4294967295
         return isinstance(node, ast.Num) and len(str(node.n)) <= 10
 
-    # Positive ints, positive floats, positive complex numbers with no real part
-    if _is_valid_Num(node):
+    def _is_valid_math_constant(node: ast.expr) -> TypeGuard[ast.Attribute]:
+        # math.inf, math.e, math.pi, math.tau
+        return (
+            isinstance(node, ast.Attribute)
+            and isinstance(node.value, ast.Name)
+            and f"{node.value.id}.{node.attr}" in _ALLOWED_MATH_ATTRIBUTES_IN_DEFAULTS
+        )
+
+    # Positive ints, positive floats, positive complex numbers with no real part, math constants
+    if _is_valid_Num(node) or _is_valid_math_constant(node):
         return True
-    # Negative ints, negative floats, negative complex numbers with no real part
+    # Negative ints, negative floats, negative complex numbers with no real part, math constants
     if (
         isinstance(node, ast.UnaryOp)
         and isinstance(node.op, ast.USub)
-        and _is_valid_Num(node.operand)
+        and (_is_valid_Num(node.operand) or _is_valid_math_constant(node))
     ):
         return True
     # Complex numbers with a real part and an imaginary part...
