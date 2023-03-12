@@ -4,8 +4,8 @@
 
 * Y011: Allow `math` constant `math.inf`, `math.e`, `math.pi`, `math.tau`, and
   their negatives in default values. Some other semantically equivalents, such
-  as `x: inf` (`from math import inf`), or `x: np.inf` (`import numpy as np`),
-  should be rewrite to `x: math.inf`. Contributed by
+  as `x = inf` (`from math import inf`), or `x = np.inf` (`import numpy as np`),
+  should be rewrite to `x = math.inf`. Contributed by
   [XuehaiPan](https://github.com/XuehaiPan).
 * Y011/Y014/Y015: Increase the maximum character length of literal numbers
   in default values from 7 to 10, allowing hexadecimal representation of
