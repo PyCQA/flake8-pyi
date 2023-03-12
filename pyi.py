@@ -756,7 +756,7 @@ def _is_valid_default_value_with_annotation(node: ast.expr) -> bool:
     if (
         isinstance(node, ast.UnaryOp)
         and isinstance(node.op, ast.USub)
-        and (_is_valid_Num(node.operand) or _is_valid_math_constant(node))
+        and (_is_valid_Num(node.operand) or _is_valid_math_constant(node.operand))
     ):
         return True
     # Complex numbers with a real part and an imaginary part...
