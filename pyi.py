@@ -726,51 +726,31 @@ def _is_valid_default_value_with_annotation(node: ast.expr) -> bool:
     the validity of default values for ast.AnnAssign nodes.
     (E.g. `foo: int = 5` is OK, but `foo: TypeVar = TypeVar("foo")` is not.)
     """
-    # `...`, bools, None
-    if isinstance(node, (ast.Ellipsis, ast.NameConstant)):
+    # `...`, bools, None, str, bytes,
+    # positive ints, positive floats, positive complex numbers with no real part
+    if isinstance(node, (ast.Ellipsis, ast.NameConstant, ast.Str, ast.Bytes, ast.Num)):
         return True
 
-    # strings, bytes
-    if isinstance(node, (ast.Str, ast.Bytes)):
-        return len(str(node.s)) <= 50
+    # Negative ints, negative floats, negative complex numbers with no real part,
+    # some constants from the math module
+    if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.USub):
+        if isinstance(node.operand, ast.Num):
+            return True
+        if isinstance(node.operand, ast.Attribute) and isinstance(
+            node.operand.value, ast.Name
+        ):
+            fullname = f"{node.operand.value.id}.{node.operand.attr}"
+            return (
+                fullname in _ALLOWED_MATH_ATTRIBUTES_IN_DEFAULTS
+                and fullname != "math.nan"
+            )
+        return False
 
-    def _is_valid_Num(node: ast.expr) -> TypeGuard[ast.Num]:
-        # The maximum character limit is arbitrary, but here's what it's based on:
-        # Hex representation of 32-bit integers tend to be 10 chars.
-        # So is the decimal representation of the maximum positive signed 32-bit integer.
-        # 0xFFFFFFFF --> 4294967295
-        return isinstance(node, ast.Num) and len(str(node.n)) <= 10
-
-    def _is_valid_math_constant(
-        node: ast.expr, allow_nan: bool = True
-    ) -> TypeGuard[ast.Attribute]:
-        # math.inf, math.nan, math.e, math.pi, math.tau
-        return (
-            isinstance(node, ast.Attribute)
-            and isinstance(node.value, ast.Name)
-            and f"{node.value.id}.{node.attr}" in _ALLOWED_MATH_ATTRIBUTES_IN_DEFAULTS
-            and (allow_nan or f"{node.value.id}.{node.attr}" != "math.nan")
-        )
-
-    # Positive ints, positive floats, positive complex numbers with no real part, math constants
-    if _is_valid_Num(node) or _is_valid_math_constant(node):
-        return True
-    # Negative ints, negative floats, negative complex numbers with no real part, math constants
-    if (
-        isinstance(node, ast.UnaryOp)
-        and isinstance(node.op, ast.USub)
-        and (
-            _is_valid_Num(node.operand)
-            # Don't allow -math.nan
-            or _is_valid_math_constant(node.operand, allow_nan=False)
-        )
-    ):
-        return True
     # Complex numbers with a real part and an imaginary part...
     if (
         isinstance(node, ast.BinOp)
         and isinstance(node.op, (ast.Add, ast.Sub))
-        and _is_valid_Num(node.right)
+        and isinstance(node.right, ast.Num)
         and type(node.right.n) is complex
     ):
         left = node.left
@@ -781,17 +761,19 @@ def _is_valid_default_value_with_annotation(node: ast.expr) -> bool:
         if (
             isinstance(left, ast.UnaryOp)
             and isinstance(left.op, ast.USub)
-            and _is_valid_Num(left.operand)
+            and isinstance(left.operand, ast.Num)
             and type(left.operand.n) is not complex
         ):
             return True
+        return False
+
     # Special cases
-    if (
-        isinstance(node, ast.Attribute)
-        and isinstance(node.value, ast.Name)
-        and f"{node.value.id}.{node.attr}" in _ALLOWED_ATTRIBUTES_IN_DEFAULTS
-    ):
-        return True
+    if isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name):
+        fullname = f"{node.value.id}.{node.attr}"
+        return (fullname in _ALLOWED_ATTRIBUTES_IN_DEFAULTS) or (
+            fullname in _ALLOWED_MATH_ATTRIBUTES_IN_DEFAULTS
+        )
+
     return False
 
 
@@ -1130,19 +1112,41 @@ class PyiVisitor(ast.NodeVisitor):
         for kw in node.keywords:
             self.visit(kw)
 
+    def _check_for_Y053(self, node: ast.Constant | ast.Str | ast.Bytes) -> None:
+        if len(node.s) > 50:
+            self.error(node, Y053)
+
+    def _check_for_Y054(self, node: ast.Constant | ast.Num) -> None:
+        # The maximum character limit is arbitrary, but here's what it's based on:
+        # Hex representation of 32-bit integers tend to be 10 chars.
+        # So is the decimal representation of the maximum positive signed 32-bit integer.
+        # 0xFFFFFFFF --> 4294967295
+        if len(str(node.n)) > 10:
+            self.error(node, Y054)
+
     # 3.8+
     def visit_Constant(self, node: ast.Constant) -> None:
-        if (
-            isinstance(node.value, str)
-            and node.value
-            and not self.string_literals_allowed.active
-        ):
+        if isinstance(node.value, str) and not self.string_literals_allowed.active:
+            self.error(node, Y020)
+        elif isinstance(node.value, (str, bytes)):
+            self._check_for_Y053(node)
+        elif isinstance(node.value, (int, float, complex)):
+            self._check_for_Y054(node)
+
+    # 3.7
+    def visit_Str(self, node: ast.Str) -> None:
+        if self.string_literals_allowed.active:
+            self._check_for_Y053(node)
+        else:
             self.error(node, Y020)
 
-    # 3.7 and lower
-    def visit_Str(self, node: ast.Str) -> None:
-        if node.s and not self.string_literals_allowed.active:
-            self.error(node, Y020)
+    # 3.7
+    def visit_Bytes(self, node: ast.Bytes) -> None:
+        self._check_for_Y053(node)
+
+    # 3.7
+    def visit_Num(self, node: ast.Num) -> None:
+        self._check_for_Y054(node)
 
     def visit_Expr(self, node: ast.Expr) -> None:
         if isinstance(node.value, ast.Str):
@@ -2047,3 +2051,8 @@ Y050 = (
 )
 Y051 = 'Y051 "{literal_subtype}" is redundant in a union with "{builtin_supertype}"'
 Y052 = 'Y052 Need type annotation for "{variable}"'
+Y053 = "Y053 String and bytes literals >50 characters long are not permitted"
+Y054 = (
+    "Y054 Numeric literals with a string representation "
+    ">10 characters long are not permitted"
+)

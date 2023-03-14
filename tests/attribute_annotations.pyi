@@ -54,10 +54,10 @@ field22: Final = {"foo": 5}  # Y015 Only simple default values are allowed for a
 field23 = "foo" + "bar"  # Y015 Only simple default values are allowed for assignments
 field24 = b"foo" + b"bar"  # Y015 Only simple default values are allowed for assignments
 field25 = 5 * 5  # Y015 Only simple default values are allowed for assignments
-field26: int = 0xFFFFFFFFF  # Y015 Only simple default values are allowed for assignments
-field27: int = 12345678901  # Y015 Only simple default values are allowed for assignments
-field28: int = -0xFFFFFFFFF  # Y015 Only simple default values are allowed for assignments
-field29: int = -12345678901  # Y015 Only simple default values are allowed for assignments
+field26: int = 0xFFFFFFFFF  # Y054 Numeric literals with a string representation >10 characters long are not permitted
+field27: int = 12345678901  # Y054 Numeric literals with a string representation >10 characters long are not permitted
+field28: int = -0xFFFFFFFFF  # Y054 Numeric literals with a string representation >10 characters long are not permitted
+field29: int = -12345678901  # Y054 Numeric literals with a string representation >10 characters long are not permitted
 
 class Foo:
     field1: int
@@ -98,10 +98,10 @@ class Foo:
     field24 = "foo" + "bar"  # Y015 Only simple default values are allowed for assignments
     field25 = b"foo" + b"bar"  # Y015 Only simple default values are allowed for assignments
     field26 = 5 * 5  # Y015 Only simple default values are allowed for assignments
-    field27 = 0xFFFFFFFFF  # Y015 Only simple default values are allowed for assignments
-    field28 = 12345678901  # Y015 Only simple default values are allowed for assignments
-    field29 = -0xFFFFFFFFF  # Y015 Only simple default values are allowed for assignments
-    field30 = -12345678901  # Y015 Only simple default values are allowed for assignments
+    field27 = 0xFFFFFFFFF  # Y052 Need type annotation for "field27" # Y054 Numeric literals with a string representation >10 characters long are not permitted
+    field28 = 12345678901  # Y052 Need type annotation for "field28" # Y054 Numeric literals with a string representation >10 characters long are not permitted
+    field29 = -0xFFFFFFFFF  # Y052 Need type annotation for "field29" # Y054 Numeric literals with a string representation >10 characters long are not permitted
+    field30 = -12345678901  # Y052 Need type annotation for "field30" # Y054 Numeric literals with a string representation >10 characters long are not permitted
 
     Field95: TypeAlias = None
     Field96: TypeAlias = int | None

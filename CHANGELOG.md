@@ -1,5 +1,20 @@
 # Change Log
 
+## Unreleased
+
+New error codes:
+* Y053: Disallow string or bytes literals with length >50 characters.
+  Previously this rule only applied to parameter default values;
+  it now applies everywhere.
+* Y054: Disallow numeric literals with a string representation >10 characters long.
+  Previously this rule only applied to parameter default values;
+  it now applies everywhere.
+
+Other changes:
+* Y052 is now emitted more consistently.
+* Some things that used to result in Y011, Y014 or Y015 being emitted
+  now result in Y053 or Y054 being emitted.
+
 ## 23.3.0
 
 * Y011/Y014/Y015: Allow `math` constants `math.inf`, `math.nan`, `math.e`,
