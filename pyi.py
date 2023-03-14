@@ -39,7 +39,7 @@ if TYPE_CHECKING:
     # and mypy thinks typing_extensions is part of the stdlib.
     from typing_extensions import Literal, TypeAlias, TypeGuard
 
-__version__ = "23.1.2"
+__version__ = "23.3.0"
 
 LOG = logging.getLogger("flake8.pyi")
 FLAKE8_MAJOR_VERSION = flake8.__version_info__[0]
@@ -165,7 +165,9 @@ class PyiAwareFlakesChecker(FlakesChecker):
     def deferHandleNode(self, node: ast.AST | None, parent) -> None:
         self.deferFunction(lambda: self.handleNode(node, parent))
 
-    def ASSIGN(self, node: ast.Assign) -> None:
+    def ASSIGN(
+        self, tree: ast.Assign, omit: str | tuple[str, ...] | None = None
+    ) -> None:
         """This is a custom implementation of ASSIGN derived from
         handleChildren() in pyflakes 1.3.0.
 
@@ -174,13 +176,13 @@ class PyiAwareFlakesChecker(FlakesChecker):
         assignments (the type aliases might have forward references).
         """
         if not isinstance(self.scope, ModuleScope):
-            super().ASSIGN(node)
+            super().ASSIGN(tree)
             return
 
-        for target in node.targets:
-            self.handleNode(target, node)
+        for target in tree.targets:
+            self.handleNode(target, tree)
 
-        self.deferHandleNode(node.value, node)
+        self.deferHandleNode(tree.value, tree)
 
     def ANNASSIGN(self, node: ast.AnnAssign) -> None:
         """
@@ -212,9 +214,9 @@ class PyiAwareFlakesChecker(FlakesChecker):
         to LAMBDA visiting the function's body is already deferred and the
         only eager calls to `handleNode` are for annotations.
         """
-        self.handleNode, self.deferHandleNode = self.deferHandleNode, self.handleNode  # type: ignore[assignment]
+        self.handleNode, self.deferHandleNode = self.deferHandleNode, self.handleNode  # type: ignore[method-assign]
         super().LAMBDA(node)
-        self.handleNode, self.deferHandleNode = self.deferHandleNode, self.handleNode  # type: ignore[assignment]
+        self.handleNode, self.deferHandleNode = self.deferHandleNode, self.handleNode  # type: ignore[method-assign]
 
     def CLASSDEF(self, node: ast.ClassDef) -> None:
         if not isinstance(self.scope, ModuleScope):
@@ -302,7 +304,7 @@ def _ast_node_for(string: str) -> ast.AST:
     return expr.value
 
 
-def _is_name(node: ast.expr | None, name: str) -> bool:
+def _is_name(node: ast.AST | None, name: str) -> bool:
     """Return True if `node` is an `ast.Name` node with id `name`
 
     >>> node = ast.Name(id="Any")
@@ -315,7 +317,7 @@ def _is_name(node: ast.expr | None, name: str) -> bool:
 _TYPING_MODULES = frozenset({"typing", "typing_extensions"})
 
 
-def _is_object(node: ast.expr | None, name: str, *, from_: Container[str]) -> bool:
+def _is_object(node: ast.AST | None, name: str, *, from_: Container[str]) -> bool:
     """Determine whether `node` is an ast representation of `name`.
 
     Return True if `node` is either:
@@ -693,6 +695,10 @@ def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
     )
 
 
+_ALLOWED_MATH_ATTRIBUTES_IN_DEFAULTS = frozenset(
+    {"math.inf", "math.nan", "math.e", "math.pi", "math.tau"}
+)
+
 _ALLOWED_ATTRIBUTES_IN_DEFAULTS = frozenset(
     {
         "sys.base_prefix",
@@ -725,13 +731,21 @@ def _is_valid_default_value_with_annotation(node: ast.expr) -> bool:
     if isinstance(node, (ast.Ellipsis, ast.NameConstant, ast.Str, ast.Bytes, ast.Num)):
         return True
 
-    # Negative ints, negative floats, negative complex numbers with no real part
-    if (
-        isinstance(node, ast.UnaryOp)
-        and isinstance(node.op, ast.USub)
-        and isinstance(node.operand, ast.Num)
-    ):
-        return True
+    # Negative ints, negative floats, negative complex numbers with no real part,
+    # some constants from the math module
+    if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.USub):
+        if isinstance(node.operand, ast.Num):
+            return True
+        if isinstance(node.operand, ast.Attribute) and isinstance(
+            node.operand.value, ast.Name
+        ):
+            fullname = f"{node.operand.value.id}.{node.operand.attr}"
+            return (
+                fullname in _ALLOWED_MATH_ATTRIBUTES_IN_DEFAULTS
+                and fullname != "math.nan"
+            )
+        return False
+
     # Complex numbers with a real part and an imaginary part...
     if (
         isinstance(node, ast.BinOp)
@@ -751,13 +765,15 @@ def _is_valid_default_value_with_annotation(node: ast.expr) -> bool:
             and type(left.operand.n) is not complex
         ):
             return True
+        return False
+
     # Special cases
-    if (
-        isinstance(node, ast.Attribute)
-        and isinstance(node.value, ast.Name)
-        and f"{node.value.id}.{node.attr}" in _ALLOWED_ATTRIBUTES_IN_DEFAULTS
-    ):
-        return True
+    if isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name):
+        fullname = f"{node.value.id}.{node.attr}"
+        return (fullname in _ALLOWED_ATTRIBUTES_IN_DEFAULTS) or (
+            fullname in _ALLOWED_MATH_ATTRIBUTES_IN_DEFAULTS
+        )
+
     return False
 
 
@@ -1281,7 +1297,7 @@ class PyiVisitor(ast.NodeVisitor):
 
         # str|int|None parses as BinOp(BinOp(str, |, int), |, None)
         current: ast.expr = node
-        members = []
+        members: list[ast.expr] = []
         while isinstance(current, ast.BinOp) and isinstance(current.op, ast.BitOr):
             members.append(current.right)
             current = current.left
