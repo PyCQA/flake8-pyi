@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## 23.3.0
 
 * Y011/Y014/Y015: Allow `math` constants `math.inf`, `math.nan`, `math.e`,
   `math.pi`, `math.tau`, and their negatives in default values. Some other
