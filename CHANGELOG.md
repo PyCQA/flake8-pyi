@@ -11,6 +11,8 @@ New error codes:
   it now applies everywhere.
 
 Other changes:
+* Y011/Y014/Y015: Simple container literals (`list`, `dict`, `tuple` and `set`
+  literals) are now allowed as default values.
 * Y052 is now emitted more consistently.
 * Some things that used to result in Y011, Y014 or Y015 being emitted
   now result in Y053 or Y054 being emitted.

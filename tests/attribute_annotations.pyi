@@ -32,6 +32,15 @@ field9 = None  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "fi
 Field95: TypeAlias = None
 Field96: TypeAlias = int | None
 Field97: TypeAlias = None | typing.SupportsInt | builtins.str | float | bool
+field19 = [1, 2, 3]  # Y052 Need type annotation for "field19"
+field191: list[int] = [1, 2, 3]
+field20 = (1, 2, 3)  # Y052 Need type annotation for "field20"
+field201: tuple[int, ...] = (1, 2, 3)
+field21 = {1, 2, 3}  # Y052 Need type annotation for "field21"
+field211: set[int] = {1, 2, 3}
+field212 = {"foo": "bar"}  # Y052 Need type annotation for "field212"
+field213: dict[str, str] = {"foo": "bar"}
+field22: Final = {"foo": 5}
 
 # Tests for Final
 field11: Final = 1
@@ -47,10 +56,14 @@ field182: Final = os.pathsep
 field183: Final = None
 
 # We *should* emit Y015 for more complex default values
-field19 = [1, 2, 3]  # Y015 Only simple default values are allowed for assignments
-field20 = (1, 2, 3)  # Y015 Only simple default values are allowed for assignments
-field21 = {1, 2, 3}  # Y015 Only simple default values are allowed for assignments
-field22: Final = {"foo": 5}  # Y015 Only simple default values are allowed for assignments
+field221: list[int] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]  # Y015 Only simple default values are allowed for assignments
+field222: list[int] = [100000000000000000000000000000]  # Y054 Numeric literals with a string representation >10 characters long are not permitted
+field223: list[int] = [*range(10)]  # Y015 Only simple default values are allowed for assignments
+field224: list[int] = list(range(10))  # Y015 Only simple default values are allowed for assignments
+field225: list[object] = [{}, 1, 2]  # Y015 Only simple default values are allowed for assignments
+field226: tuple[str | tuple[str, ...], ...] = ("foo", ("foo", "bar"))  # Y015 Only simple default values are allowed for assignments
+field227: dict[str, object] = {"foo": {"foo": "bar"}}  # Y015 Only simple default values are allowed for assignments
+field228: dict[str, list[object]] = {"foo": []}  # Y015 Only simple default values are allowed for assignments
 field23 = "foo" + "bar"  # Y015 Only simple default values are allowed for assignments
 field24 = b"foo" + b"bar"  # Y015 Only simple default values are allowed for assignments
 field25 = 5 * 5  # Y015 Only simple default values are allowed for assignments
@@ -91,10 +104,13 @@ class Foo:
     else:
         field19 = "w"  # Y052 Need type annotation for "field19"
 
-    field20 = [1, 2, 3]  # Y015 Only simple default values are allowed for assignments
-    field21 = (1, 2, 3)  # Y015 Only simple default values are allowed for assignments
-    field22 = {1, 2, 3}  # Y015 Only simple default values are allowed for assignments
-    field23: Final = {"foo": 5}  # Y015 Only simple default values are allowed for assignments
+    field20 = [1, 2, 3]  # Y052 Need type annotation for "field20"
+    field201: list[int] = [1, 2, 3]
+    field21 = (1, 2, 3)  # Y052 Need type annotation for "field21"
+    field211: tuple[int, ...] = (1, 2, 3)
+    field22 = {1, 2, 3}  # Y052 Need type annotation for "field22"
+    field221: set[int] = {1, 2, 3}
+    field23: Final = {"foo": 5}
     field24 = "foo" + "bar"  # Y015 Only simple default values are allowed for assignments
     field25 = b"foo" + b"bar"  # Y015 Only simple default values are allowed for assignments
     field26 = 5 * 5  # Y015 Only simple default values are allowed for assignments

@@ -9,8 +9,8 @@ __all__ += ["h"]
 __all__.extend(["i"])
 __all__.append("j")
 __all__.remove("j")
-__match_args__ = ('foo',)  # Y015 Only simple default values are allowed for assignments
-__slots__ = ('foo',)  # Y015 Only simple default values are allowed for assignments
+__match_args__ = ('foo',)  # Y052 Need type annotation for "__match_args__"
+__slots__ = ('foo',)  # Y052 Need type annotation for "__slots__"
 
 def f(x: "int"): ...  # Y020 Quoted annotations should never be used in stubs
 def g(x: list["int"]): ...  # Y020 Quoted annotations should never be used in stubs
@@ -26,7 +26,7 @@ Alias: TypeAlias = list["int"]  # Y020 Quoted annotations should never be used i
 class Child(list["int"]):  # Y020 Quoted annotations should never be used in stubs
     """Documented and guaranteed useful."""  # Y021 Docstrings should not be included in stubs
 
-    __all__ = ('foo',)  # Y015 Only simple default values are allowed for assignments
+    __all__ = ('foo',)  # Y052 Need type annotation for "__all__"
     __match_args__ = ('foo', 'bar')
     __slots__ = ('foo', 'bar')
 
