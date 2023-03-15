@@ -64,6 +64,8 @@ field225: list[object] = [{}, 1, 2]  # Y015 Only simple default values are allow
 field226: tuple[str | tuple[str, ...], ...] = ("foo", ("foo", "bar"))  # Y015 Only simple default values are allowed for assignments
 field227: dict[str, object] = {"foo": {"foo": "bar"}}  # Y015 Only simple default values are allowed for assignments
 field228: dict[str, list[object]] = {"foo": []}  # Y015 Only simple default values are allowed for assignments
+# When parsed, this case results in `None` being placed in the `.keys` list for the `ast.Dict` node
+field229: dict[int, int] = {1: 2, **{3: 4}}  # Y015 Only simple default values are allowed for assignments
 field23 = "foo" + "bar"  # Y015 Only simple default values are allowed for assignments
 field24 = b"foo" + b"bar"  # Y015 Only simple default values are allowed for assignments
 field25 = 5 * 5  # Y015 Only simple default values are allowed for assignments
