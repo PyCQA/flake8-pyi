@@ -745,7 +745,12 @@ def _is_valid_default_value_with_annotation(
             allow_containers
             and len(node.keys) <= 10
             and all(
-                _is_valid_default_value_with_annotation(subnode, allow_containers=False)
+                (
+                    subnode is not None
+                    and _is_valid_default_value_with_annotation(
+                        subnode, allow_containers=False
+                    )
+                )
                 for subnode in chain(node.keys, node.values)
             )
         )
