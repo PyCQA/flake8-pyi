@@ -719,13 +719,42 @@ _ALLOWED_ATTRIBUTES_IN_DEFAULTS = frozenset(
 )
 
 
-def _is_valid_default_value_with_annotation(node: ast.expr) -> bool:
+def _is_valid_default_value_with_annotation(
+    node: ast.expr, allow_containers=True
+) -> bool:
     """Is `node` valid as a default value for a function or method parameter in a stub?
 
     Note that this function is *also* used to determine
     the validity of default values for ast.AnnAssign nodes.
     (E.g. `foo: int = 5` is OK, but `foo: TypeVar = TypeVar("foo")` is not.)
     """
+    # lists, tuples, sets
+    if isinstance(node, (ast.List, ast.Tuple, ast.Set)):
+        return (
+            allow_containers
+            and len(node.elts) <= 10
+            and all(
+                _is_valid_default_value_with_annotation(elt, allow_containers=False)
+                for elt in node.elts
+            )
+        )
+
+    # dicts
+    if isinstance(node, ast.Dict):
+        return (
+            allow_containers
+            and len(node.keys) <= 10
+            and all(
+                (
+                    subnode is not None
+                    and _is_valid_default_value_with_annotation(
+                        subnode, allow_containers=False
+                    )
+                )
+                for subnode in chain(node.keys, node.values)
+            )
+        )
+
     # `...`, bools, None, str, bytes,
     # positive ints, positive floats, positive complex numbers with no real part
     if isinstance(node, (ast.Ellipsis, ast.NameConstant, ast.Str, ast.Bytes, ast.Num)):
