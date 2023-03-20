@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## 23.1.1
 
 New error codes:
 * Y053: Disallow string or bytes literals with length >50 characters.
