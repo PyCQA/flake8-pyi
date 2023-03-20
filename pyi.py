@@ -39,7 +39,7 @@ if TYPE_CHECKING:
     # and mypy thinks typing_extensions is part of the stdlib.
     from typing_extensions import Literal, TypeAlias, TypeGuard
 
-__version__ = "23.3.0"
+__version__ = "23.3.1"
 
 LOG = logging.getLogger("flake8.pyi")
 FLAKE8_MAJOR_VERSION = flake8.__version_info__[0]
@@ -720,7 +720,7 @@ _ALLOWED_ATTRIBUTES_IN_DEFAULTS = frozenset(
 
 
 def _is_valid_default_value_with_annotation(
-    node: ast.expr, allow_containers=True
+    node: ast.expr, *, allow_containers: bool = True
 ) -> bool:
     """Is `node` valid as a default value for a function or method parameter in a stub?
 
