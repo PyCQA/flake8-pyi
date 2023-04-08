@@ -31,10 +31,10 @@ def func3(arg: Annotated[_UsedInAnnotatedSubscript, "Important metadata"]) -> An
 _S = TypeVar("_S")
 
 class BadClass:
-    def __new__(cls: type[_S], *args: str, **kwargs: int) -> _S: ...  # Y019 Use "_typeshed.Self" instead of "_S", e.g. "def __new__(cls: type[Self], *args: str, **kwargs: int) -> Self: ..."
-    def bad_instance_method(self: _S, arg: bytes) -> _S: ...  # Y019 Use "_typeshed.Self" instead of "_S", e.g. "def bad_instance_method(self: Self, arg: bytes) -> Self: ..."
+    def __new__(cls: type[_S], *args: str, **kwargs: int) -> _S: ...  # Y019 Use "typing_extensions.Self" instead of "_S", e.g. "def __new__(cls, *args: str, **kwargs: int) -> Self: ..."
+    def bad_instance_method(self: _S, arg: bytes) -> _S: ...  # Y019 Use "typing_extensions.Self" instead of "_S", e.g. "def bad_instance_method(self, arg: bytes) -> Self: ..."
     @classmethod
-    def bad_class_method(cls: type[_S], arg: int) -> _S: ...  # Y019 Use "_typeshed.Self" instead of "_S", e.g. "def bad_class_method(cls: type[Self], arg: int) -> Self: ..."
+    def bad_class_method(cls: type[_S], arg: int) -> _S: ...  # Y019 Use "typing_extensions.Self" instead of "_S", e.g. "def bad_class_method(cls, arg: int) -> Self: ..."
 
 class GoodClass:
     def __new__(cls: type[Self], *args: list[int], **kwargs: set[str]) -> Self: ...

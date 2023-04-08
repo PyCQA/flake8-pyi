@@ -13,14 +13,14 @@ from _typeshed import Self
 from typing_extensions import final
 
 class Bad(object):  # Y040 Do not inherit from "object" explicitly, as it is redundant in Python 3
-    def __new__(cls, *args: Any, **kwargs: Any) -> Bad: ...  # Y034 "__new__" methods usually return "self" at runtime. Consider using "_typeshed.Self" in "Bad.__new__", e.g. "def __new__(cls: type[Self], *args: Any, **kwargs: Any) -> Self: ..."
+    def __new__(cls, *args: Any, **kwargs: Any) -> Bad: ...  # Y034 "__new__" methods usually return "self" at runtime. Consider using "typing_extensions.Self" in "Bad.__new__", e.g. "def __new__(cls, *args: Any, **kwargs: Any) -> Self: ..."
     def __repr__(self) -> str: ...  # Y029 Defining __repr__ or __str__ in a stub is almost always redundant
     def __str__(self) -> builtins.str: ...  # Y029 Defining __repr__ or __str__ in a stub is almost always redundant
     def __eq__(self, other: Any) -> bool: ...  # Y032 Prefer "object" to "Any" for the second parameter in "__eq__" methods
     def __ne__(self, other: typing.Any) -> typing.Any: ...  # Y032 Prefer "object" to "Any" for the second parameter in "__ne__" methods
-    def __enter__(self) -> Bad: ...  # Y034 "__enter__" methods in classes like "Bad" usually return "self" at runtime. Consider using "_typeshed.Self" in "Bad.__enter__", e.g. "def __enter__(self: Self) -> Self: ..."
-    async def __aenter__(self) -> Bad: ...  # Y034 "__aenter__" methods in classes like "Bad" usually return "self" at runtime. Consider using "_typeshed.Self" in "Bad.__aenter__", e.g. "async def __aenter__(self: Self) -> Self: ..."
-    def __iadd__(self, other: Bad) -> Bad: ...  # Y034 "__iadd__" methods in classes like "Bad" usually return "self" at runtime. Consider using "_typeshed.Self" in "Bad.__iadd__", e.g. "def __iadd__(self: Self, other: Bad) -> Self: ..."
+    def __enter__(self) -> Bad: ...  # Y034 "__enter__" methods in classes like "Bad" usually return "self" at runtime. Consider using "typing_extensions.Self" in "Bad.__enter__", e.g. "def __enter__(self) -> Self: ..."
+    async def __aenter__(self) -> Bad: ...  # Y034 "__aenter__" methods in classes like "Bad" usually return "self" at runtime. Consider using "typing_extensions.Self" in "Bad.__aenter__", e.g. "async def __aenter__(self) -> Self: ..."
+    def __iadd__(self, other: Bad) -> Bad: ...  # Y034 "__iadd__" methods in classes like "Bad" usually return "self" at runtime. Consider using "typing_extensions.Self" in "Bad.__iadd__", e.g. "def __iadd__(self, other: Bad) -> Self: ..."
 
 class AlsoBad(int, builtins.object): ...  # Y040 Do not inherit from "object" explicitly, as it is redundant in Python 3
 
@@ -79,23 +79,23 @@ class InvalidButPluginDoesNotCrash:
     async def __aenter__() -> InvalidButPluginDoesNotCrash: ...
 
 class BadIterator1(Iterator[int]):
-    def __iter__(self) -> Iterator[int]: ...  # Y034 "__iter__" methods in classes like "BadIterator1" usually return "self" at runtime. Consider using "_typeshed.Self" in "BadIterator1.__iter__", e.g. "def __iter__(self: Self) -> Self: ..."
+    def __iter__(self) -> Iterator[int]: ...  # Y034 "__iter__" methods in classes like "BadIterator1" usually return "self" at runtime. Consider using "typing_extensions.Self" in "BadIterator1.__iter__", e.g. "def __iter__(self) -> Self: ..."
 
 class BadIterator2(typing.Iterator[int]):  # Y022 Use "collections.abc.Iterator[T]" instead of "typing.Iterator[T]" (PEP 585 syntax)
-    def __iter__(self) -> Iterator[int]: ...  # Y034 "__iter__" methods in classes like "BadIterator2" usually return "self" at runtime. Consider using "_typeshed.Self" in "BadIterator2.__iter__", e.g. "def __iter__(self: Self) -> Self: ..."
+    def __iter__(self) -> Iterator[int]: ...  # Y034 "__iter__" methods in classes like "BadIterator2" usually return "self" at runtime. Consider using "typing_extensions.Self" in "BadIterator2.__iter__", e.g. "def __iter__(self) -> Self: ..."
 
 class BadIterator3(typing.Iterator[int]):  # Y022 Use "collections.abc.Iterator[T]" instead of "typing.Iterator[T]" (PEP 585 syntax)
-    def __iter__(self) -> collections.abc.Iterator[int]: ...  # Y034 "__iter__" methods in classes like "BadIterator3" usually return "self" at runtime. Consider using "_typeshed.Self" in "BadIterator3.__iter__", e.g. "def __iter__(self: Self) -> Self: ..."
+    def __iter__(self) -> collections.abc.Iterator[int]: ...  # Y034 "__iter__" methods in classes like "BadIterator3" usually return "self" at runtime. Consider using "typing_extensions.Self" in "BadIterator3.__iter__", e.g. "def __iter__(self) -> Self: ..."
 
 class BadIterator4(Iterator[int]):
     # Note: *Iterable*, not *Iterator*, returned!
-    def __iter__(self) -> Iterable[int]: ...  # Y034 "__iter__" methods in classes like "BadIterator4" usually return "self" at runtime. Consider using "_typeshed.Self" in "BadIterator4.__iter__", e.g. "def __iter__(self: Self) -> Self: ..."
+    def __iter__(self) -> Iterable[int]: ...  # Y034 "__iter__" methods in classes like "BadIterator4" usually return "self" at runtime. Consider using "typing_extensions.Self" in "BadIterator4.__iter__", e.g. "def __iter__(self) -> Self: ..."
 
 class IteratorReturningIterable:
     def __iter__(self) -> Iterable[str]: ...  # Y045 "__iter__" methods should return an Iterator, not an Iterable
 
 class BadAsyncIterator(collections.abc.AsyncIterator[str]):
-    def __aiter__(self) -> typing.AsyncIterator[str]: ...  # Y034 "__aiter__" methods in classes like "BadAsyncIterator" usually return "self" at runtime. Consider using "_typeshed.Self" in "BadAsyncIterator.__aiter__", e.g. "def __aiter__(self: Self) -> Self: ..."  # Y022 Use "collections.abc.AsyncIterator[T]" instead of "typing.AsyncIterator[T]" (PEP 585 syntax)
+    def __aiter__(self) -> typing.AsyncIterator[str]: ...  # Y034 "__aiter__" methods in classes like "BadAsyncIterator" usually return "self" at runtime. Consider using "typing_extensions.Self" in "BadAsyncIterator.__aiter__", e.g. "def __aiter__(self) -> Self: ..."  # Y022 Use "collections.abc.AsyncIterator[T]" instead of "typing.AsyncIterator[T]" (PEP 585 syntax)
 
 class AsyncIteratorReturningAsyncIterable:
     def __aiter__(self) -> AsyncIterable[str]: ...  # Y045 "__aiter__" methods should return an AsyncIterator, not an AsyncIterable
