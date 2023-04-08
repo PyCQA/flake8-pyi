@@ -532,7 +532,7 @@ _INPLACE_BINOP_METHODS = frozenset(
 def _has_bad_hardcoded_returns(
     method: ast.FunctionDef | ast.AsyncFunctionDef, *, classdef: ast.ClassDef
 ) -> bool:
-    """Return `True` if `function` should be rewritten using `_typeshed.Self`."""
+    """Return `True` if `function` should be rewritten using `typing_extensions.Self`."""
     # Much too complex for our purposes to worry
     # about overloaded functions or abstractmethods
     if any(
@@ -1649,14 +1649,9 @@ class PyiVisitor(ast.NodeVisitor):
         copied_node = deepcopy(node)
         copied_node.decorator_list.clear()
         copied_node.returns = ast.Name(id="Self")
-        first_arg = _non_kw_only_args_of(copied_node.args)[0]
         if method_name == "__new__":
-            first_arg.annotation = ast.Subscript(
-                value=ast.Name(id="type"), slice=ast.Name(id="Self")
-            )
             referrer = '"__new__" methods'
         else:
-            first_arg.annotation = ast.Name(id="Self")
             referrer = f'"{method_name}" methods in classes like "{cls_name}"'
         error_message = Y034.format(
             methods=referrer,
@@ -1750,6 +1745,8 @@ class PyiVisitor(ast.NodeVisitor):
     ) -> None:
         cleaned_method = deepcopy(node)
         cleaned_method.decorator_list.clear()
+        first_arg = _non_kw_only_args_of(cleaned_method.args)[0]
+        first_arg.annotation = None
         new_syntax = _unparse_func_node(cleaned_method)
         new_syntax = re.sub(rf"\b{typevar_name}\b", "Self", new_syntax)
         self.error(
@@ -2024,7 +2021,9 @@ Y015 = "Y015 Only simple default values are allowed for assignments"
 Y016 = 'Y016 Duplicate union member "{}"'
 Y017 = "Y017 Only simple assignments allowed"
 Y018 = 'Y018 {typevarlike_cls} "{typevar_name}" is not used'
-Y019 = 'Y019 Use "_typeshed.Self" instead of "{typevar_name}", e.g. "{new_syntax}"'
+Y019 = (
+    'Y019 Use "typing_extensions.Self" instead of "{typevar_name}", e.g. "{new_syntax}"'
+)
 Y020 = "Y020 Quoted annotations should never be used in stubs"
 Y021 = "Y021 Docstrings should not be included in stubs"
 Y022 = "Y022 Use {good_syntax} instead of {bad_syntax} (PEP 585 syntax)"
@@ -2048,7 +2047,7 @@ Y033 = (
 )
 Y034 = (
     'Y034 {methods} usually return "self" at runtime. '
-    'Consider using "_typeshed.Self" in "{method_name}", e.g. "{suggested_syntax}"'
+    'Consider using "typing_extensions.Self" in "{method_name}", e.g. "{suggested_syntax}"'
 )
 Y035 = (
     'Y035 "{var}" in a stub file must have a value, '

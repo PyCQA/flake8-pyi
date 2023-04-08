@@ -1,5 +1,10 @@
 # Change Log
 
+## Unreleased
+
+* Update error messages for Y019 and Y034 to recommend using
+  `typing_extensions.Self` rather than `_typeshed.Self`.
+
 ## 23.1.1
 
 New error codes:
