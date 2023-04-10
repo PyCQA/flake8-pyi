@@ -1,11 +1,11 @@
 # Change Log
 
-## Unreleased
+## 23.4.0
 
 * Update error messages for Y019 and Y034 to recommend using
   `typing_extensions.Self` rather than `_typeshed.Self`.
 
-## 23.1.1
+## 23.3.1
 
 New error codes:
 * Y053: Disallow string or bytes literals with length >50 characters.
