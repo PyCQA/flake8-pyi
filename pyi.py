@@ -45,11 +45,9 @@ LOG = logging.getLogger("flake8.pyi")
 FLAKE8_MAJOR_VERSION = flake8.__version_info__[0]
 
 if sys.version_info >= (3, 9):
-    _LiteralMember: TypeAlias = ast.expr
-    _BuiltinsTypeMember: TypeAlias = ast.expr
+    _SliceContents: TypeAlias = ast.expr
 else:
-    _LiteralMember: TypeAlias = Union[ast.expr, ast.slice]
-    _BuiltinsTypeMember: TypeAlias = Union[ast.expr, ast.slice]
+    _SliceContents: TypeAlias = Union[ast.expr, ast.slice]
 
 
 class Error(NamedTuple):
@@ -639,10 +637,10 @@ class UnionAnalysis(NamedTuple):
     builtins_classes_in_union: set[str]
     multiple_literals_in_union: bool
     non_literals_in_union: bool
-    combined_literal_members: list[_LiteralMember]
+    combined_literal_members: list[_SliceContents]
     multiple_builtins_types_in_union: bool
     non_builtins_types_in_union: bool
-    combined_builtins_types: list[_BuiltinsTypeMember]
+    combined_builtins_types: list[_SliceContents]
 
 
 def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
@@ -677,9 +675,9 @@ def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
     members_by_dump: defaultdict[str, list[ast.expr]] = defaultdict(list)
     builtins_classes_in_union: set[str] = set()
     literals_in_union = []
-    combined_literal_members: list[_LiteralMember] = []
+    combined_literal_members: list[_SliceContents] = []
     non_builtins_types_in_union = False
-    builtins_types_in_union: list[_BuiltinsTypeMember] = []
+    builtins_types_in_union: list[_SliceContents] = []
 
     for member in members:
         members_by_dump[ast.dump(member)].append(member)
@@ -1288,7 +1286,7 @@ class PyiVisitor(ast.NodeVisitor):
 
     def _check_for_Y051_violations(self, analysis: UnionAnalysis) -> None:
         """Search for redundant unions fitting the pattern `str | Literal["foo"]`, etc."""
-        literal_classes_present: defaultdict[str, list[_LiteralMember]]
+        literal_classes_present: defaultdict[str, list[_SliceContents]]
         literal_classes_present = defaultdict(list)
         for literal in analysis.combined_literal_members:
             if isinstance(literal, ast.Str):
