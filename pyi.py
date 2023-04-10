@@ -646,7 +646,9 @@ class UnionAnalysis(NamedTuple):
 def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
     """Return a tuple providing analysis of a given sequence of union members.
 
-    >>> union = _ast_node_for('Union[int, memoryview, memoryview, Literal["foo"], Literal[1], type[float], type[str]]')
+    >>> union = _ast_node_for(
+    ...     'Union[int, memoryview, memoryview, Literal["foo"], Literal[1], type[float], type[str]]'
+    ... )
     >>> members = union.slice.elts if sys.version_info >= (3, 9) else union.slice.value.elts
     >>> analysis = _analyse_union(members)
     >>> len(analysis.members_by_dump["Name(id='memoryview', ctx=Load())"])
@@ -1265,7 +1267,9 @@ class PyiVisitor(ast.NodeVisitor):
         if node_value and not _is_valid_default_value_with_annotation(node_value):
             self.error(node, Y015)
 
-    def _check_union_members(self, members: Sequence[ast.expr], parent: str) -> None:
+    def _check_union_members(
+        self, members: Sequence[ast.expr], is_pep_604_union: bool
+    ) -> None:
         first_union_member = members[0]
         analysis = _analyse_union(members)
 
@@ -1279,7 +1283,7 @@ class PyiVisitor(ast.NodeVisitor):
                 self._error_for_multiple_literals_in_union(first_union_member, analysis)
             elif analysis.multiple_builtins_types_in_union:
                 self._error_for_multiple_type_builtins_in_union(
-                    first_union_member, analysis, parent
+                    first_union_member, analysis, is_pep_604_union
                 )
             if self.visiting_arg.active:
                 self._check_for_redundant_numeric_unions(first_union_member, analysis)
@@ -1343,19 +1347,22 @@ class PyiVisitor(ast.NodeVisitor):
         self.error(first_union_member, Y030.format(suggestion=suggestion))
 
     def _error_for_multiple_type_builtins_in_union(
-        self, first_union_member: ast.expr, analysis: UnionAnalysis, parent: str
+        self,
+        first_union_member: ast.expr,
+        analysis: UnionAnalysis,
+        is_pep_604_union: bool,
     ) -> None:
+        # Union using bit or, e.g. type[str] | type[int]
+        if is_pep_604_union:
+            new_union = " | ".join(
+                unparse(expr) for expr in analysis.combined_builtins_types
+            )
         # Union is the explicit Union type, e.g. Union[type[str], type[int]]
-        if parent == "Union":
+        else:
             type_slice = unparse(ast.Tuple(analysis.combined_builtins_types)).strip(
                 "()"
             )
             new_union = f"Union[{type_slice}]"
-        # Union using bit or, e.g. type[str] | type[int]
-        else:
-            new_union = " | ".join(
-                unparse(expr) for expr in analysis.combined_builtins_types
-            )
 
         if analysis.non_builtins_types_in_union:
             suggestion = f'Combine them into one, e.g. "type[{new_union}]".'
@@ -1384,7 +1391,7 @@ class PyiVisitor(ast.NodeVisitor):
         for member in members:
             self.visit(member)
 
-        self._check_union_members(members, parent="BitOr")
+        self._check_union_members(members, is_pep_604_union=True)
 
     def visit_Subscript(self, node: ast.Subscript) -> None:
         subscripted_object = node.value
@@ -1404,7 +1411,7 @@ class PyiVisitor(ast.NodeVisitor):
 
     def _visit_slice_tuple(self, node: ast.Tuple, parent: str | None) -> None:
         if parent == "Union":
-            self._check_union_members(node.elts, parent="Union")
+            self._check_union_members(node.elts, is_pep_604_union=False)
             self.visit(node)
         elif parent == "Annotated":
             # Allow literals, except in the first argument
