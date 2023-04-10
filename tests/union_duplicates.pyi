@@ -2,10 +2,10 @@
 import builtins
 import typing
 from collections.abc import Mapping
-from typing import Union, Type  # noqa: Y022
+from typing import Type, Union  # noqa: Y022
 
 import typing_extensions
-from typing_extensions import Literal, TypeAlias, Type as Type_  # noqa: Y022
+from typing_extensions import Literal, Type as Type_, TypeAlias  # noqa: Y022
 
 def f1_pipe(x: int | str) -> None: ...
 def f2_pipe(x: int | int) -> None: ...  # Y016 Duplicate union member "int"
