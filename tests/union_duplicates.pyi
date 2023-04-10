@@ -12,12 +12,16 @@ def f2_pipe(x: int | int) -> None: ...  # Y016 Duplicate union member "int"
 def f3_pipe(x: None | int | int) -> None: ...  # Y016 Duplicate union member "int"
 def f4_pipe(x: int | None | int) -> None: ...  # Y016 Duplicate union member "int"
 def f5_pipe(x: int | int | None) -> None: ...  # Y016 Duplicate union member "int"
+def f6_pipe(x: type[int] | type[str] | type[float]) -> None: ...  # Y055 Multiple type builtins in a union. Use a single type expression, e.g. "type[int | str | float]".
+def f7_pipe(x: type[int] | str | type[float]) -> None: ...  # Y055 Multiple type builtins in a union. Combine them into one, e.g. "type[int | float]".
 
 def f1_union(x: Union[int, str]) -> None: ...
 def f2_union(x: Union[int, int]) -> None: ...  # Y016 Duplicate union member "int"
 def f3_union(x: Union[None, int, int]) -> None: ...  # Y016 Duplicate union member "int"
 def f4_union(x: typing.Union[int, None, int]) -> None: ...  # Y016 Duplicate union member "int"
 def f5_union(x: typing.Union[int, int, None]) -> None: ...  # Y016 Duplicate union member "int"
+def f6_union(x: Union[type[int], type[str], type[float]]) -> None: ...  # Y055 Multiple type builtins in a union. Use a single type expression, e.g. "type[Union[int, str, float]]".
+def f7_union(x: Union[type[int], str, type[float]]) -> None: ...  # Y055 Multiple type builtins in a union. Combine them into one, e.g. "type[Union[int, float]]".
 
 just_literals_subscript_union: Union[Literal[1], typing.Literal[2]]  # Y030 Multiple Literal members in a union. Use a single Literal, e.g. "Literal[1, 2]".
 mixed_subscript_union: Union[bytes, Literal['foo'], typing_extensions.Literal['bar']]  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal['foo', 'bar']".
@@ -36,6 +40,8 @@ c: Union[builtins.complex, memoryview, slice, int]  # No error here, Y041 only a
 
 # Don't error with Y041 here, the two error messages combined are quite confusing
 def foo(d: int | int | float) -> None: ...  # Y016 Duplicate union member "int"
+# Don't error with Y055 here either
+def baz(d: type[int] | type[int]) -> None: ...  # Y016 Duplicate union member "type[int]"
 
 def bar(f: Literal["foo"] | Literal["bar"] | int | float | builtins.bool) -> None: ...  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal['foo', 'bar']".  # Y041 Use "float" instead of "int | float" (see "The numeric tower" in PEP 484)
 
@@ -54,3 +60,4 @@ class Four:
 DupesHereSoNoY051: TypeAlias = int | int | Literal[42]  # Y016 Duplicate union member "int"
 NightmareAlias1 = int | float | Literal[4, b"bar"] | Literal["foo"]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "NightmareAlias1: TypeAlias = int | float | Literal[4, b'bar'] | Literal['foo']"  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal[4, b'bar', 'foo']".  # Y051 "Literal[4]" is redundant in a union with "int"
 nightmare_alias2: TypeAlias = int | float | Literal[True, 4] | Literal["foo"]  # Y042 Type aliases should use the CamelCase naming convention  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal[True, 4, 'foo']".  # Y051 "Literal[4]" is redundant in a union with "int"
+DoublyNestedAlias: TypeAlias = Union[type[str], type[float] | type[bytes]]  # Y055 Multiple type builtins in a union. Use a single type expression, e.g. "type[float | bytes]".

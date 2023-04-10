@@ -2,6 +2,11 @@
 
 ## 23.4.0
 
+New error codes:
+* Y055: Unions of the form `type[X] | type[Y]` can be simplified to `type[X | Y]`.
+  Similarly, `Union[type[X], type[Y]]` can be simplified to `type[Union[X, Y]]`.
+
+Other changes:
 * Update error messages for Y019 and Y034 to recommend using
   `typing_extensions.Self` rather than `_typeshed.Self`.
 

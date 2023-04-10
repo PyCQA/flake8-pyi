@@ -87,6 +87,7 @@ currently emitted:
 | Y052 | Y052 disallows assignments to constant values where the assignment does not have a type annotation. For example, `x = 0` in the global namespace is ambiguous in a stub, as there are four different types that could be inferred for the variable `x`: `int`, `Final[int]`, `Literal[0]`, or `Final[Literal[0]]`. Enum members are excluded from this check, as are various special assignments such as `__all__` and `__match_args__`.
 | Y053 | Only string and bytes literals <=50 characters long are permitted.
 | Y054 | Only numeric literals with a string representation <=10 characters long are permitted.
+| Y055 | Unions of the form `type[X] | type[Y]` can be simplified to `type[X | Y]`. Similarly, `Union[type[X], type[Y]]` can be simplified to `type[Union[X, Y]]`.
 
 Note that several error codes recommend using types from `typing_extensions` or
 `_typeshed`. Strictly speaking, these packages are not part of the standard
