@@ -2136,4 +2136,4 @@ Y054 = (
     "Y054 Numeric literals with a string representation "
     ">10 characters long are not permitted"
 )
-Y055 = "Y055 Multiple type builtins in a union. {suggestion}"
+Y055 = 'Y055 Multiple "type[C]" members in a union. {suggestion}'
