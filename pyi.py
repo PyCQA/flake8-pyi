@@ -46,8 +46,10 @@ FLAKE8_MAJOR_VERSION = flake8.__version_info__[0]
 
 if sys.version_info >= (3, 9):
     _LiteralMember: TypeAlias = ast.expr
+    _BuiltinsTypeMember: TypeAlias = ast.expr
 else:
     _LiteralMember: TypeAlias = Union[ast.expr, ast.slice]
+    _BuiltinsTypeMember: TypeAlias = Union[ast.expr, ast.slice]
 
 
 class Error(NamedTuple):
@@ -640,7 +642,7 @@ class UnionAnalysis(NamedTuple):
     combined_literal_members: list[_LiteralMember]
     multiple_builtins_types_in_union: bool
     non_builtins_types_in_union: bool
-    combined_builtins_types: list[ast.expr]
+    combined_builtins_types: list[_BuiltinsTypeMember]
 
 
 def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
@@ -677,7 +679,7 @@ def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
     literals_in_union = []
     combined_literal_members: list[_LiteralMember] = []
     non_builtins_types_in_union = False
-    builtins_types_in_union = []
+    builtins_types_in_union: list[_BuiltinsTypeMember] = []
 
     for member in members:
         members_by_dump[ast.dump(member)].append(member)
