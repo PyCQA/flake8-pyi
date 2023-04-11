@@ -638,9 +638,10 @@ class UnionAnalysis(NamedTuple):
     multiple_literals_in_union: bool
     non_literals_in_union: bool
     combined_literal_members: list[_SliceContents]
-    multiple_builtins_types_in_union: bool
-    non_builtins_types_in_union: bool
-    combined_builtins_types: list[_SliceContents]
+    # type subscript == type[Foo]
+    multiple_type_subscripts_in_union: bool
+    non_type_subscripts_in_union: bool
+    combined_type_subscripts: list[_SliceContents]
 
 
 def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
@@ -665,11 +666,11 @@ def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
     True
     >>> unparse(ast.Tuple(analysis.combined_literal_members))
     "('foo', 1)"
-    >>> analysis.multiple_builtins_types_in_union
+    >>> analysis.multiple_type_subscripts_in_union
     True
-    >>> analysis.non_builtins_types_in_union
+    >>> analysis.non_type_subscripts_in_union
     True
-    >>> unparse(ast.Tuple(analysis.combined_builtins_types))
+    >>> unparse(ast.Tuple(analysis.combined_type_subscripts))
     '(float, str)'
     """
 
@@ -678,8 +679,8 @@ def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
     builtins_classes_in_union: set[str] = set()
     literals_in_union = []
     combined_literal_members: list[_SliceContents] = []
-    non_builtins_types_in_union = False
-    builtins_types_in_union: list[_SliceContents] = []
+    non_type_subscripts_in_union = False
+    type_subscripts_in_union: list[_SliceContents] = []
 
     for member in members:
         members_by_dump[ast.dump(member)].append(member)
@@ -693,9 +694,9 @@ def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
         else:
             non_literals_in_union = True
         if isinstance(member, ast.Subscript) and _is_builtins_type(member.value):
-            builtins_types_in_union.append(member.slice)
+            type_subscripts_in_union.append(member.slice)
         else:
-            non_builtins_types_in_union = True
+            non_type_subscripts_in_union = True
 
     for literal in literals_in_union:
         if isinstance(literal, ast.Tuple):
@@ -710,9 +711,9 @@ def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
         multiple_literals_in_union=len(literals_in_union) >= 2,
         non_literals_in_union=non_literals_in_union,
         combined_literal_members=combined_literal_members,
-        multiple_builtins_types_in_union=len(builtins_types_in_union) >= 2,
-        non_builtins_types_in_union=non_builtins_types_in_union,
-        combined_builtins_types=builtins_types_in_union,
+        multiple_type_subscripts_in_union=len(type_subscripts_in_union) >= 2,
+        non_type_subscripts_in_union=non_type_subscripts_in_union,
+        combined_type_subscripts=type_subscripts_in_union,
     )
 
 
@@ -1281,8 +1282,8 @@ class PyiVisitor(ast.NodeVisitor):
             self._check_for_Y051_violations(analysis)
             if analysis.multiple_literals_in_union:
                 self._error_for_multiple_literals_in_union(first_union_member, analysis)
-            elif analysis.multiple_builtins_types_in_union:
-                self._error_for_multiple_type_builtins_in_union(
+            elif analysis.multiple_type_subscripts_in_union:
+                self._error_for_multiple_type_subscripts_in_union(
                     first_union_member, analysis, is_pep_604_union
                 )
             if self.visiting_arg.active:
@@ -1346,7 +1347,7 @@ class PyiVisitor(ast.NodeVisitor):
 
         self.error(first_union_member, Y030.format(suggestion=suggestion))
 
-    def _error_for_multiple_type_builtins_in_union(
+    def _error_for_multiple_type_subscripts_in_union(
         self,
         first_union_member: ast.expr,
         analysis: UnionAnalysis,
@@ -1355,16 +1356,16 @@ class PyiVisitor(ast.NodeVisitor):
         # Union using bit or, e.g. type[str] | type[int]
         if is_pep_604_union:
             new_union = " | ".join(
-                unparse(expr) for expr in analysis.combined_builtins_types
+                unparse(expr) for expr in analysis.combined_type_subscripts
             )
         # Union is the explicit Union type, e.g. Union[type[str], type[int]]
         else:
-            type_slice = unparse(ast.Tuple(analysis.combined_builtins_types)).strip(
+            type_slice = unparse(ast.Tuple(analysis.combined_type_subscripts)).strip(
                 "()"
             )
             new_union = f"Union[{type_slice}]"
 
-        if analysis.non_builtins_types_in_union:
+        if analysis.non_type_subscripts_in_union:
             suggestion = f'Combine them into one, e.g. "type[{new_union}]".'
         else:
             suggestion = f'Use a single type expression, e.g. "type[{new_union}]".'
@@ -2136,4 +2137,4 @@ Y054 = (
     "Y054 Numeric literals with a string representation "
     ">10 characters long are not permitted"
 )
-Y055 = 'Y055 Multiple "type[C]" members in a union. {suggestion}'
+Y055 = 'Y055 Multiple "type[Foo]" members in a union. {suggestion}'
