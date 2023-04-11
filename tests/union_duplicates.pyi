@@ -19,11 +19,11 @@ def f2_pipe(x: int | int) -> None: ...  # Y016 Duplicate union member "int"
 def f3_pipe(x: None | int | int) -> None: ...  # Y016 Duplicate union member "int"
 def f4_pipe(x: int | None | int) -> None: ...  # Y016 Duplicate union member "int"
 def f5_pipe(x: int | int | None) -> None: ...  # Y016 Duplicate union member "int"
-def f6_pipe(x: type[int] | type[str] | type[float]) -> None: ...  # Y055 Multiple "type[Foo]" members in a union. Use a single type expression, e.g. "type[int | str | float]".
+def f6_pipe(x: type[int] | type[str] | type[float]) -> None: ...  # Y055 Multiple "type[Foo]" members in a union. Combine them into one, e.g. "type[int | str | float]".
 def f7_pipe(x: type[int] | str | type[float]) -> None: ...  # Y055 Multiple "type[Foo]" members in a union. Combine them into one, e.g. "type[int | float]".
-def f8_pipe(x: builtins.type[int] | builtins.type[str] | builtins.type[float]) -> None: ...  # Y055 Multiple "type[Foo]" members in a union. Use a single type expression, e.g. "type[int | str | float]".
+def f8_pipe(x: builtins.type[int] | builtins.type[str] | builtins.type[float]) -> None: ...  # Y055 Multiple "type[Foo]" members in a union. Combine them into one, e.g. "type[int | str | float]".
 def f9_pipe(x: builtins.type[int] | str | builtins.type[float]) -> None: ...  # Y055 Multiple "type[Foo]" members in a union. Combine them into one, e.g. "type[int | float]".
-def f10_pipe(x: type[int] | builtins.type[float]) -> None: ...  # Y055 Multiple "type[Foo]" members in a union. Use a single type expression, e.g. "type[int | float]".
+def f10_pipe(x: type[int] | builtins.type[float]) -> None: ...  # Y055 Multiple "type[Foo]" members in a union. Combine them into one, e.g. "type[int | float]".
 # typing.Type and typing_extensions.Type are intentionally excluded from Y055
 # The following type annotations should not generate any Y055 errors
 def f11_pipe(x: Type[int] | Type[str]) -> None: ...
@@ -36,11 +36,11 @@ def f2_union(x: Union[int, int]) -> None: ...  # Y016 Duplicate union member "in
 def f3_union(x: Union[None, int, int]) -> None: ...  # Y016 Duplicate union member "int"
 def f4_union(x: typing.Union[int, None, int]) -> None: ...  # Y016 Duplicate union member "int"
 def f5_union(x: typing.Union[int, int, None]) -> None: ...  # Y016 Duplicate union member "int"
-def f6_union(x: Union[type[int], type[str], type[float]]) -> None: ...  # Y055 Multiple "type[Foo]" members in a union. Use a single type expression, e.g. "type[Union[int, str, float]]".
+def f6_union(x: Union[type[int], type[str], type[float]]) -> None: ...  # Y055 Multiple "type[Foo]" members in a union. Combine them into one, e.g. "type[Union[int, str, float]]".
 def f7_union(x: Union[type[int], str, type[float]]) -> None: ...  # Y055 Multiple "type[Foo]" members in a union. Combine them into one, e.g. "type[Union[int, float]]".
-def f8_union(x: Union[builtins.type[int], builtins.type[str], builtins.type[float]]) -> None: ...  # Y055 Multiple "type[Foo]" members in a union. Use a single type expression, e.g. "type[Union[int, str, float]]".
+def f8_union(x: Union[builtins.type[int], builtins.type[str], builtins.type[float]]) -> None: ...  # Y055 Multiple "type[Foo]" members in a union. Combine them into one, e.g. "type[Union[int, str, float]]".
 def f9_union(x: Union[builtins.type[int], str, builtins.type[float]]) -> None: ...  # Y055 Multiple "type[Foo]" members in a union. Combine them into one, e.g. "type[Union[int, float]]".
-def f10_union(x: Union[type[int], builtins.type[float]]) -> None: ...  # Y055 Multiple "type[Foo]" members in a union. Use a single type expression, e.g. "type[Union[int, float]]".
+def f10_union(x: Union[type[int], builtins.type[float]]) -> None: ...  # Y055 Multiple "type[Foo]" members in a union. Combine them into one, e.g. "type[Union[int, float]]".
 # typing.Type and typing_extensions.Type are intentionally excluded from Y055
 # The following type annotations should not generate any Y055 errors
 def f11_union(x: Union[Type[int], Type[str]]) -> None: ...
@@ -85,6 +85,6 @@ class Four:
 DupesHereSoNoY051: TypeAlias = int | int | Literal[42]  # Y016 Duplicate union member "int"
 NightmareAlias1 = int | float | Literal[4, b"bar"] | Literal["foo"]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "NightmareAlias1: TypeAlias = int | float | Literal[4, b'bar'] | Literal['foo']"  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal[4, b'bar', 'foo']".  # Y051 "Literal[4]" is redundant in a union with "int"
 nightmare_alias2: TypeAlias = int | float | Literal[True, 4] | Literal["foo"]  # Y042 Type aliases should use the CamelCase naming convention  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal[True, 4, 'foo']".  # Y051 "Literal[4]" is redundant in a union with "int"
-DoublyNestedAlias: TypeAlias = Union[type[str], type[float] | type[bytes]]  # Y055 Multiple "type[Foo]" members in a union. Use a single type expression, e.g. "type[float | bytes]".
+DoublyNestedAlias: TypeAlias = Union[type[str], type[float] | type[bytes]]  # Y055 Multiple "type[Foo]" members in a union. Combine them into one, e.g. "type[float | bytes]".
 # typing.Type and typing_extensions.Type are intentionally excluded from Y055
 DoublyNestedAlias2: TypeAlias = Union[Type[str], typing.Type[float], Type_[bytes], typing_extensions.Type[complex]]  # Y022 Use "type[MyClass]" instead of "typing.Type[MyClass]" (PEP 585 syntax) # Y022 Use "type[MyClass]" instead of "typing_extensions.Type[MyClass]" (PEP 585 syntax)

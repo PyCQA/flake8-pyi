@@ -640,7 +640,6 @@ class UnionAnalysis(NamedTuple):
     combined_literal_members: list[_SliceContents]
     # type subscript == type[Foo]
     multiple_type_subscripts_in_union: bool
-    non_type_subscripts_in_union: bool
     combined_type_subscripts: list[_SliceContents]
 
 
@@ -668,8 +667,6 @@ def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
     "('foo', 1)"
     >>> analysis.multiple_type_subscripts_in_union
     True
-    >>> analysis.non_type_subscripts_in_union
-    True
     >>> unparse(ast.Tuple(analysis.combined_type_subscripts))
     '(float, str)'
     """
@@ -679,7 +676,6 @@ def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
     builtins_classes_in_union: set[str] = set()
     literals_in_union = []
     combined_literal_members: list[_SliceContents] = []
-    non_type_subscripts_in_union = False
     type_subscripts_in_union: list[_SliceContents] = []
 
     for member in members:
@@ -695,8 +691,6 @@ def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
             non_literals_in_union = True
         if isinstance(member, ast.Subscript) and _is_builtins_type(member.value):
             type_subscripts_in_union.append(member.slice)
-        else:
-            non_type_subscripts_in_union = True
 
     for literal in literals_in_union:
         if isinstance(literal, ast.Tuple):
@@ -712,7 +706,6 @@ def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
         non_literals_in_union=non_literals_in_union,
         combined_literal_members=combined_literal_members,
         multiple_type_subscripts_in_union=len(type_subscripts_in_union) >= 2,
-        non_type_subscripts_in_union=non_type_subscripts_in_union,
         combined_type_subscripts=type_subscripts_in_union,
     )
 
@@ -1365,11 +1358,7 @@ class PyiVisitor(ast.NodeVisitor):
             )
             new_union = f"Union[{type_slice}]"
 
-        if analysis.non_type_subscripts_in_union:
-            suggestion = f'Combine them into one, e.g. "type[{new_union}]".'
-        else:
-            suggestion = f'Use a single type expression, e.g. "type[{new_union}]".'
-
+        suggestion = f'Combine them into one, e.g. "type[{new_union}]".'
         self.error(first_union_member, Y055.format(suggestion=suggestion))
 
     def visit_BinOp(self, node: ast.BinOp) -> None:
