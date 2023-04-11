@@ -45,9 +45,9 @@ LOG = logging.getLogger("flake8.pyi")
 FLAKE8_MAJOR_VERSION = flake8.__version_info__[0]
 
 if sys.version_info >= (3, 9):
-    _LiteralMember: TypeAlias = ast.expr
+    _SliceContents: TypeAlias = ast.expr
 else:
-    _LiteralMember: TypeAlias = Union[ast.expr, ast.slice]
+    _SliceContents: TypeAlias = Union[ast.expr, ast.slice]
 
 
 class Error(NamedTuple):
@@ -364,6 +364,7 @@ _is_final = partial(_is_object, name="final", from_=_TYPING_MODULES)
 _is_Self = partial(_is_object, name="Self", from_=({"_typeshed"} | _TYPING_MODULES))
 _is_TracebackType = partial(_is_object, name="TracebackType", from_={"types"})
 _is_builtins_object = partial(_is_object, name="object", from_={"builtins"})
+_is_builtins_type = partial(_is_object, name="type", from_={"builtins"})
 _is_Unused = partial(_is_object, name="Unused", from_={"_typeshed"})
 _is_Iterable = partial(_is_object, name="Iterable", from_={"typing", "collections.abc"})
 _is_AsyncIterable = partial(
@@ -636,13 +637,18 @@ class UnionAnalysis(NamedTuple):
     builtins_classes_in_union: set[str]
     multiple_literals_in_union: bool
     non_literals_in_union: bool
-    combined_literal_members: list[_LiteralMember]
+    combined_literal_members: list[_SliceContents]
+    # type subscript == type[Foo]
+    multiple_type_subscripts_in_union: bool
+    combined_type_subscripts: list[_SliceContents]
 
 
 def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
     """Return a tuple providing analysis of a given sequence of union members.
 
-    >>> union = _ast_node_for('Union[int, memoryview, memoryview, Literal["foo"], Literal[1]]')
+    >>> union = _ast_node_for(
+    ...     'Union[int, memoryview, memoryview, Literal["foo"], Literal[1], type[float], type[str]]'
+    ... )
     >>> members = union.slice.elts if sys.version_info >= (3, 9) else union.slice.value.elts
     >>> analysis = _analyse_union(members)
     >>> len(analysis.members_by_dump["Name(id='memoryview', ctx=Load())"])
@@ -659,13 +665,18 @@ def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
     True
     >>> unparse(ast.Tuple(analysis.combined_literal_members))
     "('foo', 1)"
+    >>> analysis.multiple_type_subscripts_in_union
+    True
+    >>> unparse(ast.Tuple(analysis.combined_type_subscripts))
+    '(float, str)'
     """
 
     non_literals_in_union = False
     members_by_dump: defaultdict[str, list[ast.expr]] = defaultdict(list)
     builtins_classes_in_union: set[str] = set()
     literals_in_union = []
-    combined_literal_members: list[_LiteralMember] = []
+    combined_literal_members: list[_SliceContents] = []
+    type_subscripts_in_union: list[_SliceContents] = []
 
     for member in members:
         members_by_dump[ast.dump(member)].append(member)
@@ -678,6 +689,8 @@ def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
             literals_in_union.append(member.slice)
         else:
             non_literals_in_union = True
+        if isinstance(member, ast.Subscript) and _is_builtins_type(member.value):
+            type_subscripts_in_union.append(member.slice)
 
     for literal in literals_in_union:
         if isinstance(literal, ast.Tuple):
@@ -692,6 +705,8 @@ def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
         multiple_literals_in_union=len(literals_in_union) >= 2,
         non_literals_in_union=non_literals_in_union,
         combined_literal_members=combined_literal_members,
+        multiple_type_subscripts_in_union=len(type_subscripts_in_union) >= 2,
+        combined_type_subscripts=type_subscripts_in_union,
     )
 
 
@@ -1246,7 +1261,9 @@ class PyiVisitor(ast.NodeVisitor):
         if node_value and not _is_valid_default_value_with_annotation(node_value):
             self.error(node, Y015)
 
-    def _check_union_members(self, members: Sequence[ast.expr]) -> None:
+    def _check_union_members(
+        self, members: Sequence[ast.expr], is_pep_604_union: bool
+    ) -> None:
         first_union_member = members[0]
         analysis = _analyse_union(members)
 
@@ -1258,12 +1275,16 @@ class PyiVisitor(ast.NodeVisitor):
             self._check_for_Y051_violations(analysis)
             if analysis.multiple_literals_in_union:
                 self._error_for_multiple_literals_in_union(first_union_member, analysis)
+            elif analysis.multiple_type_subscripts_in_union:
+                self._error_for_multiple_type_subscripts_in_union(
+                    first_union_member, analysis, is_pep_604_union
+                )
             if self.visiting_arg.active:
                 self._check_for_redundant_numeric_unions(first_union_member, analysis)
 
     def _check_for_Y051_violations(self, analysis: UnionAnalysis) -> None:
         """Search for redundant unions fitting the pattern `str | Literal["foo"]`, etc."""
-        literal_classes_present: defaultdict[str, list[_LiteralMember]]
+        literal_classes_present: defaultdict[str, list[_SliceContents]]
         literal_classes_present = defaultdict(list)
         for literal in analysis.combined_literal_members:
             if isinstance(literal, ast.Str):
@@ -1319,6 +1340,27 @@ class PyiVisitor(ast.NodeVisitor):
 
         self.error(first_union_member, Y030.format(suggestion=suggestion))
 
+    def _error_for_multiple_type_subscripts_in_union(
+        self,
+        first_union_member: ast.expr,
+        analysis: UnionAnalysis,
+        is_pep_604_union: bool,
+    ) -> None:
+        # Union using bit or, e.g. type[str] | type[int]
+        if is_pep_604_union:
+            new_union = " | ".join(
+                unparse(expr) for expr in analysis.combined_type_subscripts
+            )
+        # Union is the explicit Union type, e.g. Union[type[str], type[int]]
+        else:
+            type_slice = unparse(ast.Tuple(analysis.combined_type_subscripts)).strip(
+                "()"
+            )
+            new_union = f"Union[{type_slice}]"
+
+        suggestion = f'Combine them into one, e.g. "type[{new_union}]".'
+        self.error(first_union_member, Y055.format(suggestion=suggestion))
+
     def visit_BinOp(self, node: ast.BinOp) -> None:
         if not isinstance(node.op, ast.BitOr):
             self.generic_visit(node)
@@ -1339,7 +1381,7 @@ class PyiVisitor(ast.NodeVisitor):
         for member in members:
             self.visit(member)
 
-        self._check_union_members(members)
+        self._check_union_members(members, is_pep_604_union=True)
 
     def visit_Subscript(self, node: ast.Subscript) -> None:
         subscripted_object = node.value
@@ -1359,7 +1401,7 @@ class PyiVisitor(ast.NodeVisitor):
 
     def _visit_slice_tuple(self, node: ast.Tuple, parent: str | None) -> None:
         if parent == "Union":
-            self._check_union_members(node.elts)
+            self._check_union_members(node.elts, is_pep_604_union=False)
             self.visit(node)
         elif parent == "Annotated":
             # Allow literals, except in the first argument
@@ -2084,3 +2126,4 @@ Y054 = (
     "Y054 Numeric literals with a string representation "
     ">10 characters long are not permitted"
 )
+Y055 = 'Y055 Multiple "type[Foo]" members in a union. {suggestion}'

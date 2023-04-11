@@ -1,5 +1,11 @@
 # Change Log
 
+## Unreleased
+
+New error codes:
+* Y055: Unions of the form `type[X] | type[Y]` can be simplified to `type[X | Y]`.
+  Similarly, `Union[type[X], type[Y]]` can be simplified to `type[Union[X, Y]]`.
+
 ## 23.4.0
 
 * Update error messages for Y019 and Y034 to recommend using
