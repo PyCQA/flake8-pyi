@@ -2,10 +2,17 @@
 import builtins
 import typing
 from collections.abc import Mapping
-from typing import Type, Union  # Y022 Use "type[MyClass]" instead of "typing.Type[MyClass]" (PEP 585 syntax)
+from typing import (  # Y022 Use "type[MyClass]" instead of "typing.Type[MyClass]" (PEP 585 syntax)
+    Type,
+    Union,
+)
 
 import typing_extensions
-from typing_extensions import Literal, Type as Type_, TypeAlias  # Y022 Use "type[MyClass]" instead of "typing_extensions.Type[MyClass]" (PEP 585 syntax)
+from typing_extensions import (  # Y022 Use "type[MyClass]" instead of "typing_extensions.Type[MyClass]" (PEP 585 syntax)
+    Literal,
+    Type as Type_,
+    TypeAlias,
+)
 
 def f1_pipe(x: int | str) -> None: ...
 def f2_pipe(x: int | int) -> None: ...  # Y016 Duplicate union member "int"
