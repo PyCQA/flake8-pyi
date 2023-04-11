@@ -2,10 +2,10 @@
 import builtins
 import typing
 from collections.abc import Mapping
-from typing import Type, Union
+from typing import Type, Union  # Y022 Use "type[MyClass]" instead of "typing.Type[MyClass]" (PEP 585 syntax)
 
 import typing_extensions
-from typing_extensions import Literal, Type as Type_, TypeAlias
+from typing_extensions import Literal, Type as Type_, TypeAlias  # Y022 Use "type[MyClass]" instead of "typing_extensions.Type[MyClass]" (PEP 585 syntax)
 
 def f1_pipe(x: int | str) -> None: ...
 def f2_pipe(x: int | int) -> None: ...  # Y016 Duplicate union member "int"
@@ -20,9 +20,9 @@ def f10_pipe(x: type[int] | builtins.type[float]) -> None: ...  # Y055 Multiple 
 # typing.Type and typing_extensions.Type are intentionally excluded from Y055
 # The following type annotations should not generate any Y055 errors
 def f11_pipe(x: Type[int] | Type[str]) -> None: ...
-def f12_pipe(x: typing.Type[int] | typing.Type[str]) -> None: ...
+def f12_pipe(x: typing.Type[int] | typing.Type[str]) -> None: ...  # Y022 Use "type[MyClass]" instead of "typing.Type[MyClass]" (PEP 585 syntax)  # Y022 Use "type[MyClass]" instead of "typing.Type[MyClass]" (PEP 585 syntax)
 def f13_pipe(x: Type_[int] | Type_[str]) -> None: ...
-def f14_pipe(x: typing_extensions.Type[int] | typing_extensions.Type[str]) -> None: ...
+def f14_pipe(x: typing_extensions.Type[int] | typing_extensions.Type[str]) -> None: ...  # Y022 Use "type[MyClass]" instead of "typing_extensions.Type[MyClass]" (PEP 585 syntax)  # Y022 Use "type[MyClass]" instead of "typing_extensions.Type[MyClass]" (PEP 585 syntax)
 
 def f1_union(x: Union[int, str]) -> None: ...
 def f2_union(x: Union[int, int]) -> None: ...  # Y016 Duplicate union member "int"
@@ -37,9 +37,9 @@ def f10_union(x: Union[type[int], builtins.type[float]]) -> None: ...  # Y055 Mu
 # typing.Type and typing_extensions.Type are intentionally excluded from Y055
 # The following type annotations should not generate any Y055 errors
 def f11_union(x: Union[Type[int], Type[str]]) -> None: ...
-def f12_union(x: Union[typing.Type[int], typing.Type[str]]) -> None: ...
+def f12_union(x: Union[typing.Type[int], typing.Type[str]]) -> None: ...  # Y022 Use "type[MyClass]" instead of "typing.Type[MyClass]" (PEP 585 syntax) # Y022 Use "type[MyClass]" instead of "typing.Type[MyClass]" (PEP 585 syntax)
 def f13_union(x: Union[Type_[int], Type_[str]]) -> None: ...
-def f14_union(x: Union[typing_extensions.Type[int], typing_extensions.Type[str]]) -> None: ...
+def f14_union(x: Union[typing_extensions.Type[int], typing_extensions.Type[str]]) -> None: ...  # Y022 Use "type[MyClass]" instead of "typing_extensions.Type[MyClass]" (PEP 585 syntax) # Y022 Use "type[MyClass]" instead of "typing_extensions.Type[MyClass]" (PEP 585 syntax)
 
 just_literals_subscript_union: Union[Literal[1], typing.Literal[2]]  # Y030 Multiple Literal members in a union. Use a single Literal, e.g. "Literal[1, 2]".
 mixed_subscript_union: Union[bytes, Literal['foo'], typing_extensions.Literal['bar']]  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal['foo', 'bar']".
@@ -80,4 +80,4 @@ NightmareAlias1 = int | float | Literal[4, b"bar"] | Literal["foo"]  # Y026 Use 
 nightmare_alias2: TypeAlias = int | float | Literal[True, 4] | Literal["foo"]  # Y042 Type aliases should use the CamelCase naming convention  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal[True, 4, 'foo']".  # Y051 "Literal[4]" is redundant in a union with "int"
 DoublyNestedAlias: TypeAlias = Union[type[str], type[float] | type[bytes]]  # Y055 Multiple "type[Foo]" members in a union. Use a single type expression, e.g. "type[float | bytes]".
 # typing.Type and typing_extensions.Type are intentionally excluded from Y055
-DoublyNestedAlias2: TypeAlias = Union[Type[str], typing.Type[float], Type_[bytes], typing_extensions.Type[complex]]
+DoublyNestedAlias2: TypeAlias = Union[Type[str], typing.Type[float], Type_[bytes], typing_extensions.Type[complex]]  # Y022 Use "type[MyClass]" instead of "typing.Type[MyClass]" (PEP 585 syntax) # Y022 Use "type[MyClass]" instead of "typing_extensions.Type[MyClass]" (PEP 585 syntax)
