@@ -8,7 +8,8 @@ __author__: str = ...
 
 def make_default_c() -> C: ...
 
-class D(C):
+# Disallow forward refs for base classes
+class D(C):  # F821 undefined name 'C'
     parent: C
     def __init__(self) -> None: ...
 

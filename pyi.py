@@ -22,7 +22,7 @@ import flake8  # type: ignore[import]
 from flake8 import checker
 from flake8.options.manager import OptionManager  # type: ignore[import]
 from flake8.plugins.pyflakes import FlakesChecker  # type: ignore[import]
-from pyflakes.checker import ClassDefinition, ClassScope, FunctionScope, ModuleScope
+from pyflakes.checker import FunctionScope, ModuleScope
 
 if sys.version_info >= (3, 9):
     from ast import unparse
@@ -217,35 +217,6 @@ class PyiAwareFlakesChecker(FlakesChecker):
         self.handleNode, self.deferHandleNode = self.deferHandleNode, self.handleNode  # type: ignore[method-assign]
         super().LAMBDA(node)
         self.handleNode, self.deferHandleNode = self.deferHandleNode, self.handleNode  # type: ignore[method-assign]
-
-    def CLASSDEF(self, node: ast.ClassDef) -> None:
-        if not isinstance(self.scope, ModuleScope):
-            # This shouldn't be necessary because .pyi files don't nest
-            # scopes much, but better safe than sorry.
-            super().CLASSDEF(node)
-            return
-
-        # What follows is copied from pyflakes 1.3.0. The only changes are the
-        # deferHandleNode calls.
-        for decorator in node.decorator_list:
-            self.handleNode(decorator, node)
-        for baseNode in node.bases:
-            self.deferHandleNode(baseNode, node)
-        for keywordNode in node.keywords:
-            self.deferHandleNode(keywordNode, node)
-        self.pushScope(ClassScope)
-        # doctest does not process doctest within a doctest
-        # classes within classes are processed.
-        if (
-            self.withDoctest
-            and not self._in_doctest()
-            and not isinstance(self.scope, FunctionScope)
-        ):
-            self.deferFunction(lambda: self.handleDoctests(node))
-        for stmt in node.body:
-            self.handleNode(stmt, node)
-        self.popScope()
-        self.addBinding(node, ClassDefinition(node.name, node))
 
     def handleNodeDelete(self, node: ast.AST) -> None:
         """Null implementation.
