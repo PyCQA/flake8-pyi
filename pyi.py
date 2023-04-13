@@ -22,7 +22,7 @@ import flake8  # type: ignore[import]
 from flake8 import checker
 from flake8.options.manager import OptionManager  # type: ignore[import]
 from flake8.plugins.pyflakes import FlakesChecker  # type: ignore[import]
-from pyflakes.checker import FunctionScope, ModuleScope
+from pyflakes.checker import ModuleScope
 
 if sys.version_info >= (3, 9):
     from ast import unparse
@@ -162,6 +162,20 @@ _BAD_TYPINGEXTENSIONS_Y023_IMPORTS = frozenset(
 
 
 class PyiAwareFlakesChecker(FlakesChecker):
+    @property
+    def annotationsFutureEnabled(self):
+        """pyflakes can already handle forward refs for annotations, but only via
+        `from __future__ import annotations`.
+
+        We don't want to bother including this in every file, so we just set this to `True`.
+        """
+        return True
+
+    @annotationsFutureEnabled.setter
+    def annotationsFutureEnabled(self, value: bool):
+        """noop, we never want change the value to anything but `True` anyway."""
+        pass
+
     def deferHandleNode(self, node: ast.AST | None, parent) -> None:
         self.deferFunction(lambda: self.handleNode(node, parent))
 
@@ -183,29 +197,6 @@ class PyiAwareFlakesChecker(FlakesChecker):
             self.handleNode(target, tree)
 
         self.deferHandleNode(tree.value, tree)
-
-    def ANNASSIGN(self, node: ast.AnnAssign) -> None:
-        """
-        Annotated assignments don't have annotations evaluated on function
-        scope, hence the custom implementation. Compared to the pyflakes
-        version, we defer evaluation of the annotations (and values on
-        module level).
-        """
-        if node.value:
-            # Only bind the *target* if the assignment has value.
-            # Otherwise it's not really ast.Store and shouldn't silence
-            # UndefinedLocal warnings.
-            self.handleNode(node.target, node)
-        if not isinstance(self.scope, FunctionScope):
-            self.deferHandleNode(node.annotation, node)
-        if node.value:
-            # If the assignment has value, handle the *value*...
-            if isinstance(self.scope, ModuleScope):
-                # ...later (if module scope).
-                self.deferHandleNode(node.value, node)
-            else:
-                # ...now.
-                self.handleNode(node.value, node)
 
     def LAMBDA(self, node: ast.Lambda) -> None:
         """This is likely very brittle, currently works for pyflakes 1.3.0.
