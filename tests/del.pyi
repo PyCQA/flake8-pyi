@@ -1,4 +1,4 @@
-# flags: --ignore=Y037
+# flags: --extend-ignore=Y037
 from typing import TypeAlias, Union
 
 ManyStr: TypeAlias = list[EitherStr]
