@@ -1,5 +1,9 @@
 # Change Log
 
+## Unreleased
+
+* flake8-pyi no longer supports being run with flake8 <5.0.0.
+
 ## 23.4.1
 
 New error codes:

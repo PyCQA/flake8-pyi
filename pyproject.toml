@@ -47,7 +47,7 @@ classifiers = [
     "Topic :: Software Development :: Quality Assurance",
 ]
 dependencies = [
-    "flake8 >= 3.2.1, < 7.0.0",
+    "flake8 >= 5.0.4, < 7.0.0",
     "pyflakes >= 2.1.1",
     "ast-decompiler >= 0.7.0, < 1.0; python_version < '3.9'",
 ]
