@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-* flake8-pyi no longer supports being run with flake8 <5.0.0.
+* flake8-pyi no longer supports being run with flake8 <5.0.4.
 
 ## 23.4.1
 
