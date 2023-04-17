@@ -35,6 +35,14 @@ def test_pyi_file(path: str) -> None:
             message = line[match.end() : end_pos].strip()
             expected_output += f"{path}:{lineno}: {match.group(1)}{message}\n"
 
+    bad_flag_msg = (
+        "--ignore flags in test files override the .flake8 config file. "
+        "Use --extend-ignore instead."
+    )
+    for flag in flags:
+        option = flag.split("=")[0]
+        assert option != "--ignore", bad_flag_msg
+
     run_results = [
         # Passing a file on command line
         subprocess.run(
