@@ -18,8 +18,7 @@ from keyword import iskeyword
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple, Union
 
-import flake8  # type: ignore[import]
-from flake8 import checker
+from flake8 import checker  # type: ignore[import]
 from flake8.options.manager import OptionManager  # type: ignore[import]
 from flake8.plugins.pyflakes import FlakesChecker  # type: ignore[import]
 from pyflakes.checker import ClassDefinition, ClassScope, FunctionScope, ModuleScope
@@ -42,7 +41,6 @@ if TYPE_CHECKING:
 __version__ = "23.4.1"
 
 LOG = logging.getLogger("flake8.pyi")
-FLAKE8_MAJOR_VERSION = flake8.__version_info__[0]
 
 if sys.version_info >= (3, 9):
     _SliceContents: TypeAlias = ast.expr
@@ -257,25 +255,18 @@ class PyiAwareFlakesChecker(FlakesChecker):
 
 class PyiAwareFileChecker(checker.FileChecker):
     def run_check(self, plugin, **kwargs: Any) -> Any:
-        if self.filename == "-":
-            filename = self.options.stdin_display_name
-        else:
-            filename = self.filename
-
-        if filename.endswith(".pyi"):
-            log_msg = (
-                f"Replacing FlakesChecker with PyiAwareFlakesChecker while "
-                f"checking {filename!r}"
-            )
-            if FLAKE8_MAJOR_VERSION < 5:
-                if plugin["plugin"] is FlakesChecker:
-                    LOG.info(log_msg)
-                    plugin = dict(plugin)
-                    plugin["plugin"] = PyiAwareFlakesChecker
+        if plugin.obj is FlakesChecker:
+            if self.filename == "-":
+                filename = self.options.stdin_display_name
             else:
-                if plugin.obj is FlakesChecker:
-                    LOG.info(log_msg)
-                    plugin = plugin._replace(obj=PyiAwareFlakesChecker)
+                filename = self.filename
+
+            if filename.endswith(".pyi"):
+                LOG.info(
+                    f"Replacing FlakesChecker with PyiAwareFlakesChecker while "
+                    f"checking {filename!r}"
+                )
+                plugin = plugin._replace(obj=PyiAwareFlakesChecker)
         return super().run_check(plugin, **kwargs)
 
 
