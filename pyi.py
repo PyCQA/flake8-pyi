@@ -159,7 +159,25 @@ _BAD_TYPINGEXTENSIONS_Y023_IMPORTS = frozenset(
 )
 
 
+class PyflakesPreProcessor(ast.NodeTransformer):
+    """Transform AST prior to passing it to pyflakes.
+
+    This reduces false positives on recursive class definitions.
+    """
+
+    def visit_ClassDef(self, node: ast.ClassDef) -> ast.ClassDef:
+        self.generic_visit(node)
+        node.bases = [
+            base.value if isinstance(base, ast.Subscript) else base
+            for base in node.bases
+        ]
+        return node
+
+
 class PyiAwareFlakesChecker(FlakesChecker):
+    def __init__(self, tree: ast.AST, filename: str) -> None:
+        super().__init__(PyflakesPreProcessor().visit(tree), filename)
+
     @property
     def annotationsFutureEnabled(self):
         """pyflakes can already handle forward refs for annotations, but only via
