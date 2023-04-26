@@ -176,8 +176,8 @@ class PyflakesPreProcessor(ast.NodeTransformer):
 
 
 class PyiAwareFlakesChecker(FlakesChecker):
-    def __init__(self, tree: ast.AST, filename: str) -> None:
-        super().__init__(PyflakesPreProcessor().visit(tree), filename)
+    def __init__(self, tree: ast.AST, **kwargs: Any) -> None:
+        super().__init__(PyflakesPreProcessor().visit(tree), **kwargs)
 
     @property
     def annotationsFutureEnabled(self):
