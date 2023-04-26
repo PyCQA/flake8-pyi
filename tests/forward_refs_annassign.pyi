@@ -30,6 +30,7 @@ class Meta(type):
 class Bar(metaclass=Meta):
     ...
 
+# Allow circular references in annotations
 class A:
     foo: B
     bar: dict[str, B]
