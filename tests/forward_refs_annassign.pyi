@@ -30,7 +30,6 @@ class Meta(type):
 class Bar(metaclass=Meta):
     ...
 
-# Allow circular references in annotations
 class A:
     foo: B
     bar: dict[str, B]
@@ -38,3 +37,12 @@ class A:
 class B:
     foo: A
     bar: dict[str, A]
+
+# This recursive definitions is allowed.
+# We allow it by disabling checks for anything in the subscript
+class Leaf: ...
+class Tree(list[Tree | Leaf]): ...
+
+# This recursive definition is not allowed
+class Parent(Child): ...   # F821 undefined name 'Child'
+class Child(Parent): ...

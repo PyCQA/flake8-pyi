@@ -168,6 +168,7 @@ class PyflakesPreProcessor(ast.NodeTransformer):
     def visit_ClassDef(self, node: ast.ClassDef) -> ast.ClassDef:
         self.generic_visit(node)
         node.bases = [
+            # Remove the subscript to prevent F821 errors from being raised for (valid) recursive definitions.
             base.value if isinstance(base, ast.Subscript) else base
             for base in node.bases
         ]
@@ -189,7 +190,7 @@ class PyiAwareFlakesChecker(FlakesChecker):
 
     @annotationsFutureEnabled.setter
     def annotationsFutureEnabled(self, value: bool):
-        """noop, we never want change the value to anything but `True` anyway."""
+        """noop, we never want to change the value to anything but `True` anyway."""
         pass
 
     def deferHandleNode(self, node: ast.AST | None, parent) -> None:
