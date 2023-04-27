@@ -168,7 +168,8 @@ class PyflakesPreProcessor(ast.NodeTransformer):
     def visit_ClassDef(self, node: ast.ClassDef) -> ast.ClassDef:
         self.generic_visit(node)
         node.bases = [
-            # Remove the subscript to prevent F821 errors from being raised for (valid) recursive definitions.
+            # Remove the subscript to prevent F821 errors from being raised
+            # for (valid) recursive definitions.
             base.value if isinstance(base, ast.Subscript) else base
             for base in node.bases
         ]
@@ -176,8 +177,8 @@ class PyflakesPreProcessor(ast.NodeTransformer):
 
 
 class PyiAwareFlakesChecker(FlakesChecker):
-    def __init__(self, tree: ast.AST, **kwargs: Any) -> None:
-        super().__init__(PyflakesPreProcessor().visit(tree), **kwargs)
+    def __init__(self, tree: ast.AST, *args: Any, **kwargs: Any) -> None:
+        super().__init__(PyflakesPreProcessor().visit(tree), *args, **kwargs)
 
     @property
     def annotationsFutureEnabled(self):
@@ -190,7 +191,7 @@ class PyiAwareFlakesChecker(FlakesChecker):
 
     @annotationsFutureEnabled.setter
     def annotationsFutureEnabled(self, value: bool):
-        """noop, we never want to change the value to anything but `True` anyway."""
+        """Does nothing, as we always want this property to be `True`."""
         pass
 
     def deferHandleNode(self, node: ast.AST | None, parent) -> None:
