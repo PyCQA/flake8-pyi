@@ -3,6 +3,13 @@
 ## Unreleased
 
 * flake8-pyi no longer supports being run with flake8 <5.0.4.
+* Improve handling of forward references for annotations and classes.
+  For annotations, forward references no longer raise an error.
+  For classes, forward references are now only allowed for recursive or
+  otherwise circular type definitions where forward references cannot
+  be avoided. In all other cases, classes must be defined before they
+  can be referenced as is standard in normal Python code.
+  The purpose of this change is to improve code readability.
 
 ## 23.4.1
 
