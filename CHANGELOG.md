@@ -3,13 +3,27 @@
 ## Unreleased
 
 * flake8-pyi no longer supports being run with flake8 <5.0.4.
-* Improve handling of forward references for annotations and classes.
-  For annotations, forward references no longer raise an error.
-  For classes, forward references are now only allowed for recursive or
-  otherwise circular type definitions where forward references cannot
-  be avoided. In all other cases, classes must be defined before they
-  can be referenced as is standard in normal Python code.
-  The purpose of this change is to improve code readability.
+* The way in which flake8-pyi modifies pyflakes runs has been improved:
+  * When flake8-pyi is installed, pyflakes now correctly recognises an annotation as
+    being equivalent to a binding assignment in a stub file, reducing false
+    positives from flake8's F821 error code.
+  * When flake8-pyi is installed, there are now fewer pyflakes positives from class
+    definitions that have forward references in the bases tuple for the purpose of
+    creating recursive or circular type definitions. These are invalid in `.py` files,
+    but are supported in stub files.
+  * When flake8-pyi is installed, pyflakes will also *complain* about code which (in
+    combination with flake8-pyi) it previously had no issue with. For example, it will
+    now complain about this code:
+
+    ```py
+    class Foo(Bar): ...
+    class Bar: ...
+    ```
+
+    Although the above code is legal in a stub file, it is considered poor style, and
+    the forward reference serves no purpose (there is no recursive or circular
+    definition). As such, it is now disallowed by pyflakes when flake8-pyi is
+    installed.
 
 ## 23.4.1
 
