@@ -47,3 +47,10 @@ class Tree(list[Tree | Leaf]): ...
 # This recursive definition is not allowed.
 class Parent(Child): ...   # F821 undefined name 'Child'
 class Child(Parent): ...
+
+class MyClass:
+    foo: int
+    bar = foo
+
+baz: MyClass
+eggs = baz
