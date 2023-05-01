@@ -24,6 +24,9 @@
     the forward reference serves no purpose (there is no recursive or circular
     definition). As such, it is now disallowed by pyflakes when flake8-pyi is
     installed.
+* Introduce Y056: Various type checkers have different levels of support for method
+  calls on `__all__`. Use `__all__ += ["foo", "bar"]` instead, as this is known to be
+  supported by all major type checkers.
 
 ## 23.4.1
 

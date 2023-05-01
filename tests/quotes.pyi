@@ -6,9 +6,9 @@ import typing_extensions
 
 __all__ = ["f", "g"]
 __all__ += ["h"]
-__all__.extend(["i"])
-__all__.append("j")
-__all__.remove("j")
+__all__.extend(["i"])  # Y056 Calling ".extend()" on "__all__" may not be supported by all type checkers (use += instead)
+__all__.append("j")  # Y056 Calling ".append()" on "__all__" may not be supported by all type checkers (use += instead)
+__all__.remove("j")  # Y056 Calling ".remove()" on "__all__" may not be supported by all type checkers (use += instead)
 __match_args__ = ('foo',)  # Y052 Need type annotation for "__match_args__"
 __slots__ = ('foo',)  # Y052 Need type annotation for "__slots__"
 

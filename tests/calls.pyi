@@ -32,3 +32,8 @@ F = TypedDict("E", {'1': list[str], '2': str})
 class ClassBased(TypedDict):
     foo: str
     bar: int
+
+__all__ = ["T", "U", "S"]
+__all__.append("W")  # Y056 Calling ".append()" on "__all__" may not be supported by all type checkers (use += instead)
+__all__.extend(["B", "WithTotal"])  # Y056 Calling ".extend()" on "__all__" may not be supported by all type checkers (use += instead)
+__all__.remove("U")  # Y056 Calling ".remove()" on "__all__" may not be supported by all type checkers (use += instead)
