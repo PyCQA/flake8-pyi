@@ -1118,6 +1118,12 @@ class PyiVisitor(ast.NodeVisitor):
             if _is_bad_TypedDict(node):
                 self.error(node, Y031)
             return
+        elif (
+            isinstance(function, ast.Attribute)
+            and isinstance(function.value, ast.Name)
+            and function.value.id == "__all__"
+        ):
+            return self.error(node, Y056.format(method=f".{function.attr}()"))
 
         # String literals can appear in positional arguments for
         # TypeVar definitions.
@@ -2100,3 +2106,7 @@ Y054 = (
     ">10 characters long are not permitted"
 )
 Y055 = 'Y055 Multiple "type[Foo]" members in a union. {suggestion}'
+Y056 = (
+    'Y056 Calling "{method}" on "__all__" may not be supported by all type checkers '
+    "(use += instead)"
+)
