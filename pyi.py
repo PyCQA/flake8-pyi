@@ -169,7 +169,7 @@ class PyflakesPreProcessor(ast.NodeTransformer):
         self.generic_visit(node)
         node.bases = [
             # Remove the subscript to prevent F821 errors from being raised
-            # for (valid) recursive definitions.
+            # for (valid) recursive definitions: Foo[Bar] --> Foo
             base.value if isinstance(base, ast.Subscript) else base
             for base in node.bases
         ]
