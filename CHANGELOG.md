@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## 23.5.0
 
 * flake8-pyi no longer supports being run with flake8 <5.0.4.
 * The way in which flake8-pyi modifies pyflakes runs has been improved:
@@ -24,6 +24,8 @@
     the forward reference serves no purpose (there is no recursive or circular
     definition). As such, it is now disallowed by pyflakes when flake8-pyi is
     installed.
+
+  Contributed by [tomasr8](https://github.com/tomasr8).
 * Introduce Y056: Various type checkers have different levels of support for method
   calls on `__all__`. Use `__all__ += ["foo", "bar"]` instead, as this is known to be
   supported by all major type checkers.
