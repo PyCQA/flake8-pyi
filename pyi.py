@@ -38,7 +38,7 @@ if TYPE_CHECKING:
     # and mypy thinks typing_extensions is part of the stdlib.
     from typing_extensions import Literal, TypeAlias, TypeGuard
 
-__version__ = "23.4.1"
+__version__ = "23.5.0"
 
 LOG = logging.getLogger("flake8.pyi")
 
@@ -168,7 +168,7 @@ class PyflakesPreProcessor(ast.NodeTransformer):
     def visit_ClassDef(self, node: ast.ClassDef) -> ast.ClassDef:
         self.generic_visit(node)
         node.bases = [
-            # Remove the subscript to prevent F821 errors from being raised
+            # Remove the subscript to prevent F821 errors from being emitted
             # for (valid) recursive definitions: Foo[Bar] --> Foo
             base.value if isinstance(base, ast.Subscript) else base
             for base in node.bases
