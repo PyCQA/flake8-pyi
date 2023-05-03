@@ -216,17 +216,6 @@ class PyiAwareFlakesChecker(FlakesChecker):
 
         self.deferHandleNode(tree.value, tree)
 
-    def LAMBDA(self, node: ast.Lambda) -> None:
-        """This is likely very brittle, currently works for pyflakes 1.3.0.
-
-        Deferring annotation handling depends on the fact that during calls
-        to LAMBDA visiting the function's body is already deferred and the
-        only eager calls to `handleNode` are for annotations.
-        """
-        self.handleNode, self.deferHandleNode = self.deferHandleNode, self.handleNode  # type: ignore[method-assign]
-        super().LAMBDA(node)
-        self.handleNode, self.deferHandleNode = self.deferHandleNode, self.handleNode  # type: ignore[method-assign]
-
     def handleNodeDelete(self, node: ast.AST) -> None:
         """Null implementation.
 
