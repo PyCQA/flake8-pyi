@@ -849,8 +849,8 @@ class NestingCounter:
 
 
 class PyiVisitor(ast.NodeVisitor):
-    def __init__(self, filename: Path | None = None) -> None:
-        self.filename = Path("(none)") if filename is None else filename
+    def __init__(self, filename: str) -> None:
+        self.filename = filename
         self.errors: list[Error] = []
         # Mapping of all private TypeVars/ParamSpecs/TypeVarTuples
         # to the nodes where they're defined
@@ -1970,11 +1970,10 @@ class PyiTreeChecker:
     def run(self) -> Iterable[Error]:
         assert self.lines is not None
         assert self.tree is not None
-        path = Path(self.filename)
-        if path.suffix == ".pyi":
+        if Path(self.filename).suffix == ".pyi":
             yield from _check_for_type_comments(self.lines)
             tree = LegacyNormalizer().visit(self.tree)
-            yield from PyiVisitor(filename=path).run(tree)
+            yield from PyiVisitor(filename=self.filename).run(tree)
 
     @staticmethod
     def add_options(parser: OptionManager) -> None:
