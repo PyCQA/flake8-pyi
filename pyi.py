@@ -1961,14 +1961,11 @@ class PyiTreeChecker:
     name: ClassVar[str] = "flake8-pyi"
     version: ClassVar[str] = __version__
 
-    tree: ast.Module | None = None
-    lines: list[str] | None = None
+    tree: ast.Module
+    lines: list[str]
     filename: str = "(none)"
-    options: argparse.Namespace | None = None
 
     def run(self) -> Iterable[Error]:
-        assert self.lines is not None
-        assert self.tree is not None
         if self.filename.endswith(".pyi"):
             yield from _check_for_type_comments(self.lines)
             tree = LegacyNormalizer().visit(self.tree)
