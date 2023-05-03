@@ -1936,9 +1936,8 @@ class PyiVisitor(ast.NodeVisitor):
 _TYPE_COMMENT_REGEX = re.compile(r"#\s*type:\s*(?!\s?ignore)([^#]+)(\s*#.*?)?$")
 
 
-def _check_for_type_comments(path: Path) -> Iterator[Error]:
-    stublines = path.read_text(encoding="UTF-8").splitlines()
-    for lineno, line in enumerate(stublines, start=1):
+def _check_for_type_comments(lines: list[str]) -> Iterator[Error]:
+    for lineno, line in enumerate(lines, start=1):
         cleaned_line = line.strip()
 
         if cleaned_line.startswith("#"):
@@ -1964,14 +1963,16 @@ class PyiTreeChecker:
     version: ClassVar[str] = __version__
 
     tree: ast.Module | None = None
+    lines: list[str] | None = None
     filename: str = "(none)"
     options: argparse.Namespace | None = None
 
     def run(self) -> Iterable[Error]:
+        assert self.lines is not None
         assert self.tree is not None
         path = Path(self.filename)
         if path.suffix == ".pyi":
-            yield from _check_for_type_comments(path)
+            yield from _check_for_type_comments(self.lines)
             tree = LegacyNormalizer().visit(self.tree)
             yield from PyiVisitor(filename=path).run(tree)
 
