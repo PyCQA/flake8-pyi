@@ -1970,7 +1970,7 @@ class PyiTreeChecker:
     def run(self) -> Iterable[Error]:
         assert self.lines is not None
         assert self.tree is not None
-        if Path(self.filename).suffix == ".pyi":
+        if self.filename.endswith(".pyi"):
             yield from _check_for_type_comments(self.lines)
             tree = LegacyNormalizer().visit(self.tree)
             yield from PyiVisitor(filename=self.filename).run(tree)
