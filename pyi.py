@@ -15,7 +15,6 @@ from dataclasses import dataclass
 from functools import partial
 from itertools import chain, zip_longest
 from keyword import iskeyword
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple, Union
 
 from flake8 import checker  # type: ignore[import]
