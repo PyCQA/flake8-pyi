@@ -1978,8 +1978,8 @@ class PyiTreeChecker:
             tree = LegacyNormalizer().visit(self.tree)
             yield from PyiVisitor(filename=path).run(tree)
 
-    @classmethod
-    def add_options(cls, parser: OptionManager) -> None:
+    @staticmethod
+    def add_options(parser: OptionManager) -> None:
         """This is brittle, there's multiple levels of caching of defaults."""
         if isinstance(parser.parser, argparse.ArgumentParser):
             parser.parser.set_defaults(filename="*.py,*.pyi")
@@ -2001,11 +2001,8 @@ class PyiTreeChecker:
                 help="don't patch flake8 with .pyi-aware file checker",
             )
 
-    @classmethod
-    def parse_options(
-        cls, optmanager: OptionManager, options: argparse.Namespace, extra_args
-    ) -> None:
-        """This is also brittle, only checked with flake8 3.2.1 and master."""
+    @staticmethod
+    def parse_options(options: argparse.Namespace) -> None:
         if not options.no_pyi_aware_file_checker:
             checker.FileChecker = PyiAwareFileChecker
 
