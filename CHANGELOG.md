@@ -1,5 +1,17 @@
 # Change Log
 
+## Unreleased
+
+* The way in which flake8-pyi modifies pyflakes runs has been improved. When
+  flake8-pyi is installed, pyflakes will now complain about forward references
+  in default values for function and method parameters (the same as pyflakes
+  does when it checks `.py` files). Unlike in `.py` files, forward references
+  in default values are legal in stub files. However, they are never necessary,
+  and are considered bad style. (Forward references for parameter *annotations*
+  are still allowed.)
+
+  Contributed by [tomasr8](https://github.com/tomasr8).
+
 ## 23.5.0
 
 * flake8-pyi no longer supports being run with flake8 <5.0.4.
