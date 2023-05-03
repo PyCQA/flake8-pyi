@@ -194,9 +194,6 @@ class PyiAwareFlakesChecker(FlakesChecker):
         """Does nothing, as we always want this property to be `True`."""
         pass
 
-    def deferHandleNode(self, node: ast.AST | None, parent) -> None:
-        self.deferFunction(lambda: self.handleNode(node, parent))
-
     def ASSIGN(
         self, tree: ast.Assign, omit: str | tuple[str, ...] | None = None
     ) -> None:
@@ -214,7 +211,7 @@ class PyiAwareFlakesChecker(FlakesChecker):
         for target in tree.targets:
             self.handleNode(target, tree)
 
-        self.deferHandleNode(tree.value, tree)
+        self.deferFunction(lambda: self.handleNode(tree.value, tree))
 
     def handleNodeDelete(self, node: ast.AST) -> None:
         """Null implementation.
