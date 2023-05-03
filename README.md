@@ -88,6 +88,7 @@ currently emitted:
 | Y053 | Only string and bytes literals <=50 characters long are permitted.
 | Y054 | Only numeric literals with a string representation <=10 characters long are permitted.
 | Y055 | Unions of the form `type[X] \| type[Y]` can be simplified to `type[X \| Y]`. Similarly, `Union[type[X], type[Y]]` can be simplified to `type[Union[X, Y]]`.
+| Y056 | Do not call methods such as `.append()`, `.extend()` or `.remove()` on `__all__`. Different type checkers have varying levels of support for calling these methods on `__all__`. Use `+=` instead, which is known to be supported by all major type checkers.
 
 Note that several error codes recommend using types from `typing_extensions` or
 `_typeshed`. Strictly speaking, these packages are not part of the standard

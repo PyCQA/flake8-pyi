@@ -38,7 +38,7 @@ if TYPE_CHECKING:
     # and mypy thinks typing_extensions is part of the stdlib.
     from typing_extensions import Literal, TypeAlias, TypeGuard
 
-__version__ = "23.4.1"
+__version__ = "23.5.0"
 
 LOG = logging.getLogger("flake8.pyi")
 
@@ -168,7 +168,7 @@ class PyflakesPreProcessor(ast.NodeTransformer):
     def visit_ClassDef(self, node: ast.ClassDef) -> ast.ClassDef:
         self.generic_visit(node)
         node.bases = [
-            # Remove the subscript to prevent F821 errors from being raised
+            # Remove the subscript to prevent F821 errors from being emitted
             # for (valid) recursive definitions: Foo[Bar] --> Foo
             base.value if isinstance(base, ast.Subscript) else base
             for base in node.bases
@@ -1107,6 +1107,12 @@ class PyiVisitor(ast.NodeVisitor):
             if _is_bad_TypedDict(node):
                 self.error(node, Y031)
             return
+        elif (
+            isinstance(function, ast.Attribute)
+            and isinstance(function.value, ast.Name)
+            and function.value.id == "__all__"
+        ):
+            return self.error(node, Y056.format(method=f".{function.attr}()"))
 
         # String literals can appear in positional arguments for
         # TypeVar definitions.
@@ -2089,3 +2095,7 @@ Y054 = (
     ">10 characters long are not permitted"
 )
 Y055 = 'Y055 Multiple "type[Foo]" members in a union. {suggestion}'
+Y056 = (
+    'Y056 Calling "{method}" on "__all__" may not be supported by all type checkers '
+    "(use += instead)"
+)
