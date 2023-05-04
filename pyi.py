@@ -102,7 +102,8 @@ _BAD_Y022_IMPORTS: dict[str, tuple[str, str | None]] = {
     ),
     # typing aliases for collections.abc
     # typing.AbstractSet is deliberately omitted (special-cased elsewhere)
-    # If the second element of the tuple is `None`, it signals that the object shouldn't be parameterized
+    # If the second element of the tuple is `None`,
+    # it signals that the object shouldn't be parameterized
     "typing.ByteString": ("collections.abc.ByteString", None),
     "typing.Collection": ("collections.abc.Collection", "T"),
     "typing.ItemsView": ("collections.abc.ItemsView", _MAPPING_SLICE),
@@ -181,10 +182,12 @@ class PyiAwareFlakesChecker(FlakesChecker):
 
     @property
     def annotationsFutureEnabled(self):
-        """pyflakes can already handle forward refs for annotations, but only via
-        `from __future__ import annotations`.
+        """Always allow forward references in `.pyi` files.
 
-        We don't want to bother including this in every file, so we just set this to `True`.
+        Pyflakes can already handle forward refs for annotations,
+        but only via `from __future__ import annotations`.
+        In a stub file, `from __future__ import annotations` is unnecessary,
+        so we pretend to pyflakes that it's always present when linting a `.pyi` file.
         """
         return True
 
@@ -196,12 +199,15 @@ class PyiAwareFlakesChecker(FlakesChecker):
     def ASSIGN(
         self, tree: ast.Assign, omit: str | tuple[str, ...] | None = None
     ) -> None:
-        """This is a custom implementation of ASSIGN derived from
+        """Defer evaluation of assignments in the module scope.
+
+        This is a custom implementation of ASSIGN, originally derived from
         handleChildren() in pyflakes 1.3.0.
 
-        The point here is that on module level, there's type aliases that we
-        want to bind eagerly, but defer computation of the values of the
-        assignments (the type aliases might have forward references).
+        This reduces false positives for:
+          - TypeVars bound or constrained to forward references
+          - Assignments to forward references that are not explicitly
+            demarcated as type aliases.
         """
         if not isinstance(self.scope, ModuleScope):
             super().ASSIGN(tree)
@@ -284,7 +290,8 @@ def _is_object(node: ast.AST | None, name: str, *, from_: Container[str]) -> boo
         where <parent> is a string that can be found within the `from_` collection of
         strings.
 
-    >>> _is_AsyncIterator = partial(_is_object, name="AsyncIterator", from_=_TYPING_MODULES | {"collections.abc"})
+    >>> modules = _TYPING_MODULES | {"collections.abc"}
+    >>> _is_AsyncIterator = partial(_is_object, name="AsyncIterator", from_=modules)
     >>> _is_AsyncIterator(_ast_node_for("AsyncIterator"))
     True
     >>> _is_AsyncIterator(_ast_node_for("typing.AsyncIterator"))
@@ -351,9 +358,10 @@ def _get_name_of_class_if_from_modules(
 
     >>> _get_name_of_class_if_from_modules(_ast_node_for('int'), modules={'builtins'})
     'int'
-    >>> _get_name_of_class_if_from_modules(_ast_node_for('builtins.int'), modules={'builtins'})
+    >>> int_node = _ast_node_for('builtins.int')
+    >>> _get_name_of_class_if_from_modules(int_node, modules={'builtins'})
     'int'
-    >>> _get_name_of_class_if_from_modules(_ast_node_for('builtins.int'), modules={'typing'}) is None
+    >>> _get_name_of_class_if_from_modules(int_node, modules={'typing'}) is None
     True
     """
     if isinstance(classnode, ast.Name):
@@ -455,11 +463,13 @@ def _get_collections_abc_obj_id(node: ast.expr | None) -> str | None:
     'AsyncIterator'
     >>> _get_collections_abc_obj_id(_ast_node_for('typing.AsyncIterator[str]'))
     'AsyncIterator'
-    >>> _get_collections_abc_obj_id(_ast_node_for('typing_extensions.AsyncIterator[str]'))
+    >>> node = _ast_node_for('typing_extensions.AsyncIterator[str]')
+    >>> _get_collections_abc_obj_id(node)
     'AsyncIterator'
     >>> _get_collections_abc_obj_id(_ast_node_for('collections.abc.AsyncIterator[str]'))
     'AsyncIterator'
-    >>> _get_collections_abc_obj_id(_ast_node_for('collections.OrderedDict[str, int]')) is None
+    >>> node = _ast_node_for('collections.OrderedDict[str, int]')
+    >>> _get_collections_abc_obj_id(node) is None
     True
     """
     if not isinstance(node, ast.Subscript):
@@ -491,7 +501,7 @@ _INPLACE_BINOP_METHODS = frozenset(
 def _has_bad_hardcoded_returns(
     method: ast.FunctionDef | ast.AsyncFunctionDef, *, classdef: ast.ClassDef
 ) -> bool:
-    """Return `True` if `function` should be rewritten using `typing_extensions.Self`."""
+    """Return `True` if `function` should be rewritten with `typing_extensions.Self`."""
     # Much too complex for our purposes to worry
     # about overloaded functions or abstractmethods
     if any(
@@ -542,7 +552,7 @@ def _is_list_of_str_nodes(seq: list[ast.expr | None]) -> TypeGuard[list[ast.Str]
 
 
 def _is_bad_TypedDict(node: ast.Call) -> bool:
-    """Evaluate whether an assignment-based TypedDict should be rewritten using class syntax.
+    """Should the assignment-based TypedDict `node` be rewritten using class syntax?
 
     Return `False` if the TypedDict appears as though it may be invalidly defined;
     type-checkers will raise an error in that eventuality.
@@ -604,10 +614,11 @@ class UnionAnalysis(NamedTuple):
 def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
     """Return a tuple providing analysis of a given sequence of union members.
 
-    >>> union = _ast_node_for(
-    ...     'Union[int, memoryview, memoryview, Literal["foo"], Literal[1], type[float], type[str]]'
+    >>> source = 'Union[int, memoryview, memoryview, Literal["foo"], Literal[1], type[float], type[str]]'
+    >>> union = _ast_node_for(source)
+    >>> members = (
+    ...     union.slice.elts if sys.version_info >= (3, 9) else union.slice.value.elts
     ... )
-    >>> members = union.slice.elts if sys.version_info >= (3, 9) else union.slice.value.elts
     >>> analysis = _analyse_union(members)
     >>> len(analysis.members_by_dump["Name(id='memoryview', ctx=Load())"])
     2
@@ -1127,7 +1138,8 @@ class PyiVisitor(ast.NodeVisitor):
     def _check_for_Y054(self, node: ast.Constant | ast.Num) -> None:
         # The maximum character limit is arbitrary, but here's what it's based on:
         # Hex representation of 32-bit integers tend to be 10 chars.
-        # So is the decimal representation of the maximum positive signed 32-bit integer.
+        # So is the decimal representation
+        # of the maximum positive signed 32-bit integer.
         # 0xFFFFFFFF --> 4294967295
         if len(str(node.n)) > 10:
             self.error(node, Y054)
@@ -1247,7 +1259,7 @@ class PyiVisitor(ast.NodeVisitor):
                 self._check_for_redundant_numeric_unions(first_union_member, analysis)
 
     def _check_for_Y051_violations(self, analysis: UnionAnalysis) -> None:
-        """Search for redundant unions fitting the pattern `str | Literal["foo"]`, etc."""
+        """Search for redundant unions such as `str | Literal["foo"]`, etc."""
         literal_classes_present: defaultdict[str, list[_SliceContents]]
         literal_classes_present = defaultdict(list)
         for literal in analysis.combined_literal_members:
@@ -2047,7 +2059,8 @@ Y033 = (
 )
 Y034 = (
     'Y034 {methods} usually return "self" at runtime. '
-    'Consider using "typing_extensions.Self" in "{method_name}", e.g. "{suggested_syntax}"'
+    'Consider using "typing_extensions.Self" in "{method_name}", '
+    'e.g. "{suggested_syntax}"'
 )
 Y035 = (
     'Y035 "{var}" in a stub file must have a value, '
