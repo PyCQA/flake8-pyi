@@ -11,7 +11,7 @@
     are still allowed.)
 
     Contributed by [tomasr8](https://github.com/tomasr8).
-  * when flake8-pyi is installed, pyflakes's F822 check now produces many fewer false
+  * When flake8-pyi is installed, pyflakes's F822 check now produces many fewer false
     positives when flake8 is run on `.pyi` files. It now understands that `x: int` in a
     stub file is sufficient for `x` to be considered "bound", and that `"x"` can
     therefore be included in `__all__`.
