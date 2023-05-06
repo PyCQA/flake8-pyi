@@ -2,6 +2,8 @@ name: typeshed_primer
 
 on:
   pull_request:
+    paths:
+      - "pyi.py"
   workflow_dispatch:
 
 permissions:
