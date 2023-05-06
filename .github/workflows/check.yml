@@ -8,6 +8,7 @@ on:
     paths:
       - "pyi.py"
       - "tests/*"
+      - ".github/workflows/*"
   workflow_dispatch:
 
 permissions:

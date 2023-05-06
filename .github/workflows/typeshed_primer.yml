@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "pyi.py"
+      - ".github/**/*"
   workflow_dispatch:
 
 permissions:
