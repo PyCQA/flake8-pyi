@@ -2,15 +2,19 @@
 
 ## Unreleased
 
-* The way in which flake8-pyi modifies pyflakes runs has been improved. When
-  flake8-pyi is installed, pyflakes will now complain about forward references
-  in default values for function and method parameters (the same as pyflakes
-  does when it checks `.py` files). Unlike in `.py` files, forward references
-  in default values are legal in stub files. However, they are never necessary,
-  and are considered bad style. (Forward references for parameter *annotations*
-  are still allowed.)
+* The way in which flake8-pyi modifies pyflakes runs has been improved:
+  * When flake8-pyi is installed, pyflakes will now complain about forward references
+    in default values for function and method parameters (the same as pyflakes
+    does when it checks `.py` files). Unlike in `.py` files, forward references
+    in default values are legal in stub files. However, they are never necessary,
+    and are considered bad style. (Forward references for parameter *annotations*
+    are still allowed.)
 
-  Contributed by [tomasr8](https://github.com/tomasr8).
+    Contributed by [tomasr8](https://github.com/tomasr8).
+  * When flake8-pyi is installed, pyflakes's F822 check now produces many fewer false
+    positives when flake8 is run on `.pyi` files. It now understands that `x: int` in a
+    stub file is sufficient for `x` to be considered "bound", and that `"x"` can
+    therefore be included in `__all__`.
 
 ## 23.5.0
 
