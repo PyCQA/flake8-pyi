@@ -5,10 +5,8 @@ on:
     branches:
       - main
   pull_request:
-    paths:
-      - "pyi.py"
-      - "tests/*"
-      - ".github/workflows/*"
+    paths-ignore:
+      - "**/*.md"
   workflow_dispatch:
 
 permissions:
