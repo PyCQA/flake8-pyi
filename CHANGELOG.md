@@ -21,7 +21,7 @@ Bugfixes:
 * Y018, Y046, Y047 and Y049 previously failed to detect unused
   TypeVars/ParamSpecs/TypeAliases/TypedDicts/Protocols if the object in question had
   multiple definitions in the same file (e.g. across two branches of an `if
-  sys.version_info` check). This bug has now been fixed.
+  sys.version_info >= (3, 10)` check). This bug has now been fixed.
 
 ## 23.5.0
 
