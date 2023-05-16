@@ -859,28 +859,49 @@ class NestingCounter:
 
 
 class PyiVisitor(ast.NodeVisitor):
+    filename: str
+    errors: list[Error]
+
+    # Mapping of all private TypeVars/ParamSpecs/TypeVarTuples
+    # to the nodes where they're defined.
+    #
+    # The value type is a list, because any given TypeVar
+    # could have multiple definitions,
+    # e.g. in different sys.version_info branches
+    typevarlike_defs: defaultdict[TypeVarInfo, list[ast.Assign]]
+    # The same for private protocol definitions
+    protocol_defs: defaultdict[str, list[ast.ClassDef]]
+    # The same for class-based private TypedDicts
+    class_based_typeddicts: defaultdict[str, list[ast.ClassDef]]
+    # And for assignment-based TypedDicts
+    assignment_based_typeddicts: defaultdict[str, list[ast.Assign]]
+    # And for private TypeAliases
+    typealias_decls: defaultdict[str, list[ast.AnnAssign]]
+
+    # Mapping of each name in the file to the no. of occurrences
+    all_name_occurrences: Counter[str]
+
+    string_literals_allowed: NestingCounter
+    in_function: NestingCounter
+    in_class: NestingCounter
+    visiting_arg: NestingCounter
+
+    # This is only relevant for visiting classes
+    current_class_node: ast.ClassDef | None = None
+
     def __init__(self, filename: str) -> None:
         self.filename = filename
-        self.errors: list[Error] = []
-        # Mapping of all private TypeVars/ParamSpecs/TypeVarTuples
-        # to the nodes where they're defined
-        self.typevarlike_defs: dict[TypeVarInfo, ast.Assign] = {}
-        # A list of all private Protocol-definition nodes
-        self.protocol_defs: list[ast.ClassDef] = []
-        # The same for class-based private TypedDicts
-        self.class_based_typeddicts: list[ast.ClassDef] = []
-        # Mapping of private TypedDicts to the nodes where they're defined
-        self.assignment_based_typeddicts: dict[str, ast.Assign] = {}
-        # The same for private TypeAliases
-        self.typealias_decls: dict[str, ast.AnnAssign] = {}
-        # Mapping of each name in the file to the no. of occurrences
-        self.all_name_occurrences: Counter[str] = Counter()
+        self.errors = []
+        self.typevarlike_defs = defaultdict(list)
+        self.protocol_defs = defaultdict(list)
+        self.class_based_typeddicts = defaultdict(list)
+        self.assignment_based_typeddicts = defaultdict(list)
+        self.typealias_decls = defaultdict(list)
+        self.all_name_occurrences = Counter()
         self.string_literals_allowed = NestingCounter()
         self.in_function = NestingCounter()
         self.in_class = NestingCounter()
         self.visiting_arg = NestingCounter()
-        # This is only relevant for visiting classes
-        self.current_class_node: ast.ClassDef | None = None
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(filename={self.filename!r})"
@@ -989,7 +1010,7 @@ class PyiVisitor(ast.NodeVisitor):
         if cls_name in {"TypeVar", "ParamSpec", "TypeVarTuple"}:
             if object_name.startswith("_"):
                 target_info = TypeVarInfo(cls_name=cls_name, name=object_name)
-                self.typevarlike_defs[target_info] = node
+                self.typevarlike_defs[target_info].append(node)
             else:
                 self.error(node, Y001.format(cls_name))
 
@@ -1043,7 +1064,7 @@ class PyiVisitor(ast.NodeVisitor):
             function = assignment.func
             if _is_TypedDict(function):
                 if target_name.startswith("_"):
-                    self.assignment_based_typeddicts[target_name] = node
+                    self.assignment_based_typeddicts[target_name].append(node)
             else:
                 self._check_for_typevarlike_assignments(
                     node=node, function=function, object_name=target_name
@@ -1185,7 +1206,7 @@ class PyiVisitor(ast.NodeVisitor):
 
     def _check_typealias(self, node: ast.AnnAssign, alias_name: str) -> None:
         if alias_name.startswith("_"):
-            self.typealias_decls[alias_name] = node
+            self.typealias_decls[alias_name].append(node)
         if self._Y042_REGEX.match(alias_name):
             self.error(node, Y042)
         if self._Y043_REGEX.match(alias_name):
@@ -1519,10 +1540,10 @@ class PyiVisitor(ast.NodeVisitor):
         if node.name.startswith("_") and not self.in_class.active:
             for base in node.bases:
                 if _is_Protocol(base):
-                    self.protocol_defs.append(node)
+                    self.protocol_defs[node.name].append(node)
                     break
                 if _is_TypedDict(base):
-                    self.class_based_typeddicts.append(node)
+                    self.class_based_typeddicts[node.name].append(node)
                     break
 
         old_class_node = self.current_class_node
@@ -1918,25 +1939,22 @@ class PyiVisitor(ast.NodeVisitor):
         - Protocols
         - TypedDicts
         """
-        for (cls_name, typevar_name), def_node in self.typevarlike_defs.items():
-            if self.all_name_occurrences[typevar_name] == 1:
-                self.error(
-                    def_node,
-                    Y018.format(typevarlike_cls=cls_name, typevar_name=typevar_name),
-                )
-        for protocol in self.protocol_defs:
-            if self.all_name_occurrences[protocol.name] == 0:
-                self.error(protocol, Y046.format(protocol_name=protocol.name))
-        for class_based_typeddict in self.class_based_typeddicts:
-            cls_name = class_based_typeddict.name
-            if self.all_name_occurrences[cls_name] == 0:
-                self.error(class_based_typeddict, Y049.format(typeddict_name=cls_name))
-        for td_name, td_node in self.assignment_based_typeddicts.items():
-            if self.all_name_occurrences[td_name] == 1:
-                self.error(td_node, Y049.format(typeddict_name=td_name))
-        for alias_name, alias in self.typealias_decls.items():
-            if self.all_name_occurrences[alias_name] == 1:
-                self.error(alias, Y047.format(alias_name=alias_name))
+        for (cls_name, typevar_name), tv_nodelist in self.typevarlike_defs.items():
+            if self.all_name_occurrences[typevar_name] == len(tv_nodelist):
+                msg = Y018.format(typevarlike_cls=cls_name, typevar_name=typevar_name)
+                self.error(tv_nodelist[0], msg)
+        for proto_name, proto_nodelist in self.protocol_defs.items():
+            if self.all_name_occurrences[proto_name] == 0:
+                self.error(proto_nodelist[0], Y046.format(protocol_name=proto_name))
+        for td_name, cls_td_nodelist in self.class_based_typeddicts.items():
+            if self.all_name_occurrences[td_name] == 0:
+                self.error(cls_td_nodelist[0], Y049.format(typeddict_name=td_name))
+        for td_name, ass_td_nodelist in self.assignment_based_typeddicts.items():
+            if self.all_name_occurrences[td_name] == len(ass_td_nodelist):
+                self.error(ass_td_nodelist[0], Y049.format(typeddict_name=td_name))
+        for alias_name, alias_nodelist in self.typealias_decls.items():
+            if self.all_name_occurrences[alias_name] == len(alias_nodelist):
+                self.error(alias_nodelist[0], Y047.format(alias_name=alias_name))
 
     def run(self, tree: ast.AST) -> Iterator[Error]:
         self.visit(tree)

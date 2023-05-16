@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+Features:
 * The way in which flake8-pyi modifies pyflakes runs has been improved:
   * When flake8-pyi is installed, pyflakes will now complain about forward references
     in default values for function and method parameters (the same as pyflakes
@@ -15,6 +16,12 @@
     positives when flake8 is run on `.pyi` files. It now understands that `x: int` in a
     stub file is sufficient for `x` to be considered "bound", and that `"x"` can
     therefore be included in `__all__`.
+
+Bugfixes:
+* Y018, Y046, Y047 and Y049 previously failed to detect unused
+  TypeVars/ParamSpecs/TypeAliases/TypedDicts/Protocols if the object in question had
+  multiple definitions in the same file (e.g. across two branches of an `if
+  sys.version_info >= (3, 10)` check). This bug has now been fixed.
 
 ## 23.5.0
 

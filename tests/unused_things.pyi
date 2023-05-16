@@ -1,5 +1,6 @@
+import sys
 import typing
-from typing import Protocol, TypedDict
+from typing import Protocol, TypedDict, TypeVar
 
 import mypy_extensions
 import typing_extensions
@@ -58,3 +59,27 @@ class UnusedButPublicTypedDict(TypedDict):
     foo: str
 
 UnusedButPublicTypedDict2 = TypedDict("UnusedButPublicTypedDict", {"99999": frozenset[str]})
+
+if sys.version_info >= (3, 10):
+    _ConditionallyDefinedUnusedAlias: TypeAlias = int  # Y047 Type alias "_ConditionallyDefinedUnusedAlias" is not used
+    _ConditionallyDefinedUnusedTypeVar = TypeVar("_ConditionallyDefinedUnusedTypeVar")  # Y018 TypeVar "_ConditionallyDefinedUnusedTypeVar" is not used
+    _ConditionallyDefinedUnusedAssignmentBasedTypedDict = TypedDict("_ConditionallyDefinedUnusedTypedDict", {"42": int})  # Y049 TypedDict "_ConditionallyDefinedUnusedAssignmentBasedTypedDict" is not used
+
+    class _ConditionallyDefinedUnusedClassBasedTypedDict(TypedDict):  # Y049 TypedDict "_ConditionallyDefinedUnusedClassBasedTypedDict" is not used
+        foo: str
+
+    class _ConditionallyDefinedUnusedProtocol(Protocol):  # Y046 Protocol "_ConditionallyDefinedUnusedProtocol" is not used
+        foo: int
+
+else:
+    _ConditionallyDefinedUnusedAlias: TypeAlias = str
+    _ConditionallyDefinedUnusedTypeVar = TypeVar("_ConditionallyDefinedUnusedTypeVar", bound=str)
+    _ConditionallyDefinedUnusedAssignmentBasedTypedDict = TypedDict("_ConditionallyDefinedUnusedTypedDict", {"4222": int})
+
+    class _ConditionallyDefinedUnusedClassBasedTypedDict(TypedDict):
+        foo: str
+        bar: int
+
+    class _ConditionallyDefinedUnusedProtocol(Protocol):
+        foo: int
+        bar: str
