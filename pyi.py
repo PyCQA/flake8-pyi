@@ -17,9 +17,10 @@ from itertools import chain, zip_longest
 from keyword import iskeyword
 from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple, Union
 
-from flake8 import checker  # type: ignore[import]
-from flake8.options.manager import OptionManager  # type: ignore[import]
-from flake8.plugins.pyflakes import FlakesChecker  # type: ignore[import]
+from flake8 import checker
+from flake8.options.manager import OptionManager
+from flake8.plugins.finder import LoadedPlugin
+from flake8.plugins.pyflakes import FlakesChecker
 from pyflakes.checker import ModuleScope
 
 if sys.version_info >= (3, 9):
@@ -181,7 +182,7 @@ class PyiAwareFlakesChecker(FlakesChecker):
         super().__init__(PyflakesPreProcessor().visit(tree), *args, **kwargs)
 
     @property
-    def annotationsFutureEnabled(self):
+    def annotationsFutureEnabled(self) -> Literal[True]:
         """Always allow forward references in `.pyi` files.
 
         Pyflakes can already handle forward refs for annotations,
@@ -192,7 +193,7 @@ class PyiAwareFlakesChecker(FlakesChecker):
         return True
 
     @annotationsFutureEnabled.setter
-    def annotationsFutureEnabled(self, value: bool):
+    def annotationsFutureEnabled(self, value: bool) -> None:
         """Does nothing, as we always want this property to be `True`."""
         pass
 
@@ -227,7 +228,7 @@ class PyiAwareFlakesChecker(FlakesChecker):
 
 
 class PyiAwareFileChecker(checker.FileChecker):
-    def run_check(self, plugin, **kwargs: Any) -> Any:
+    def run_check(self, plugin: LoadedPlugin, **kwargs: Any) -> Any:
         if plugin.obj is FlakesChecker:
             if self.filename == "-":
                 filename = self.options.stdin_display_name
