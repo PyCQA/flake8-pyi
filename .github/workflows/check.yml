@@ -77,5 +77,6 @@ jobs:
         if: endsWith(matrix.python-version, '-dev')
         with:
           python-version: ${{ matrix.python-version }}
+      - run: python --version --version && which python
       - run: pip install -e .[dev]
       - run: python3 -m pytest -vv
