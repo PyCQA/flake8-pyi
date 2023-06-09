@@ -3,6 +3,7 @@
 ## Unreleased
 
 Features:
+* Support Python 3.12
 * The way in which flake8-pyi modifies pyflakes runs has been improved:
   * When flake8-pyi is installed, pyflakes will now complain about forward references
     in default values for function and method parameters (the same as pyflakes
