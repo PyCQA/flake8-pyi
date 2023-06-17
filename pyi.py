@@ -1265,6 +1265,7 @@ class PyiVisitor(ast.NodeVisitor):
             self.error(node, Y015)
 
     if sys.version_info >= (3, 12):
+
         def visit_TypeAlias(self, node: ast.TypeAlias) -> None:
             self.generic_visit(node)
             self._check_typealias(node=node, alias_name=node.name.id)
