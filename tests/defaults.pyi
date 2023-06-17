@@ -74,3 +74,10 @@ def f38(x: bytes = b"a_very_long_byte_stringgggggggggggggggggggggggggggggggggggg
 
 foo: str = "a_very_long_stringgggggggggggggggggggggggggggggggggggggggggggggg"  # Y053 String and bytes literals >50 characters long are not permitted
 bar: bytes = b"a_very_long_byte_stringggggggggggggggggggggggggggggggggggggg"  # Y053 String and bytes literals >50 characters long are not permitted
+
+# Tests for PEP-570 syntax
+def f39(x: "int", /) -> None: ...  # Y020 Quoted annotations should never be used in stubs
+def f40(x: int, /) -> None: ...
+def f41(x: int, /, y: "int") -> None: ...  # Y020 Quoted annotations should never be used in stubs
+def f42(x: str = "y", /) -> None: ...
+def f43(x: str = os.pathsep, /) -> None: ...  # Y011 Only simple default values allowed for typed arguments

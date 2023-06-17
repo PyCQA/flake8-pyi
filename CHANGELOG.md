@@ -24,6 +24,9 @@ Bugfixes:
   multiple definitions in the same file (e.g. across two branches of an `if
   sys.version_info >= (3, 10)` check). This bug has now been fixed.
 
+Other changes:
+* flake8-pyi no longer supports being run on Python 3.7.
+
 ## 23.5.0
 
 * flake8-pyi no longer supports being run with flake8 <5.0.4.
