@@ -6,6 +6,10 @@ Features:
 * Support Python 3.12
 * Support [PEP 695](https://peps.python.org/pep-0695/) syntax for declaring
   type aliases
+* Introduce Y057: Do not use `typing.ByteString` or `collections.abc.ByteString`. These
+  types have unclear semantics, and are deprecated; use  `typing_extensions.Buffer` or
+  a union such as `bytes | bytearray | memoryview` instead. See
+  [PEP 688](https://peps.python.org/pep-0688/) for more details.
 * The way in which flake8-pyi modifies pyflakes runs has been improved:
   * When flake8-pyi is installed, pyflakes will now complain about forward references
     in default values for function and method parameters (the same as pyflakes
@@ -25,6 +29,9 @@ Bugfixes:
   TypeVars/ParamSpecs/TypeAliases/TypedDicts/Protocols if the object in question had
   multiple definitions in the same file (e.g. across two branches of an `if
   sys.version_info >= (3, 10)` check). This bug has now been fixed.
+
+Other changes:
+* flake8-pyi no longer supports being run on Python 3.7.
 
 ## 23.5.0
 

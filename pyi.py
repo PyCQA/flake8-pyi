@@ -107,10 +107,10 @@ _BAD_Y022_IMPORTS: dict[str, tuple[str, str | None]] = {
         "T",
     ),
     # typing aliases for collections.abc
-    # typing.AbstractSet is deliberately omitted (special-cased elsewhere)
+    # typing.AbstractSet and typing.ByteString are deliberately omitted
+    # (special-cased elsewhere).
     # If the second element of the tuple is `None`,
     # it signals that the object shouldn't be parameterized
-    "typing.ByteString": ("collections.abc.ByteString", None),
     "typing.Collection": ("collections.abc.Collection", "T"),
     "typing.ItemsView": ("collections.abc.ItemsView", _MAPPING_SLICE),
     "typing.KeysView": ("collections.abc.KeysView", "KeyType"),
@@ -515,7 +515,8 @@ def _has_bad_hardcoded_returns(
     ):
         return False
 
-    if not _non_kw_only_args_of(method.args):  # weird, but theoretically possible
+    # weird, but theoretically possible
+    if not method.args.posonlyargs and not method.args.args:
         return False
 
     method_name, returns = method.name, method.returns
@@ -588,13 +589,6 @@ def _is_bad_TypedDict(node: ast.Call) -> bool:
         fieldname.isidentifier() and not iskeyword(fieldname)
         for fieldname in fieldnames
     )
-
-
-def _non_kw_only_args_of(args: ast.arguments) -> list[ast.arg]:
-    """Return a list containing the pos-only args and pos-or-kwd args of `args`"""
-    # pos-only args don't exist on 3.7
-    pos_only_args: list[ast.arg] = getattr(args, "posonlyargs", [])
-    return pos_only_args + args.args
 
 
 def _is_assignment_which_must_have_a_value(
@@ -917,8 +911,12 @@ class PyiVisitor(ast.NodeVisitor):
     ) -> None:
         fullname = f"{module_name}.{object_name}"
 
+        # Y057 errors
+        if fullname in {"typing.ByteString", "collections.abc.ByteString"}:
+            error_message = Y057.format(module=module_name)
+
         # Y022 errors
-        if fullname in _BAD_Y022_IMPORTS:
+        elif fullname in _BAD_Y022_IMPORTS:
             good_cls_name, slice_contents = _BAD_Y022_IMPORTS[fullname]
             params = "" if slice_contents is None else f"[{slice_contents}]"
             error_message = Y022.format(
@@ -966,12 +964,8 @@ class PyiVisitor(ast.NodeVisitor):
 
     def visit_Attribute(self, node: ast.Attribute) -> None:
         self.generic_visit(node)
-        thing = node.value
-        if not isinstance(thing, ast.Name):
-            return
-
         self._check_import_or_attribute(
-            node=node, module_name=thing.id, object_name=node.attr
+            node=node, module_name=unparse(node.value), object_name=node.attr
         )
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
@@ -983,18 +977,17 @@ class PyiVisitor(ast.NodeVisitor):
 
         imported_names = {obj.name: obj for obj in node.names}
 
-        if module_name == "collections.abc":
-            if (
-                "Set" in imported_names
-                and imported_names["Set"].asname != "AbstractSet"
-            ):
-                self.error(node, Y025)
-            return
-
         if module_name == "__future__":
             if "annotations" in imported_names:
                 self.error(node, Y044)
             return
+
+        if (
+            module_name == "collections.abc"
+            and "Set" in imported_names
+            and imported_names["Set"].asname != "AbstractSet"
+        ):
+            self.error(node, Y025)
 
         for object_name in imported_names:
             self._check_import_or_attribute(node, module_name, object_name)
@@ -1592,7 +1585,7 @@ class PyiVisitor(ast.NodeVisitor):
         self, node: ast.FunctionDef | ast.AsyncFunctionDef, method_name: str
     ) -> None:
         all_args = node.args
-        non_kw_only_args = _non_kw_only_args_of(all_args)
+        non_kw_only_args = all_args.posonlyargs + all_args.args
         num_args = len(non_kw_only_args)
         varargs = all_args.vararg
 
@@ -1758,7 +1751,7 @@ class PyiVisitor(ast.NodeVisitor):
         if all_args.kwonlyargs:
             return
 
-        non_kw_only_args = _non_kw_only_args_of(all_args)
+        non_kw_only_args = all_args.posonlyargs + all_args.args
 
         # Raise an error for defining __str__ or __repr__ on a class, but only if:
         # 1). The method is not decorated with @abstractmethod
@@ -1796,17 +1789,11 @@ class PyiVisitor(ast.NodeVisitor):
     ) -> None:
         cleaned_method = deepcopy(node)
         cleaned_method.decorator_list.clear()
-        first_arg = _non_kw_only_args_of(cleaned_method.args)[0]
-        first_arg.annotation = None
+        non_kw_only_args = cleaned_method.args.posonlyargs + cleaned_method.args.args
+        non_kw_only_args[0].annotation = None
         new_syntax = _unparse_func_node(cleaned_method)
         new_syntax = re.sub(rf"\b{typevar_name}\b", "Self", new_syntax)
-        self.error(
-            # pass the node for the first argument to `self.error`,
-            # rather than the function node,
-            # as linenos differ in Python 3.7 and 3.8+ for decorated functions
-            node.args.args[0],
-            Y019.format(typevar_name=typevar_name, new_syntax=new_syntax),
-        )
+        self.error(node, Y019.format(typevar_name=typevar_name, new_syntax=new_syntax))
 
     def _check_instance_method_for_bad_typevars(
         self,
@@ -1915,7 +1902,7 @@ class PyiVisitor(ast.NodeVisitor):
             self.generic_visit(node)
 
     def visit_arguments(self, node: ast.arguments) -> None:
-        args = _non_kw_only_args_of(node)
+        args = node.posonlyargs + node.args
         defaults = [None] * (len(args) - len(node.defaults)) + node.defaults
         assert len(args) == len(defaults)
         for arg, default in zip(args, defaults):
@@ -2131,4 +2118,7 @@ Y055 = 'Y055 Multiple "type[Foo]" members in a union. {suggestion}'
 Y056 = (
     'Y056 Calling "{method}" on "__all__" may not be supported by all type checkers '
     "(use += instead)"
+)
+Y057 = (
+    "Y057 Do not use {module}.ByteString, which has unclear semantics and is deprecated"
 )
