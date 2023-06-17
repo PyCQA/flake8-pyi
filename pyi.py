@@ -4,12 +4,11 @@ from __future__ import annotations
 import argparse
 import ast
 import logging
-import optparse
 import re
 import sys
 from collections import Counter, defaultdict
 from collections.abc import Container, Iterable, Iterator, Sequence
-from contextlib import contextmanager, suppress
+from contextlib import contextmanager
 from copy import deepcopy
 from dataclasses import dataclass
 from functools import partial
@@ -2003,25 +2002,14 @@ class PyiTreeChecker:
     @staticmethod
     def add_options(parser: OptionManager) -> None:
         """This is brittle, there's multiple levels of caching of defaults."""
-        if isinstance(parser.parser, argparse.ArgumentParser):
-            parser.parser.set_defaults(filename="*.py,*.pyi")
-        else:
-            for option in parser.options:
-                if option.long_option_name == "--filename":
-                    option.default = "*.py,*.pyi"
-                    option.option_kwargs["default"] = option.default
-                    option.to_optparse().default = option.default
-                    parser.parser.defaults[option.dest] = option.default
-
-        with suppress(optparse.OptionConflictError):
-            # In tests, sometimes this option gets called twice for some reason.
-            parser.add_option(
-                "--no-pyi-aware-file-checker",
-                default=False,
-                action="store_true",
-                parse_from_config=True,
-                help="don't patch flake8 with .pyi-aware file checker",
-            )
+        parser.parser.set_defaults(filename="*.py,*.pyi")
+        parser.add_option(
+            "--no-pyi-aware-file-checker",
+            default=False,
+            action="store_true",
+            parse_from_config=True,
+            help="don't patch flake8 with .pyi-aware file checker",
+        )
 
     @staticmethod
     def parse_options(options: argparse.Namespace) -> None:
