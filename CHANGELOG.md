@@ -4,6 +4,10 @@
 
 Features:
 * Support Python 3.12
+* Introduce Y057: Do not use `typing.ByteString or `collections.ByteString`. These
+  types have unclear semantics, and are deprecated; use  `typing_extensions.Buffer` or
+  a union such as `bytes | bytearray | memoryview` instead. See
+  [PEP 688](https://peps.python.org/pep-0688/) for more details.
 * The way in which flake8-pyi modifies pyflakes runs has been improved:
   * When flake8-pyi is installed, pyflakes will now complain about forward references
     in default values for function and method parameters (the same as pyflakes

@@ -89,6 +89,7 @@ currently emitted:
 | Y054 | Only numeric literals with a string representation <=10 characters long are permitted.
 | Y055 | Unions of the form `type[X] \| type[Y]` can be simplified to `type[X \| Y]`. Similarly, `Union[type[X], type[Y]]` can be simplified to `type[Union[X, Y]]`.
 | Y056 | Do not call methods such as `.append()`, `.extend()` or `.remove()` on `__all__`. Different type checkers have varying levels of support for calling these methods on `__all__`. Use `+=` instead, which is known to be supported by all major type checkers.
+| Y057 | Do not use `typing.ByteString or `collections.ByteString`. These types have unclear semantics, and are deprecated; use  `typing_extensions.Buffer` or a union such as `bytes \| bytearray \| memoryview` instead. See [PEP 688](https://peps.python.org/pep-0688/) for more details.
 
 Note that several error codes recommend using types from `typing_extensions` or
 `_typeshed`. Strictly speaking, these packages are not part of the standard

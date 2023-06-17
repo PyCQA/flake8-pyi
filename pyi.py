@@ -102,10 +102,10 @@ _BAD_Y022_IMPORTS: dict[str, tuple[str, str | None]] = {
         "T",
     ),
     # typing aliases for collections.abc
-    # typing.AbstractSet is deliberately omitted (special-cased elsewhere)
+    # typing.AbstractSet and typing.ByteString are deliberately omitted
+    # (special-cased elsewhere).
     # If the second element of the tuple is `None`,
     # it signals that the object shouldn't be parameterized
-    "typing.ByteString": ("collections.abc.ByteString", None),
     "typing.Collection": ("collections.abc.Collection", "T"),
     "typing.ItemsView": ("collections.abc.ItemsView", _MAPPING_SLICE),
     "typing.KeysView": ("collections.abc.KeysView", "KeyType"),
@@ -912,8 +912,12 @@ class PyiVisitor(ast.NodeVisitor):
     ) -> None:
         fullname = f"{module_name}.{object_name}"
 
+        # Y057 errors
+        if fullname in {"typing.ByteString", "collections.abc.ByteString"}:
+            error_message = Y057.format(module=module_name)
+
         # Y022 errors
-        if fullname in _BAD_Y022_IMPORTS:
+        elif fullname in _BAD_Y022_IMPORTS:
             good_cls_name, slice_contents = _BAD_Y022_IMPORTS[fullname]
             params = "" if slice_contents is None else f"[{slice_contents}]"
             error_message = Y022.format(
@@ -961,12 +965,8 @@ class PyiVisitor(ast.NodeVisitor):
 
     def visit_Attribute(self, node: ast.Attribute) -> None:
         self.generic_visit(node)
-        thing = node.value
-        if not isinstance(thing, ast.Name):
-            return
-
         self._check_import_or_attribute(
-            node=node, module_name=thing.id, object_name=node.attr
+            node=node, module_name=unparse(node.value), object_name=node.attr
         )
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
@@ -978,18 +978,17 @@ class PyiVisitor(ast.NodeVisitor):
 
         imported_names = {obj.name: obj for obj in node.names}
 
-        if module_name == "collections.abc":
-            if (
-                "Set" in imported_names
-                and imported_names["Set"].asname != "AbstractSet"
-            ):
-                self.error(node, Y025)
-            return
-
         if module_name == "__future__":
             if "annotations" in imported_names:
                 self.error(node, Y044)
             return
+
+        if (
+            module_name == "collections.abc"
+            and "Set" in imported_names
+            and imported_names["Set"].asname != "AbstractSet"
+        ):
+            self.error(node, Y025)
 
         for object_name in imported_names:
             self._check_import_or_attribute(node, module_name, object_name)
@@ -2120,4 +2119,7 @@ Y055 = 'Y055 Multiple "type[Foo]" members in a union. {suggestion}'
 Y056 = (
     'Y056 Calling "{method}" on "__all__" may not be supported by all type checkers '
     "(use += instead)"
+)
+Y057 = (
+    "Y057 Do not use {module}.ByteString, which has unclear semantics and is deprecated"
 )
