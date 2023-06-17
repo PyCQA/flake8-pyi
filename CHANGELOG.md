@@ -4,6 +4,8 @@
 
 Features:
 * Support Python 3.12
+* Support [PEP 695](https://peps.python.org/pep-0695/) syntax for declaring
+  type aliases
 * The way in which flake8-pyi modifies pyflakes runs has been improved:
   * When flake8-pyi is installed, pyflakes will now complain about forward references
     in default values for function and method parameters (the same as pyflakes

@@ -42,6 +42,11 @@ __version__ = "23.5.0"
 
 LOG = logging.getLogger("flake8.pyi")
 
+if sys.version_info >= (3, 12):
+    _TypeAliasNodeType: TypeAlias = ast.TypeAlias | ast.AnnAssign
+else:
+    _TypeAliasNodeType: TypeAlias = ast.AnnAssign
+
 if sys.version_info >= (3, 9):
     _SliceContents: TypeAlias = ast.expr
 else:
@@ -877,7 +882,7 @@ class PyiVisitor(ast.NodeVisitor):
     # And for assignment-based TypedDicts
     assignment_based_typeddicts: defaultdict[str, list[ast.Assign]]
     # And for private TypeAliases
-    typealias_decls: defaultdict[str, list[ast.AnnAssign]]
+    typealias_decls: defaultdict[str, list[_TypeAliasNodeType]]
 
     # Mapping of each name in the file to the no. of occurrences
     all_name_occurrences: Counter[str]
@@ -1205,7 +1210,7 @@ class PyiVisitor(ast.NodeVisitor):
     # - The penultimate character in the name is an ASCII-lowercase letter
     _Y043_REGEX = re.compile(r"^_.*[a-z]T\d?$")
 
-    def _check_typealias(self, node: ast.AnnAssign, alias_name: str) -> None:
+    def _check_typealias(self, node: _TypeAliasNodeType, alias_name: str) -> None:
         if alias_name.startswith("_"):
             self.typealias_decls[alias_name].append(node)
         if self._Y042_REGEX.match(alias_name):
@@ -1258,6 +1263,11 @@ class PyiVisitor(ast.NodeVisitor):
 
         if node_value and not _is_valid_default_value_with_annotation(node_value):
             self.error(node, Y015)
+
+    if sys.version_info >= (3, 12):
+        def visit_TypeAlias(self, node: ast.TypeAlias) -> None:
+            self.generic_visit(node)
+            self._check_typealias(node=node, alias_name=node.name.id)
 
     def _check_union_members(
         self, members: Sequence[ast.expr], is_pep_604_union: bool

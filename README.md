@@ -59,7 +59,7 @@ currently emitted:
 | Y023 | Where there is no detriment to backwards compatibility, import objects such as `ClassVar` and `NoReturn` from `typing` rather than `typing_extensions`.
 | Y024 | Use `typing.NamedTuple` instead of `collections.namedtuple`, as it allows for more precise type inference.
 | Y025 | Always alias `collections.abc.Set` when importing it, so as to avoid confusion with `builtins.set`. E.g. use `from collections.abc import Set as AbstractSet` instead of `from collections.abc import Set`.
-| Y026 | Type aliases should be explicitly demarcated with `typing.TypeAlias`.
+| Y026 | Type aliases should be explicitly demarcated with `typing.TypeAlias` (or use a [PEP-695](https://peps.python.org/pep-0695/) type statement).
 | Y028 | Always use class-based syntax for `typing.NamedTuple`, instead of assignment-based syntax.
 | Y029 | It is almost always redundant to define `__str__` or `__repr__` in a stub file, as the signatures are almost always identical to `object.__str__` and `object.__repr__`.
 | Y030 | Union expressions should never have more than one `Literal` member, as `Literal[1] \| Literal[2]` is semantically identical to `Literal[1, 2]`.
