@@ -4,7 +4,7 @@
 
 Features:
 * Support Python 3.12
-* Introduce Y057: Do not use `typing.ByteString or `collections.ByteString`. These
+* Introduce Y057: Do not use `typing.ByteString` or `collections.abc.ByteString`. These
   types have unclear semantics, and are deprecated; use  `typing_extensions.Buffer` or
   a union such as `bytes | bytearray | memoryview` instead. See
   [PEP 688](https://peps.python.org/pep-0688/) for more details.
