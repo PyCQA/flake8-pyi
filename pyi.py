@@ -510,9 +510,8 @@ def _has_bad_hardcoded_returns(
     ):
         return False
 
-    if (
-        not method.args.posonlyargs and not method.args.args
-    ):  # weird, but theoretically possible
+    # weird, but theoretically possible
+    if not method.args.posonlyargs and not method.args.args:
         return False
 
     method_name, returns = method.name, method.returns
