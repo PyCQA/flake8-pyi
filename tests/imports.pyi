@@ -37,7 +37,6 @@ from collections.abc import (
     ValuesView,
     Sequence,
     MutableSequence,
-    ByteString
 )
 from re import Match, Pattern
 # Things that are of no use for stub files are intentionally omitted.
@@ -93,7 +92,6 @@ from typing import ContextManager  # Y022 Use "contextlib.AbstractContextManager
 from typing import OrderedDict  # Y022 Use "collections.OrderedDict[KeyType, ValueType]" instead of "typing.OrderedDict[KeyType, ValueType]" (PEP 585 syntax)
 from typing_extensions import OrderedDict  # Y022 Use "collections.OrderedDict[KeyType, ValueType]" instead of "typing_extensions.OrderedDict[KeyType, ValueType]" (PEP 585 syntax)
 from typing import Callable  # Y022 Use "collections.abc.Callable" instead of "typing.Callable" (PEP 585 syntax)
-from typing import ByteString  # Y022 Use "collections.abc.ByteString" instead of "typing.ByteString" (PEP 585 syntax)
 from typing import Container  # Y022 Use "collections.abc.Container[T]" instead of "typing.Container[T]" (PEP 585 syntax)
 from typing import Hashable  # Y022 Use "collections.abc.Hashable" instead of "typing.Hashable" (PEP 585 syntax)
 from typing import ItemsView  # Y022 Use "collections.abc.ItemsView[KeyType, ValueType]" instead of "typing.ItemsView[KeyType, ValueType]" (PEP 585 syntax)
@@ -128,6 +126,8 @@ from collections import namedtuple  # Y024 Use "typing.NamedTuple" instead of "c
 from collections.abc import Set  # Y025 Use "from collections.abc import Set as AbstractSet" to avoid confusion with "builtins.set"
 from typing import AbstractSet  # Y038 Use "from collections.abc import Set as AbstractSet" instead of "from typing import AbstractSet" (PEP 585 syntax)
 from typing import Text  # Y039 Use "str" instead of "typing.Text"
+from typing import ByteString  # Y057 Do not use typing.ByteString, which has unclear semantics and is deprecated
+from collections.abc import ByteString  # Y057 Do not use collections.abc.ByteString, which has unclear semantics and is deprecated
 
 # GOOD ATTRIBUTE ACCESS
 foo: typing.SupportsIndex
@@ -164,3 +164,5 @@ class Foo:
 # BAD ATTRIBUTE ACCESS: OTHER
 j: collections.namedtuple  # Y024 Use "typing.NamedTuple" instead of "collections.namedtuple"
 m: typing.Text  # Y039 Use "str" instead of "typing.Text"
+o: typing.ByteString  # Y057 Do not use typing.ByteString, which has unclear semantics and is deprecated
+p: collections.abc.ByteString  # Y057 Do not use collections.abc.ByteString, which has unclear semantics and is deprecated
