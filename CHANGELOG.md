@@ -32,6 +32,7 @@ Bugfixes:
 
 Other changes:
 * flake8-pyi no longer supports being run on Python 3.7.
+* flake8-pyi no longer supports being run with flake8 <v6.
 
 ## 23.5.0
 
