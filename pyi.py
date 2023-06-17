@@ -176,7 +176,10 @@ class PyflakesPreProcessor(ast.NodeTransformer):
             if isinstance(base, ast.Subscript):
                 # Stringify the subscript to prevent F821 errors from being emitted
                 # for (valid) recursive definitions: Foo[Bar] --> Foo["Bar"]
-                base.slice = ast.Constant(value=unparse(base.slice))
+                if sys.version_info >= (3, 9):
+                    base.slice = ast.Constant(value=unparse(base.slice))
+                else:
+                    base.slice = ast.Index(ast.Constant(value=unparse(base.slice)))
                 ast.fix_missing_locations(base)
         return node
 
