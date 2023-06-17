@@ -510,7 +510,9 @@ def _has_bad_hardcoded_returns(
     ):
         return False
 
-    if not method.args.posonlyargs and not method.args.args:  # weird, but theoretically possible
+    if (
+        not method.args.posonlyargs and not method.args.args
+    ):  # weird, but theoretically possible
         return False
 
     method_name, returns = method.name, method.returns
@@ -1782,10 +1784,7 @@ class PyiVisitor(ast.NodeVisitor):
         non_kw_only_args[0].annotation = None
         new_syntax = _unparse_func_node(cleaned_method)
         new_syntax = re.sub(rf"\b{typevar_name}\b", "Self", new_syntax)
-        self.error(
-            node,
-            Y019.format(typevar_name=typevar_name, new_syntax=new_syntax),
-        )
+        self.error(node, Y019.format(typevar_name=typevar_name, new_syntax=new_syntax))
 
     def _check_instance_method_for_bad_typevars(
         self,
