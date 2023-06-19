@@ -13,8 +13,7 @@ def test_pyi_file(path: str) -> None:
     flags = []
     expected_output = ""
 
-    match = re.search(r"_py3(\d+)\.pyi$", path)
-    if match is not None:
+    if match := re.search(r"_py3(\d+)\.pyi$", path):
         if sys.version_info < (3, int(match.group(1))):
             pytest.skip(f"Python {sys.version_info} is too old for {path}")
 

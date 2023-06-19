@@ -1970,18 +1970,15 @@ def _check_for_type_comments(lines: list[str]) -> Iterator[Error]:
         if cleaned_line.startswith("#"):
             continue
 
-        match = _TYPE_COMMENT_REGEX.search(cleaned_line)
-        if not match:
-            continue
+        if match := _TYPE_COMMENT_REGEX.search(cleaned_line):
+            type_comment = match.group(1).strip()
 
-        type_comment = match.group(1).strip()
+            try:
+                ast.parse(type_comment)
+            except SyntaxError:
+                continue
 
-        try:
-            ast.parse(type_comment)
-        except SyntaxError:
-            continue
-
-        yield Error(lineno, 0, Y033, PyiTreeChecker)
+            yield Error(lineno, 0, Y033, PyiTreeChecker)
 
 
 @dataclass
