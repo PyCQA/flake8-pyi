@@ -1788,11 +1788,30 @@ class PyiVisitor(ast.NodeVisitor):
     ) -> None:
         cleaned_method = deepcopy(node)
         cleaned_method.decorator_list.clear()
+        if sys.version_info >= (3, 12):
+            cleaned_method.type_params = [
+                param
+                for param in cleaned_method.type_params
+                if not (isinstance(param, ast.TypeVar) and param.name == typevar_name)
+            ]
         non_kw_only_args = cleaned_method.args.posonlyargs + cleaned_method.args.args
         non_kw_only_args[0].annotation = None
         new_syntax = _unparse_func_node(cleaned_method)
         new_syntax = re.sub(rf"\b{typevar_name}\b", "Self", new_syntax)
         self.error(node, Y019.format(typevar_name=typevar_name, new_syntax=new_syntax))
+
+    @staticmethod
+    def _is_likely_private_typevar(
+        method: ast.FunctionDef | ast.AsyncFunctionDef, tvar_name: str
+    ) -> bool:
+        if tvar_name.startswith("_"):
+            return True
+        if sys.version_info < (3, 12):
+            return False
+        return any(  # type: ignore[unreachable]
+            isinstance(param, ast.TypeVar) and param.name == tvar_name
+            for param in method.type_params
+        )
 
     def _check_instance_method_for_bad_typevars(
         self,
@@ -1809,7 +1828,7 @@ class PyiVisitor(ast.NodeVisitor):
 
         arg1_annotation_name = first_arg_annotation.id
 
-        if arg1_annotation_name.startswith("_"):
+        if self._is_likely_private_typevar(method, arg1_annotation_name):
             self._Y019_error(method, arg1_annotation_name)
 
     def _check_class_method_for_bad_typevars(
@@ -1833,7 +1852,9 @@ class PyiVisitor(ast.NodeVisitor):
         if not _is_name(first_arg_annotation.value, "type"):
             return
 
-        if cls_typevar == return_annotation.id and cls_typevar.startswith("_"):
+        if cls_typevar == return_annotation.id and self._is_likely_private_typevar(
+            method, cls_typevar
+        ):
             self._Y019_error(method, cls_typevar)
 
     def check_self_typevars(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
