@@ -6,6 +6,8 @@ Features:
 * Support Python 3.12
 * Support [PEP 695](https://peps.python.org/pep-0695/) syntax for declaring
   type aliases
+* Correctly emit Y019 errors for PEP-695 methods that are generic around a `TypeVar`
+  instead of returning `typing_extensions.Self`
 * Introduce Y057: Do not use `typing.ByteString` or `collections.abc.ByteString`. These
   types have unclear semantics, and are deprecated; use  `typing_extensions.Buffer` or
   a union such as `bytes | bytearray | memoryview` instead. See
