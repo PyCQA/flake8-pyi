@@ -1,11 +1,45 @@
 import glob
 import os
+import os.path
 import re
 import subprocess
 import sys
 from itertools import zip_longest
 
 import pytest
+
+
+IGNORED_DEPRECATION_WARNINGS = [
+    # Ignore all DeprecationWarnings that come from pyflakes or flake8-bugbear
+    rf"{re.escape(os.path.join('pyflakes', 'checker.py'))}:\d+: DeprecationWarning: ",
+    r"bugbear\.py:\d+: DeprecationWarning: ",
+]
+IGNORED_DEPRECATION_PATTERNS = [
+    re.compile(pattern) for pattern in IGNORED_DEPRECATION_WARNINGS
+]
+
+
+def get_filtered_stderr(stderr: str) -> str:
+    lines = stderr.splitlines()
+
+    grouped_lines = []
+    skip_this_line = False
+    for line, next_line in zip_longest(lines, lines[1:]):
+        if skip_this_line:
+            skip_this_line = False
+        elif next_line is None:
+            grouped_lines.append(line)
+        elif "DeprecationWarning" in line:
+            grouped_lines.append(line + "\n" + next_line)
+            skip_this_line = True
+        else:
+            grouped_lines.append(line)
+
+    return "\n".join(
+        line
+        for line in grouped_lines
+        if not any(pattern.search(line) for pattern in IGNORED_DEPRECATION_PATTERNS)
+    )
 
 
 @pytest.mark.parametrize("path", glob.glob("tests/*.pyi"))
@@ -45,20 +79,34 @@ def test_pyi_file(path: str) -> None:
     run_results = [
         # Passing a file on command line
         subprocess.run(
-            ["flake8", "-j0", *flags, path],
+            [sys.executable, "-Wa", "-m", "flake8", "-j0", *flags, path],
             env={**os.environ, "PYTHONPATH": "."},
-            stdout=subprocess.PIPE,
+            capture_output=True,
+            text=True,
         ),
         # Passing "-" as the file, and reading from stdin instead
         subprocess.run(
-            ["flake8", "-j0", "--stdin-display-name", path, *flags, "-"],
+            [
+                sys.executable,
+                "-Wa",
+                "-m",
+                "flake8",
+                "-j0",
+                "--stdin-display-name",
+                path,
+                *flags,
+                "-",
+            ],
             env={**os.environ, "PYTHONPATH": "."},
-            input=file_contents.encode("utf-8"),
-            stdout=subprocess.PIPE,
+            input=file_contents,
+            capture_output=True,
+            text=True,
         ),
     ]
 
     for run_result in run_results:
-        output = run_result.stdout.decode("utf-8")
+        output = run_result.stdout
+        if stderr := get_filtered_stderr(run_result.stderr):
+            output += "\n" + stderr
         output = re.sub(":[0-9]+: ", ": ", output)  # ignore column numbers
         assert output == expected_output
