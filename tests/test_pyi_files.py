@@ -8,7 +8,6 @@ from itertools import zip_longest
 
 import pytest
 
-
 IGNORED_DEPRECATION_WARNINGS = [
     # Ignore all DeprecationWarnings that come from pyflakes or flake8-bugbear
     rf"{re.escape(os.path.join('pyflakes', 'checker.py'))}:\d+: DeprecationWarning: ",
