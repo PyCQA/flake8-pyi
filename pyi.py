@@ -1151,7 +1151,7 @@ class PyiVisitor(ast.NodeVisitor):
         if isinstance(node.value, str) and not self.string_literals_allowed.active:
             self.error(node, Y020)
         elif isinstance(node.value, (str, bytes)):
-            if len(str(node.value)) > 50:
+            if len(node.value) > 50:
                 self.error(node, Y053)
         elif isinstance(node.value, (int, float, complex)):
             if len(str(node.value)) > 10:
