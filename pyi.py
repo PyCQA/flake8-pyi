@@ -735,8 +735,7 @@ def _is_valid_default_value_with_annotation(
 
     # `...`, bools, None, str, bytes,
     # positive ints, positive floats, positive complex numbers with no real part
-    allowed_types = {type(...), bool, type(None), int, float, complex, str, bytes}
-    if isinstance(node, ast.Constant) and type(node.value) in allowed_types:
+    if isinstance(node, ast.Constant):
         return True
 
     # Negative ints, negative floats, negative complex numbers with no real part,
