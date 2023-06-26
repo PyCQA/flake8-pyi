@@ -404,14 +404,7 @@ def _is_type_or_Type(node: ast.expr) -> bool:
 
 
 def _is_None(node: ast.expr) -> bool:
-    # <=3.7: `BaseException | None` parses as:
-    #     BinOp(left=Name(id='BaseException'), op=BitOr(), right=NameConstant(value=None))`
-    # >=3.8: `BaseException | None` parses as
-    #     BinOp(left=Name(id='BaseException'), op=BitOr(), right=Constant(value=None))`
-    #
-    # ast.NameConstant is deprecated in 3.8+, but doesn't raise a DeprecationWarning,
-    # and the isinstance() check still works
-    return isinstance(node, ast.NameConstant) and node.value is None
+    return isinstance(node, ast.Constant) and node.value is None
 
 
 class ExitArgAnalysis(NamedTuple):
@@ -553,8 +546,10 @@ def _unparse_func_node(node: ast.FunctionDef | ast.AsyncFunctionDef) -> str:
     return re.sub(r"\s+", " ", unparse(node))
 
 
-def _is_list_of_str_nodes(seq: list[ast.expr | None]) -> TypeGuard[list[ast.Str]]:
-    return all(isinstance(item, ast.Str) for item in seq)
+def _is_list_of_str_nodes(seq: list[ast.expr | None]) -> TypeGuard[list[ast.Constant]]:
+    return all(
+        isinstance(item, ast.Constant) and type(item.value) is str for item in seq
+    )
 
 
 def _is_bad_TypedDict(node: ast.Call) -> bool:
@@ -582,7 +577,7 @@ def _is_bad_TypedDict(node: ast.Call) -> bool:
     if not _is_list_of_str_nodes(typed_dict_fields):
         return False
 
-    fieldnames = [field.s for field in typed_dict_fields]
+    fieldnames = [field.value for field in typed_dict_fields]
 
     return all(
         fieldname.isidentifier() and not iskeyword(fieldname)
@@ -740,13 +735,17 @@ def _is_valid_default_value_with_annotation(
 
     # `...`, bools, None, str, bytes,
     # positive ints, positive floats, positive complex numbers with no real part
-    if isinstance(node, (ast.Ellipsis, ast.NameConstant, ast.Str, ast.Bytes, ast.Num)):
+    if isinstance(node, ast.Constant):
         return True
 
     # Negative ints, negative floats, negative complex numbers with no real part,
     # some constants from the math module
     if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.USub):
-        if isinstance(node.operand, ast.Num):
+        numeric_types = {int, float, complex}
+        if (
+            isinstance(node.operand, ast.Constant)
+            and type(node.operand.value) in numeric_types
+        ):
             return True
         if isinstance(node.operand, ast.Attribute) and isinstance(
             node.operand.value, ast.Name
@@ -762,19 +761,19 @@ def _is_valid_default_value_with_annotation(
     if (
         isinstance(node, ast.BinOp)
         and isinstance(node.op, (ast.Add, ast.Sub))
-        and isinstance(node.right, ast.Num)
-        and type(node.right.n) is complex
+        and isinstance(node.right, ast.Constant)
+        and type(node.right.value) is complex
     ):
         left = node.left
         # ...Where the real part is positive:
-        if isinstance(left, ast.Num) and type(left.n) is not complex:
+        if isinstance(left, ast.Constant) and type(left.value) in {int, float}:
             return True
         # ...Where the real part is negative:
         if (
             isinstance(left, ast.UnaryOp)
             and isinstance(left.op, ast.USub)
-            and isinstance(left.operand, ast.Num)
-            and type(left.operand.n) is not complex
+            and isinstance(left.operand, ast.Constant)
+            and type(left.operand.value) in {int, float}
         ):
             return True
         return False
@@ -809,10 +808,8 @@ def _is_valid_pep_604_union(node: ast.expr) -> TypeGuard[ast.BinOp]:
 def _is_valid_default_value_without_annotation(node: ast.expr) -> bool:
     """Is `node` a valid default for an assignment without an annotation?"""
     return (
-        isinstance(
-            node, (ast.Call, ast.Name, ast.Attribute, ast.Subscript, ast.Ellipsis)
-        )
-        or _is_None(node)
+        isinstance(node, (ast.Call, ast.Name, ast.Attribute, ast.Subscript))
+        or (isinstance(node, ast.Constant) and node.value in {None, ...})
         or _is_valid_pep_604_union(node)
     )
 
@@ -1150,45 +1147,23 @@ class PyiVisitor(ast.NodeVisitor):
         for kw in node.keywords:
             self.visit(kw)
 
-    def _check_for_Y053(self, node: ast.Constant | ast.Str | ast.Bytes) -> None:
-        if len(node.s) > 50:
-            self.error(node, Y053)
-
-    def _check_for_Y054(self, node: ast.Constant | ast.Num) -> None:
-        # The maximum character limit is arbitrary, but here's what it's based on:
-        # Hex representation of 32-bit integers tend to be 10 chars.
-        # So is the decimal representation
-        # of the maximum positive signed 32-bit integer.
-        # 0xFFFFFFFF --> 4294967295
-        if len(str(node.n)) > 10:
-            self.error(node, Y054)
-
-    # 3.8+
     def visit_Constant(self, node: ast.Constant) -> None:
         if isinstance(node.value, str) and not self.string_literals_allowed.active:
             self.error(node, Y020)
         elif isinstance(node.value, (str, bytes)):
-            self._check_for_Y053(node)
+            if len(node.value) > 50:
+                self.error(node, Y053)
         elif isinstance(node.value, (int, float, complex)):
-            self._check_for_Y054(node)
-
-    # 3.7
-    def visit_Str(self, node: ast.Str) -> None:
-        if self.string_literals_allowed.active:
-            self._check_for_Y053(node)
-        else:
-            self.error(node, Y020)
-
-    # 3.7
-    def visit_Bytes(self, node: ast.Bytes) -> None:
-        self._check_for_Y053(node)
-
-    # 3.7
-    def visit_Num(self, node: ast.Num) -> None:
-        self._check_for_Y054(node)
+            if len(str(node.value)) > 10:
+                # The maximum character limit is arbitrary, but here's what it's based on:
+                # Hex representation of 32-bit integers tend to be 10 chars.
+                # So is the decimal representation
+                # of the maximum positive signed 32-bit integer.
+                # 0xFFFFFFFF --> 4294967295
+                self.error(node, Y054)
 
     def visit_Expr(self, node: ast.Expr) -> None:
-        if isinstance(node.value, ast.Str):
+        if isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
             self.error(node, Y021)
         else:
             self.generic_visit(node)
@@ -1288,16 +1263,12 @@ class PyiVisitor(ast.NodeVisitor):
         literal_classes_present: defaultdict[str, list[_SliceContents]]
         literal_classes_present = defaultdict(list)
         for literal in analysis.combined_literal_members:
-            if isinstance(literal, ast.Str):
-                literal_classes_present["str"].append(literal)
-            elif isinstance(literal, ast.Bytes):
-                literal_classes_present["bytes"].append(literal)
-            elif isinstance(literal, ast.Num):
-                if type(literal.n) is int:
-                    literal_classes_present["int"].append(literal)
-            elif isinstance(literal, ast.NameConstant):
-                if type(literal.value) is bool:
-                    literal_classes_present["bool"].append(literal)
+            interesting_builtins = {str, bytes, int, bool}
+            if (
+                isinstance(literal, ast.Constant)
+                and type(literal.value) in interesting_builtins
+            ):
+                literal_classes_present[type(literal.value).__name__].append(literal)
         for cls, literals in literal_classes_present.items():
             if cls in analysis.builtins_classes_in_union:
                 first_literal_present = literals[0]
@@ -1460,10 +1431,9 @@ class PyiVisitor(ast.NodeVisitor):
         version_info = node.left
         if isinstance(version_info, ast.Subscript):
             slc = version_info.slice
-            # TODO: ast.Num works, but is deprecated
-            if isinstance(slc, ast.Num):
+            if isinstance(slc, ast.Constant):
                 # anything other than the integer 0 doesn't make much sense
-                if isinstance(slc.n, int) and slc.n == 0:
+                if isinstance(slc.value, int) and slc.value == 0:
                     must_be_single = True
                 else:
                     self.error(node, Y003)
@@ -1474,11 +1444,11 @@ class PyiVisitor(ast.NodeVisitor):
                     return
                 elif (
                     # allow only [:1] and [:2]
-                    isinstance(slc.upper, ast.Num)
-                    and isinstance(slc.upper.n, int)
-                    and slc.upper.n in (1, 2)
+                    isinstance(slc.upper, ast.Constant)
+                    and isinstance(slc.upper.value, int)
+                    and slc.upper.value in {1, 2}
                 ):
-                    can_have_strict_equals = slc.upper.n
+                    can_have_strict_equals = slc.upper.value
                 else:
                     self.error(node, Y003)
                     return
@@ -1501,12 +1471,17 @@ class PyiVisitor(ast.NodeVisitor):
     ) -> None:
         comparator = node.comparators[0]
         if must_be_single:
-            if not isinstance(comparator, ast.Num) or not isinstance(comparator.n, int):
+            if not isinstance(comparator, ast.Constant) or not isinstance(
+                comparator.value, int
+            ):
                 self.error(node, Y003)
         elif not isinstance(comparator, ast.Tuple):
             self.error(node, Y003)
         else:
-            if not all(isinstance(elt, ast.Num) for elt in comparator.elts):
+            if not all(
+                isinstance(elt, ast.Constant) and type(elt.value) is int
+                for elt in comparator.elts
+            ):
                 self.error(node, Y003)
             elif len(comparator.elts) > 2:
                 # mypy only supports major and minor version checks
@@ -1532,11 +1507,11 @@ class PyiVisitor(ast.NodeVisitor):
             return
 
         comparator = node.comparators[0]
-        if isinstance(comparator, ast.Str):
+        if isinstance(comparator, ast.Constant) and type(comparator.value) is str:
             # other values are possible but we don't need them right now
             # this protects against typos
-            if comparator.s not in ("linux", "win32", "cygwin", "darwin"):
-                self.error(node, Y008.format(platform=comparator.s))
+            if comparator.value not in {"linux", "win32", "cygwin", "darwin"}:
+                self.error(node, Y008.format(platform=comparator.value))
         else:
             self.error(node, Y007)
 
@@ -1562,8 +1537,10 @@ class PyiVisitor(ast.NodeVisitor):
         # empty class body should contain "..." not "pass"
         if len(node.body) == 1:
             statement = node.body[0]
-            if isinstance(statement, ast.Expr) and isinstance(
-                statement.value, ast.Ellipsis
+            if (
+                isinstance(statement, ast.Expr)
+                and isinstance(statement.value, ast.Constant)
+                and statement.value.value is ...
             ):
                 return
             elif isinstance(statement, ast.Pass):
@@ -1575,8 +1552,10 @@ class PyiVisitor(ast.NodeVisitor):
             if isinstance(statement, ast.Pass):
                 self.error(statement, Y012)
             # "..." should not be used in non-empty class body
-            elif isinstance(statement, ast.Expr) and isinstance(
-                statement.value, ast.Ellipsis
+            elif (
+                isinstance(statement, ast.Expr)
+                and isinstance(statement.value, ast.Constant)
+                and statement.value.value is ...
             ):
                 self.error(statement, Y013)
 
@@ -1904,11 +1883,12 @@ class PyiVisitor(ast.NodeVisitor):
             # normally, should just be "..."
             if isinstance(statement, ast.Pass):
                 self.error(statement, Y009)
-            # Ellipsis is fine. Str (docstrings) is not but we produce
-            # tailored error message for it elsewhere.
+            # ... is fine. Docstrings are not but we produce
+            # tailored error message for them elsewhere.
             elif not (
                 isinstance(statement, ast.Expr)
-                and isinstance(statement.value, (ast.Ellipsis, ast.Str))
+                and isinstance(statement.value, ast.Constant)
+                and isinstance(statement.value.value, (str, type(...)))
             ):
                 self.error(statement, Y010)
 
