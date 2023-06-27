@@ -78,7 +78,7 @@ def test_pyi_file(path: str) -> None:
     run_results = [
         # Passing a file on command line
         subprocess.run(
-            [sys.executable, "-Wa", "-m", "flake8", "-j0", *flags, path],
+            [sys.executable, "-Walways", "-m", "flake8", "-j0", *flags, path],
             env={**os.environ, "PYTHONPATH": "."},
             capture_output=True,
             text=True,
@@ -87,7 +87,7 @@ def test_pyi_file(path: str) -> None:
         subprocess.run(
             [
                 sys.executable,
-                "-Wa",
+                "-Walways",
                 "-m",
                 "flake8",
                 "-j0",
