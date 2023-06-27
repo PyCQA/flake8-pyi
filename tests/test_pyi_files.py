@@ -47,7 +47,7 @@ def test_pyi_file(path: str) -> None:
     # For DeprecationWarnings coming from flake8-pyi itself,
     # print the first occurence of each warning to stderr.
     # This will fail CI the same as `-Werror:::pyi`,
-    # but the test failure report that pyflakes gives is much easier to read
+    # but the test failure report that pytest gives is much easier to read
     # if we use `-Wdefault:::pyi`
     flake8_invocation = [
         sys.executable,
