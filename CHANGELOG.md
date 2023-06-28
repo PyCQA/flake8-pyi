@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## 23.6.0
 
 Features:
 * Support Python 3.12
@@ -33,7 +33,7 @@ Bugfixes:
   sys.version_info >= (3, 10)` check). This bug has now been fixed.
 
 Other changes:
-* flake8-pyi no longer supports being run on Python 3.7.
+* flake8-pyi no longer supports being run on Python 3.7, which is now end-of-life.
 * flake8-pyi no longer supports being run with flake8 <v6.
 
 ## 23.5.0
