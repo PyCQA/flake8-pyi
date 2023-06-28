@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## 23.6.0
 
 Features:
 * Support Python 3.12
@@ -35,7 +35,7 @@ Bugfixes:
   constraints. This bug has now been fixed.
 
 Other changes:
-* flake8-pyi no longer supports being run on Python 3.7.
+* flake8-pyi no longer supports being run on Python 3.7, which has reached its end of life.
 * flake8-pyi no longer supports being run with flake8 <v6.
 
 ## 23.5.0
