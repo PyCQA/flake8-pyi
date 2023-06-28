@@ -31,6 +31,8 @@ Bugfixes:
   TypeVars/ParamSpecs/TypeAliases/TypedDicts/Protocols if the object in question had
   multiple definitions in the same file (e.g. across two branches of an `if
   sys.version_info >= (3, 10)` check). This bug has now been fixed.
+* Y020 was previously not emitted if quoted annotations were used in TypeVar
+  constraints. This bug has now been fixed.
 
 Other changes:
 * flake8-pyi no longer supports being run on Python 3.7.

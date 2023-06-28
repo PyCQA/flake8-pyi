@@ -1,6 +1,6 @@
 import sys
 import typing
-from typing import Annotated, Literal, TypeAlias, TypeVar
+from typing import Annotated, Literal, NewType, TypeAlias, TypeVar
 
 import typing_extensions
 
@@ -15,6 +15,16 @@ __slots__ = ('foo',)  # Y052 Need type annotation for "__slots__"
 def f(x: "int"): ...  # Y020 Quoted annotations should never be used in stubs
 def g(x: list["int"]): ...  # Y020 Quoted annotations should never be used in stubs
 _T = TypeVar("_T", bound="int")  # Y020 Quoted annotations should never be used in stubs
+_T2 = TypeVar("_T", bound=int)
+_S = TypeVar("_S")
+_U = TypeVar("_U", "int", "str")  # Y020 Quoted annotations should never be used in stubs  # Y020 Quoted annotations should never be used in stubs
+_U2 = TypeVar("_U", int, str)
+
+# This is invalid, but type checkers will flag it, so we don't need to
+_V = TypeVar()
+
+def make_sure_those_typevars_arent_flagged_as_unused(a: _T, b: _T2, c: _S, d: _U, e: _U2, f: _V) -> tuple[_T, _T2, _S, _U, _U2, _V]: ...
+
 def h(w: Literal["a", "b"], x: typing.Literal["c"], y: typing_extensions.Literal["d"], z: _T) -> _T: ...
 
 def i(x: Annotated[int, "lots", "of", "strings"], b: typing.Annotated[str, "more", "strings"]) -> None:
@@ -60,3 +70,6 @@ class DocstringAndPass:
 k = ""  # Y052 Need type annotation for "k"
 el = r""  # Y052 Need type annotation for "el"
 m = u""  # Y052 Need type annotation for "m"
+
+_N = NewType("_N", int)
+_NBad = NewType("_N", "int")  # Y020 Quoted annotations should never be used in stubs
