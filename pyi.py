@@ -1142,7 +1142,7 @@ class PyiVisitor(ast.NodeVisitor):
         if node.args:
             with self.string_literals_allowed.enabled():
                 self.visit(node.args[0])
-        # But in keyword arguments they're most likely TypeVar bounds,
+        # But in other arguments they're most likely TypeVar bounds,
         # which should not be quoted.
         for arg in chain(node.args[1:], node.keywords):
             self.visit(arg)
