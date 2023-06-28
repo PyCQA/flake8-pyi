@@ -1433,7 +1433,7 @@ class PyiVisitor(ast.NodeVisitor):
             slc = version_info.slice
             if isinstance(slc, ast.Constant):
                 # anything other than the integer 0 doesn't make much sense
-                if isinstance(slc.value, int) and slc.value == 0:
+                if type(slc.value) is int and slc.value == 0:
                     must_be_single = True
                 else:
                     self.error(node, Y003)
@@ -1445,7 +1445,7 @@ class PyiVisitor(ast.NodeVisitor):
                 elif (
                     # allow only [:1] and [:2]
                     isinstance(slc.upper, ast.Constant)
-                    and isinstance(slc.upper.value, int)
+                    and type(slc.upper.value) is int
                     and slc.upper.value in {1, 2}
                 ):
                     can_have_strict_equals = slc.upper.value
@@ -1471,8 +1471,9 @@ class PyiVisitor(ast.NodeVisitor):
     ) -> None:
         comparator = node.comparators[0]
         if must_be_single:
-            if not isinstance(comparator, ast.Constant) or not isinstance(
-                comparator.value, int
+            if (
+                not isinstance(comparator, ast.Constant)
+                or type(comparator.value) is not int
             ):
                 self.error(node, Y003)
         elif not isinstance(comparator, ast.Tuple):
