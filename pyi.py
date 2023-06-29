@@ -1260,17 +1260,18 @@ class PyiVisitor(ast.NodeVisitor):
 
     def _check_for_Y051_violations(self, analysis: UnionAnalysis) -> None:
         """Search for redundant unions such as `str | Literal["foo"]`, etc."""
-        seen_builtins: set[str] = set()
+        seen_builtins: set[type] = set()
         for literal in analysis.combined_literal_members:
             if not isinstance(literal, ast.Constant):
                 continue
-            typename = type(literal.value).__name__
+            typ = type(literal.value)
+            typename = typ.__name__
             if (
-                typename in {"str", "bytes", "int", "bool"}
+                typ in {str, bytes, int, bool}
                 and typename in analysis.builtins_classes_in_union
-                and typename not in seen_builtins
+                and typ not in seen_builtins
             ):
-                seen_builtins.add(typename)
+                seen_builtins.add(typ)
                 self.error(
                     literal,
                     Y051.format(
