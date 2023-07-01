@@ -42,23 +42,42 @@ def test_pyi_file(path: str) -> None:
         option = flag.split("=")[0]
         assert option != "--ignore", bad_flag_msg
 
+    # Silence DeprecationWarnings from our dependencies (pyflakes, flake8-bugbear, etc.)
+    #
+    # For DeprecationWarnings coming from flake8-pyi itself,
+    # print the first occurence of each warning to stderr.
+    # This will fail CI the same as `-Werror:::pyi`,
+    # but the test failure report that pytest gives is much easier to read
+    # if we use `-Wdefault:::pyi`
+    flake8_invocation = [
+        sys.executable,
+        "-Wignore",
+        "-Wdefault:::pyi",
+        "-m",
+        "flake8",
+        "-j0",
+    ]
+
     run_results = [
         # Passing a file on command line
         subprocess.run(
-            ["flake8", "-j0", *flags, path],
+            [*flake8_invocation, *flags, path],
             env={**os.environ, "PYTHONPATH": "."},
-            stdout=subprocess.PIPE,
+            capture_output=True,
+            text=True,
         ),
         # Passing "-" as the file, and reading from stdin instead
         subprocess.run(
-            ["flake8", "-j0", "--stdin-display-name", path, *flags, "-"],
+            [*flake8_invocation, "--stdin-display-name", path, *flags, "-"],
             env={**os.environ, "PYTHONPATH": "."},
-            input=file_contents.encode("utf-8"),
-            stdout=subprocess.PIPE,
+            input=file_contents,
+            capture_output=True,
+            text=True,
         ),
     ]
 
     for run_result in run_results:
-        output = run_result.stdout.decode("utf-8")
-        output = re.sub(":[0-9]+: ", ": ", output)  # ignore column numbers
+        output = re.sub(":[0-9]+: ", ": ", run_result.stdout)  # ignore column numbers
+        if run_result.stderr:
+            output += "\n" + run_result.stderr
         assert output == expected_output
