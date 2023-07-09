@@ -9,7 +9,7 @@ from typing import Union
 
 import typing_extensions
 from typing_extensions import (
-    Type as Type_,  # isort: skip  # Y022 Use "type[MyClass]" instead of "typing_extensions.Type[MyClass]" (PEP 585 syntax)
+    Type as Type_,)  # isort: skip  # Y022 Use "type[MyClass]" instead of "typing_extensions.Type[MyClass]" (PEP 585 syntax
 )
 from typing_extensions import Literal, TypeAlias
 
