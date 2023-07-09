@@ -8,6 +8,7 @@ from typing import (
 from typing import Union
 
 import typing_extensions
+
 # Switch isort off or it auto-adds some fun SyntaxErrors here!!
 # isort: off
 from typing_extensions import (
