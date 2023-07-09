@@ -903,7 +903,7 @@ class PyiVisitor(ast.NodeVisitor):
         return f"{self.__class__.__name__}(filename={self.filename!r})"
 
     def _check_import_or_attribute(
-        self, node: ast.Attribute | ast.ImportFrom, module_name: str, object_name: str
+        self, node: ast.Attribute | ast.alias, module_name: str, object_name: str
     ) -> None:
         fullname = f"{module_name}.{object_name}"
 
@@ -975,7 +975,7 @@ class PyiVisitor(ast.NodeVisitor):
 
         if module_name == "__future__":
             if "annotations" in imported_names:
-                self.error(node, Y044)
+                self.error(imported_names["annotations"], Y044)
             return
 
         if (
@@ -983,13 +983,13 @@ class PyiVisitor(ast.NodeVisitor):
             and "Set" in imported_names
             and imported_names["Set"].asname != "AbstractSet"
         ):
-            self.error(node, Y025)
+            self.error(imported_names["Set"], Y025)
 
-        for object_name in imported_names:
-            self._check_import_or_attribute(node, module_name, object_name)
+        for object_name, subnode in imported_names.items():
+            self._check_import_or_attribute(subnode, module_name, object_name)
 
         if module_name == "typing" and "AbstractSet" in imported_names:
-            self.error(node, Y038)
+            self.error(imported_names["AbstractSet"], Y038)
 
     def _check_for_typevarlike_assignments(
         self, node: ast.Assign, function: ast.expr, object_name: str

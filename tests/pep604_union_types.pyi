@@ -1,7 +1,7 @@
 import typing
-from typing import (  # Y037 Use PEP 604 union types instead of typing.Optional (e.g. "int | None" instead of "Optional[int]"). # Y037 Use PEP 604 union types instead of typing.Union (e.g. "int | str" instead of "Union[int, str]").
-    Optional,
-    Union,
+from typing import (
+    Optional,  # Y037 Use PEP 604 union types instead of typing.Optional (e.g. "int | None" instead of "Optional[int]").
+    Union,  # Y037 Use PEP 604 union types instead of typing.Union (e.g. "int | str" instead of "Union[int, str]").
 )
 
 x1: Optional[str]

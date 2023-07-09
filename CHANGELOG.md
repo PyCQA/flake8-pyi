@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+* In multiline import statements, import-related error codes such as Y022 and
+  Y027 are now emitted on the line of the specific import that is disallowed,
+  rather than the first line of the import statement.
 * Introduce Y090, which warns if you have an annotation such as `tuple[int]` or
   `Tuple[int]`. These mean "a tuple of length 1, in which the sole element is
   of type `int`". This is sometimes what you want, but more usually you'll want
