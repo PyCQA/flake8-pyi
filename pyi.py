@@ -1359,7 +1359,11 @@ class PyiVisitor(ast.NodeVisitor):
         current_code = unparse(node)
         typ = unparse(node.slice)
         copied_node = deepcopy(node)
-        copied_node.slice = ast.Tuple(elts=[copied_node.slice, ast.Constant(...)])
+        new_slice = ast.Tuple(elts=[copied_node.slice, ast.Constant(...)])
+        if sys.version_info >= (3, 9):
+            copied_node.slice = new_slice
+        else:
+            copied_node.slice = ast.Index(new_slice)
         suggestion = unparse(copied_node)
         self.error(node, Y090.format(original=current_code, typ=typ, new=suggestion))
 
