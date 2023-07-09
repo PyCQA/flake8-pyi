@@ -971,6 +971,11 @@ class PyiVisitor(ast.NodeVisitor):
         if module_name is None:
             return
 
+        if sys.version_info < (3, 10):
+            for obj in node.names:
+                obj.lineno = node.lineno
+                obj.col_offset = node.col_offset
+
         imported_names = {obj.name: obj for obj in node.names}
 
         if module_name == "__future__":
