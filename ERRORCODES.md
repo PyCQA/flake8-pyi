@@ -61,9 +61,14 @@ The following warnings are currently emitted by default:
 | Y056 | Do not call methods such as `.append()`, `.extend()` or `.remove()` on `__all__`. Different type checkers have varying levels of support for calling these methods on `__all__`. Use `+=` instead, which is known to be supported by all major type checkers.
 | Y057 | Do not use `typing.ByteString` or `collections.abc.ByteString`. These types have unclear semantics, and are deprecated; use  `typing_extensions.Buffer` or a union such as `bytes \| bytearray \| memoryview` instead. See [PEP 688](https://peps.python.org/pep-0688/) for more details.
 
-The following error codes are also provided, but are disabled by default due to the risk of false-positive errors. To enable these error codes, use
+The following error codes are also provided, but are disabled by default due to
+the risk of false-positive errors. To enable these error codes, use
 `--extend-select={code1,code2,...}` on the command line or in your flake8
-configuration file:
+configuration file.
+
+Note that `--extend-select` **will not work** if you have
+`--select` specified on the command line or in your configuration file. We
+recommend only using `--extend-select`, never `--select`.
 
 | Code | Description
 |------|------------
