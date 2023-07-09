@@ -10,6 +10,7 @@ from typing import Union
 import typing_extensions
 
 # Switch isort off or it auto-adds some fun SyntaxErrors here!!
+# https://github.com/PyCQA/isort/issues/2154
 # isort: off
 from typing_extensions import (
     Literal,
