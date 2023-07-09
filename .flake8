@@ -24,7 +24,7 @@
 #           produces false positives if you're surrounding things with double quotes
 
 [flake8]
-extend-select = B
+extend-select = B9
 max-line-length = 80
 max-complexity = 12
 noqa-require-code = true
