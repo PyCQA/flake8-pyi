@@ -1355,10 +1355,18 @@ class PyiVisitor(ast.NodeVisitor):
 
         self._check_union_members(members, is_pep_604_union=True)
 
+    def _Y090_error(self, node: ast.Subscript) -> None:
+        current_code = unparse(node)
+        typ = unparse(node.slice)
+        copied_node = deepcopy(node)
+        copied_node.slice = ast.Tuple(elts=[copied_node.slice, ast.Constant(...)])
+        suggestion = unparse(copied_node)
+        self.error(node, Y090.format(original=current_code, typ=typ, new=suggestion))
+
     def visit_Subscript(self, node: ast.Subscript) -> None:
         subscripted_object = node.value
         subscripted_object_name = _get_name_of_class_if_from_modules(
-            subscripted_object, modules=_TYPING_MODULES
+            subscripted_object, modules=_TYPING_MODULES | {"builtins"}
         )
         self.visit(subscripted_object)
         if subscripted_object_name == "Literal":
@@ -1370,6 +1378,8 @@ class PyiVisitor(ast.NodeVisitor):
             self._visit_slice_tuple(node.slice, subscripted_object_name)
         else:
             self.visit(node.slice)
+            if subscripted_object_name in {"tuple", "Tuple"}:
+                self._Y090_error(node)
 
     def _visit_slice_tuple(self, node: ast.Tuple, parent: str | None) -> None:
         if parent == "Union":
@@ -2002,6 +2012,7 @@ class PyiTreeChecker:
     def add_options(parser: OptionManager) -> None:
         """This is brittle, there's multiple levels of caching of defaults."""
         parser.parser.set_defaults(filename="*.py,*.pyi")
+        parser.extend_default_ignore(DISABLED_BY_DEFAULT)
         parser.add_option(
             "--no-pyi-aware-file-checker",
             default=False,
@@ -2109,3 +2120,10 @@ Y056 = (
 Y057 = (
     "Y057 Do not use {module}.ByteString, which has unclear semantics and is deprecated"
 )
+Y090 = (
+    'Y090 "{original}" means '
+    '"a tuple of length 1, in which the sole element is of type {typ!r}". '
+    'Perhaps you meant "{new}"?'
+)
+
+DISABLED_BY_DEFAULT = ["Y090"]

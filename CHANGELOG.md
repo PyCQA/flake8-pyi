@@ -1,5 +1,16 @@
 # Change Log
 
+## Unreleased
+
+* Introduce Y090, which warns if you have an annotation such as `tuple[int]` or
+  `Tuple[int]`. These mean "a tuple of length 1, in which the sole element is
+  of type `int`". This is sometimes what you want, but more usually you'll want
+  `tuple[int, ...]`, which means "a tuple of arbitrary (possibly 0) length, in
+  which all elements are of type `int`".
+
+  This error code is disabled by default due to the risk of false-positive
+  errors. To enable it, use the `--extend-select=Y090` option.
+
 ## 23.6.0
 
 Features:
