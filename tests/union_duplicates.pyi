@@ -4,20 +4,15 @@ import typing
 from collections.abc import Mapping
 from typing import (
     Type,  # Y022 Use "type[MyClass]" instead of "typing.Type[MyClass]" (PEP 585 syntax)
+    Union,
 )
-from typing import Union
 
 import typing_extensions
-
-# Switch isort off or it auto-adds some fun SyntaxErrors here!!
-# https://github.com/PyCQA/isort/issues/2154
-# isort: off
 from typing_extensions import (
     Literal,
     Type as Type_,  # Y022 Use "type[MyClass]" instead of "typing_extensions.Type[MyClass]" (PEP 585 syntax)
     TypeAlias,
 )
-# isort: on
 
 def f1_pipe(x: int | str) -> None: ...
 def f2_pipe(x: int | int) -> None: ...  # Y016 Duplicate union member "int"
