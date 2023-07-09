@@ -8,10 +8,14 @@ from typing import (
 from typing import Union
 
 import typing_extensions
+# Switch isort off or it auto-adds some fun SyntaxErrors here!!
+# isort: off
 from typing_extensions import (
-    Type as Type_,)  # isort: skip  # Y022 Use "type[MyClass]" instead of "typing_extensions.Type[MyClass]" (PEP 585 syntax
+    Literal,
+    Type as Type_,  # Y022 Use "type[MyClass]" instead of "typing_extensions.Type[MyClass]" (PEP 585 syntax)
+    TypeAlias,
 )
-from typing_extensions import Literal, TypeAlias
+# isort: on
 
 def f1_pipe(x: int | str) -> None: ...
 def f2_pipe(x: int | int) -> None: ...  # Y016 Duplicate union member "int"
