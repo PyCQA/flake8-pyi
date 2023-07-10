@@ -2,15 +2,15 @@
 import builtins
 import typing
 from collections.abc import Mapping
-from typing import (
-    Type,  # Y022 Use "type[MyClass]" instead of "typing.Type[MyClass]" (PEP 585 syntax)
+from typing import (  # Y022 Use "type[MyClass]" instead of "typing.Type[MyClass]" (PEP 585 syntax)
+    Type,
     Union,
 )
 
 import typing_extensions
-from typing_extensions import (
+from typing_extensions import (  # Y022 Use "type[MyClass]" instead of "typing_extensions.Type[MyClass]" (PEP 585 syntax)
     Literal,
-    Type as Type_,  # Y022 Use "type[MyClass]" instead of "typing_extensions.Type[MyClass]" (PEP 585 syntax)
+    Type as Type_,
     TypeAlias,
 )
 

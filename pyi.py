@@ -855,6 +855,9 @@ class NestingCounter:
 
 
 class PyiVisitor(ast.NodeVisitor):
+    # This is dynamically set on the class in PyiTreeChecker.parse_options()
+    precise_import_linenos: ClassVar[bool]
+
     filename: str
     errors: list[Error]
 
@@ -902,67 +905,68 @@ class PyiVisitor(ast.NodeVisitor):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(filename={self.filename!r})"
 
-    def _check_import_or_attribute(
-        self, node: ast.Attribute | ast.alias, module_name: str, object_name: str
-    ) -> None:
+    @staticmethod
+    def _check_import_or_attribute(module_name: str, object_name: str) -> str | None:
+        """Return the relevant error message for a bad import or attribute access.
+
+        If the import/attribute access is OK, return None.
+        """
         fullname = f"{module_name}.{object_name}"
 
         # Y057 errors
         if fullname in {"typing.ByteString", "collections.abc.ByteString"}:
-            error_message = Y057.format(module=module_name)
+            return Y057.format(module=module_name)
 
         # Y022 errors
-        elif fullname in _BAD_Y022_IMPORTS:
+        if fullname in _BAD_Y022_IMPORTS:
             good_cls_name, slice_contents = _BAD_Y022_IMPORTS[fullname]
             params = "" if slice_contents is None else f"[{slice_contents}]"
-            error_message = Y022.format(
+            return Y022.format(
                 good_syntax=f'"{good_cls_name}{params}"',
                 bad_syntax=f'"{fullname}{params}"',
             )
 
         # Y023 errors
-        elif module_name == "typing_extensions":
+        if module_name == "typing_extensions":
             if object_name in _BAD_TYPINGEXTENSIONS_Y023_IMPORTS:
-                error_message = Y023.format(
+                return Y023.format(
                     good_syntax=f'"typing.{object_name}"',
                     bad_syntax=f'"typing_extensions.{object_name}"',
                 )
             elif object_name == "ClassVar":
-                error_message = Y023.format(
+                return Y023.format(
                     good_syntax='"typing.ClassVar[T]"',
                     bad_syntax='"typing_extensions.ClassVar[T]"',
                 )
             else:
-                return
+                return None
 
         # Y024 errors
-        elif fullname == "collections.namedtuple":
-            error_message = Y024
+        if fullname == "collections.namedtuple":
+            return Y024
 
         # Y037 errors
-        elif fullname == "typing.Optional":
-            error_message = Y037.format(
+        if fullname == "typing.Optional":
+            return Y037.format(
                 old_syntax=fullname, example='"int | None" instead of "Optional[int]"'
             )
-        elif fullname == "typing.Union":
-            error_message = Y037.format(
+        if fullname == "typing.Union":
+            return Y037.format(
                 old_syntax=fullname, example='"int | str" instead of "Union[int, str]"'
             )
 
         # Y039 errors
-        elif fullname == "typing.Text":
-            error_message = Y039
+        if fullname == "typing.Text":
+            return Y039
 
-        else:
-            return
-
-        self.error(node, error_message)
+        return None
 
     def visit_Attribute(self, node: ast.Attribute) -> None:
         self.generic_visit(node)
-        self._check_import_or_attribute(
-            node=node, module_name=unparse(node.value), object_name=node.attr
-        )
+        if error_msg := self._check_import_or_attribute(
+            module_name=unparse(node.value), object_name=node.attr
+        ):
+            self.error(node, error_msg)
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         self.generic_visit(node)
@@ -971,16 +975,19 @@ class PyiVisitor(ast.NodeVisitor):
         if module_name is None:
             return
 
-        if sys.version_info < (3, 10):
-            for obj in node.names:
-                obj.lineno = node.lineno
-                obj.col_offset = node.col_offset
+        def error_for_bad_import(
+            node: ast.ImportFrom, subnode: ast.alias, msg: str
+        ) -> None:
+            if self.precise_import_linenos:
+                self.error(subnode, msg)
+            else:
+                self.error(node, msg)
 
         imported_names = {obj.name: obj for obj in node.names}
 
         if module_name == "__future__":
             if "annotations" in imported_names:
-                self.error(imported_names["annotations"], Y044)
+                error_for_bad_import(node, imported_names["annotations"], Y044)
             return
 
         if (
@@ -988,13 +995,14 @@ class PyiVisitor(ast.NodeVisitor):
             and "Set" in imported_names
             and imported_names["Set"].asname != "AbstractSet"
         ):
-            self.error(imported_names["Set"], Y025)
+            error_for_bad_import(node, imported_names["Set"], Y025)
 
         for object_name, subnode in imported_names.items():
-            self._check_import_or_attribute(subnode, module_name, object_name)
+            if error_msg := self._check_import_or_attribute(module_name, object_name):
+                error_for_bad_import(node, subnode, error_msg)
 
         if module_name == "typing" and "AbstractSet" in imported_names:
-            self.error(imported_names["AbstractSet"], Y038)
+            error_for_bad_import(node, imported_names["AbstractSet"], Y038)
 
     def _check_for_typevarlike_assignments(
         self, node: ast.Assign, function: ast.expr, object_name: str
@@ -2029,11 +2037,21 @@ class PyiTreeChecker:
             parse_from_config=True,
             help="don't patch flake8 with .pyi-aware file checker",
         )
+        parser.add_option(
+            "--precise-import-code-linenos",
+            default=False,
+            action="store_true",
+            parse_from_config=True,
+            help="use precise linenos for import-related lints, where possible",
+        )
 
     @staticmethod
     def parse_options(options: argparse.Namespace) -> None:
         if not options.no_pyi_aware_file_checker:
             checker.FileChecker = PyiAwareFileChecker
+        PyiVisitor.precise_import_linenos = (
+            options.precise_import_code_linenos and sys.version_info >= (3, 10)
+        )
 
 
 # Please keep error code lists in ERRORCODES and CHANGELOG up to date
