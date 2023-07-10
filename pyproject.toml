@@ -79,7 +79,6 @@ path = "pyi.py"
 [tool.isort]
 profile = "black"
 combine_as_imports = true
-skip_glob = ["tests/*.pyi"]
 skip_gitignore = true
 
 [tool.black]
