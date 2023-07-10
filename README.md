@@ -43,6 +43,50 @@ have an explicit dependency on either `typing_extensions` or typeshed.
 
 Flake8-pyi's checks may produce false positives on stubs that aim to support Python 2.
 
+## Optional flags
+
+### `--no-pyi-aware-file-checker`
+
+This flag disables the behaviour where flake8-pyi modifies pyflakes runs for `.pyi`
+files. It can be set on the command line or in a configuration file. It defaults to
+`False`.
+
+### `--precise-import-code-linenos`
+
+The default behaviour of flake8-pyi is to flag "forbidden imports" on the first line
+of a multiline import statement, e.g.:
+
+```py
+from collections.abc import (  # Y057 flagged on this line here for the bad ByteString import
+    Awaitable,
+    ByteString,
+    Generator,
+    Iterable,
+    Iterator,
+    Mapping,
+    MutableMapping,
+    MutableSequence,
+```
+
+Enabling `--precise-import-code-linenos` will mean that flake8-pyi will use more
+precise line numbers for "forbidden imports" on Python 3.10 and higher. The flag has
+no effect on Python 3.9 and lower:
+
+```py
+from collections.abc import (
+    Awaitable,
+    ByteString,  # Y057 flagged on this line here for the bad ByteString import with --precise-import-code-linenos
+    Generator,
+    Iterable,
+    Iterator,
+    Mapping,
+    MutableMapping,
+    MutableSequence,
+```
+
+This flag defaults to `False`. It can be set on the command line or in a configuration
+file.
+
 ## License
 
 MIT
