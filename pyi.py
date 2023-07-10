@@ -1369,8 +1369,9 @@ class PyiVisitor(ast.NodeVisitor):
 
     def visit_Subscript(self, node: ast.Subscript) -> None:
         subscripted_object = node.value
+        interesting_modules = _TYPING_MODULES | {"builtins", "collections.abc"}
         subscripted_object_name = _get_name_of_class_if_from_modules(
-            subscripted_object, modules=_TYPING_MODULES | {"builtins"}
+            subscripted_object, modules=interesting_modules
         )
         self.visit(subscripted_object)
         if subscripted_object_name == "Literal":
@@ -1398,6 +1399,14 @@ class PyiVisitor(ast.NodeVisitor):
                         self.visit(elt)
             else:
                 self.visit(node)
+        elif parent == "Callable":
+            self.visit(node)
+            if self.visiting_arg.active and len(node.elts) == 2:
+                return_annotation = node.elts[1]
+                if _is_None(return_annotation):
+                    self.error(node, Y091.format(bad_return="None"))
+                elif _is_Any(return_annotation):
+                    self.error(node, Y091.format(bad_return="Any"))
         else:
             self.visit(node)
 
@@ -2129,5 +2138,9 @@ Y090 = (
     '"a tuple of length 1, in which the sole element is of type {typ!r}". '
     'Perhaps you meant "{new}"?'
 )
+Y091 = (
+    'Y091 "Callable" in argument annotations '
+    'should generally have "object" for the second parameter, not "{bad_return}"'
+)
 
-DISABLED_BY_DEFAULT = ["Y090"]
+DISABLED_BY_DEFAULT = ["Y090", "Y091"]
