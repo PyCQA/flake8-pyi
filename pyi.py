@@ -2140,7 +2140,7 @@ Y090 = (
 )
 Y091 = (
     'Y091 "Callable" in argument annotations '
-    'should generally have "object" for the second parameter, not "{bad_return}"'
+    'should generally have "object" as the return type, not "{bad_return}"'
 )
 
 DISABLED_BY_DEFAULT = ["Y090", "Y091"]
