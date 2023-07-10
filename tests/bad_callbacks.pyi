@@ -8,11 +8,11 @@ from typing import Any
 from typing_extensions import TypeAlias
 
 def bad(
-    a: Callable[[], None],  # Y091 "Callable" in argument annotations should generally have "object" for the second parameter, not "None"
-    b: Callable[..., Any],  # Y091 "Callable" in argument annotations should generally have "object" for the second parameter, not "Any"
-    c: typing.Callable[[str, int], typing.Any],  # Y022 Use "collections.abc.Callable" instead of "typing.Callable" (PEP 585 syntax) # Y091 "Callable" in argument annotations should generally have "object" for the second parameter, not "Any"
-    d: collections.abc.Callable[[None], None],  # Y091 "Callable" in argument annotations should generally have "object" for the second parameter, not "None"
-    e: int | str | tuple[Callable[[], None], int, str],  # Y091 "Callable" in argument annotations should generally have "object" for the second parameter, not "None"
+    a: Callable[[], None],  # Y091 "Callable" in argument annotations should generally have "object" as the return type, not "None"
+    b: Callable[..., Any],  # Y091 "Callable" in argument annotations should generally have "object" as the return type, not "Any"
+    c: typing.Callable[[str, int], typing.Any],  # Y022 Use "collections.abc.Callable" instead of "typing.Callable" (PEP 585 syntax) # Y091 "Callable" in argument annotations should generally have "object" as the return type, not "Any"
+    d: collections.abc.Callable[[None], None],  # Y091 "Callable" in argument annotations should generally have "object" as the return type, not "None"
+    e: int | str | tuple[Callable[[], None], int, str],  # Y091 "Callable" in argument annotations should generally have "object" as the return type, not "None"
 ) -> None: ...
 
 def good(
