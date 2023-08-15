@@ -10,6 +10,7 @@
 
   This error code is disabled by default due to the risk of false-positive
   errors. To enable it, use the `--extend-select=Y090` option.
+* Y011 now ignores `sentinel` and `_typeshed.sentinel` in default values.
 
 ## 23.6.0
 

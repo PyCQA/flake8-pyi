@@ -693,8 +693,11 @@ _ALLOWED_ATTRIBUTES_IN_DEFAULTS = frozenset(
         "sys.version",
         "sys.version_info",
         "sys.winver",
+        "_typeshed.sentinel",
     }
 )
+
+_ALLOWED_SIMPLE_ATTRIBUTES_IN_DEFAULTS = frozenset({"sentinel"})
 
 
 def _is_valid_default_value_with_annotation(
@@ -784,6 +787,8 @@ def _is_valid_default_value_with_annotation(
         return (fullname in _ALLOWED_ATTRIBUTES_IN_DEFAULTS) or (
             fullname in _ALLOWED_MATH_ATTRIBUTES_IN_DEFAULTS
         )
+    elif isinstance(node, ast.Name):
+        return node.id in _ALLOWED_SIMPLE_ATTRIBUTES_IN_DEFAULTS
 
     return False
 
