@@ -1807,7 +1807,7 @@ class PyiVisitor(ast.NodeVisitor):
             return True
         if sys.version_info < (3, 12):
             return False
-        return any(
+        return any(  # type: ignore[unreachable,unused-ignore]
             isinstance(param, ast.TypeVar) and param.name == tvar_name
             for param in method.type_params
         )
