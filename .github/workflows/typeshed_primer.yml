@@ -23,16 +23,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout flake8-pyi on target branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.base_ref }}
           path: old_plugin
       - name: Checkout flake8-pyi on PR branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: new_plugin
       - name: Checkout typeshed
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: python/typeshed
           path: typeshed
