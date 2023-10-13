@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## 23.10.0
 
 * Introduce Y090, which warns if you have an annotation such as `tuple[int]` or
   `Tuple[int]`. These mean "a tuple of length 1, in which the sole element is
