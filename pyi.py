@@ -37,8 +37,6 @@ if TYPE_CHECKING:
     # and mypy thinks typing_extensions is part of the stdlib.
     from typing_extensions import Literal, TypeAlias, TypeGuard
 
-__version__ = "23.10.0"
-
 LOG = logging.getLogger("flake8.pyi")
 
 if sys.version_info >= (3, 12):
@@ -2005,8 +2003,6 @@ def _check_for_type_comments(lines: list[str]) -> Iterator[Error]:
 @dataclass
 class PyiTreeChecker:
     name: ClassVar[str] = "flake8-pyi"
-    version: ClassVar[str] = __version__
-
     tree: ast.Module
     lines: list[str]
     filename: str = "(none)"
