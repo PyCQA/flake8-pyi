@@ -1,5 +1,12 @@
 # Change Log
 
+## Unreleased
+
+* The undocumented `pyi.__version__` and `pyi.PyiTreeChecker.version`
+  attributes has been removed. Use `flake8 --version` from the command line, or
+  `importlib.metadata.version("flake8_pyi")` at runtime, to determine the
+  version of `flake8-pyi` installed at runtime.
+
 ## 23.10.0
 
 * Introduce Y090, which warns if you have an annotation such as `tuple[int]` or

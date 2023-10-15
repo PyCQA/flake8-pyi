@@ -51,8 +51,7 @@ release in January 2022 should be called 22.1.0, followed by 22.1.1.
 
 Releasing a new version is easy:
 
-- Make a PR that updates the version header in `CHANGELOG.md`
-  and the `__version__` attribute in `pyi.py`.
+- Make a PR that updates the version header in `CHANGELOG.md`.
 - Merge the PR and wait for tests to complete.
 - Draft a release using the GitHub UI. The tag name should be
   identical to the version (e.g., `22.1.0`) and the release notes
