@@ -37,8 +37,6 @@ if TYPE_CHECKING:
     # and mypy thinks typing_extensions is part of the stdlib.
     from typing_extensions import Literal, TypeAlias, TypeGuard
 
-__version__ = "23.6.0"
-
 LOG = logging.getLogger("flake8.pyi")
 
 if sys.version_info >= (3, 12):
@@ -693,8 +691,11 @@ _ALLOWED_ATTRIBUTES_IN_DEFAULTS = frozenset(
         "sys.version",
         "sys.version_info",
         "sys.winver",
+        "_typeshed.sentinel",
     }
 )
+
+_ALLOWED_SIMPLE_ATTRIBUTES_IN_DEFAULTS = frozenset({"sentinel"})
 
 
 def _is_valid_default_value_with_annotation(
@@ -784,6 +785,8 @@ def _is_valid_default_value_with_annotation(
         return (fullname in _ALLOWED_ATTRIBUTES_IN_DEFAULTS) or (
             fullname in _ALLOWED_MATH_ATTRIBUTES_IN_DEFAULTS
         )
+    elif isinstance(node, ast.Name):
+        return node.id in _ALLOWED_SIMPLE_ATTRIBUTES_IN_DEFAULTS
 
     return False
 
@@ -1811,7 +1814,7 @@ class PyiVisitor(ast.NodeVisitor):
             return True
         if sys.version_info < (3, 12):
             return False
-        return any(  # type: ignore[unreachable]
+        return any(  # type: ignore[unreachable,unused-ignore]
             isinstance(param, ast.TypeVar) and param.name == tvar_name
             for param in method.type_params
         )
@@ -2009,8 +2012,6 @@ def _check_for_type_comments(lines: list[str]) -> Iterator[Error]:
 @dataclass
 class PyiTreeChecker:
     name: ClassVar[str] = "flake8-pyi"
-    version: ClassVar[str] = __version__
-
     tree: ast.Module
     lines: list[str]
     filename: str = "(none)"

@@ -2,19 +2,30 @@
 
 ## Unreleased
 
-* Introduce several codes which are disabled by default due to the risk of
-  false-positive errors. To enable these lints, use the
-  `--extend-select={code1,code2,...}` option.
-  * Y090, which warns if you have an annotation such as `tuple[int]` or
-    `Tuple[int]`. These mean "a tuple of length 1, in which the sole element is
-    of type `int`". This is sometimes what you want, but more usually you'll want
-    `tuple[int, ...]`, which means "a tuple of arbitrary (possibly 0) length, in
-    which all elements are of type `int`".
-  * Y091, which warns if `Callable[<parameter_list>, Any]` or
-    `Callable[<parameter_list>, None]` is used as an argument annotation in a
-    function or method. Most of the time, the returned object from callbacks like
-    these is ignored at runtime, so the annotation you're probably looking for is
-    `Callable[<parameter_list>, object]`.
+* Introduce Y091, which warns if `Callable[<parameter_list>, Any]` or
+  `Callable[<parameter_list>, None]` is used as an argument annotation in a
+  function or method. Most of the time, the returned object from callbacks like
+  these is ignored at runtime, so the annotation you're probably looking for is
+  `Callable[<parameter_list>, object]`.
+
+  This error code is disabled by default due to the risk of false-positive
+  errors. To enable it, use the `--extend-select=Y091` option.
+* The undocumented `pyi.__version__` and `pyi.PyiTreeChecker.version`
+  attributes has been removed. Use `flake8 --version` from the command line, or
+  `importlib.metadata.version("flake8_pyi")` at runtime, to determine the
+  version of `flake8-pyi` installed at runtime.
+
+## 23.10.0
+
+* Introduce Y090, which warns if you have an annotation such as `tuple[int]` or
+  `Tuple[int]`. These mean "a tuple of length 1, in which the sole element is
+  of type `int`". This is sometimes what you want, but more usually you'll want
+  `tuple[int, ...]`, which means "a tuple of arbitrary (possibly 0) length, in
+  which all elements are of type `int`".
+
+  This error code is disabled by default due to the risk of false-positive
+  errors. To enable it, use the `--extend-select=Y090` option.
+* Y011 now ignores `sentinel` and `_typeshed.sentinel` in default values.
 
 ## 23.6.0
 
