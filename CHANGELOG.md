@@ -8,7 +8,7 @@
   version of `flake8-pyi` installed at runtime.
 * Introduce Y058: Use `Iterator` rather than `Generator` as the return value
   for simple `__iter__` methods, and `AsyncIterator` rather than
-  `AsyncGenerator` as the return value for simple `__aiter__` methods. 
+  `AsyncGenerator` as the return value for simple `__aiter__` methods.
 
 ## 23.10.0
 
