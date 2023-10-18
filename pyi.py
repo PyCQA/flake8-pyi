@@ -341,6 +341,12 @@ _is_AsyncIterable = partial(
 _is_Protocol = partial(_is_object, name="Protocol", from_=_TYPING_MODULES)
 _is_NoReturn = partial(_is_object, name="NoReturn", from_=_TYPING_MODULES)
 _is_Final = partial(_is_object, name="Final", from_=_TYPING_MODULES)
+_is_Generator = partial(
+    _is_object, name="Generator", from_=_TYPING_MODULES | {"collections.abc"}
+)
+_is_AsyncGenerator = partial(
+    _is_object, name="AsyncGenerator", from_=_TYPING_MODULES | {"collections.abc"}
+)
 
 
 def _is_object_or_Unused(node: ast.expr | None) -> bool:
@@ -1700,6 +1706,15 @@ class PyiVisitor(ast.NodeVisitor):
         )
         self.error(node, error_message)
 
+    def _Y058_error(
+        self, node: ast.FunctionDef, args: list[ast.arg], example_returns: str
+    ) -> None:
+        assert node.name in {"__iter__", "__aiter__"}
+        good_cls = "Iterator" if node.name == "__iter__" else "AsyncIterator"
+        example = f"def {node.name}({args[0].arg}) -> {example_returns}: ..."
+        msg = Y058.format(iter_method=node.name, good_cls=good_cls, example=example)
+        self.error(node, msg)
+
     def _check_iter_returns(
         self, node: ast.FunctionDef, returns: ast.expr | None
     ) -> None:
@@ -1710,6 +1725,24 @@ class PyiVisitor(ast.NodeVisitor):
                 iter_method="__iter__", good_cls="Iterator", bad_cls="Iterable"
             )
             self.error(node, msg)
+            return
+        non_kw_only_args = node.args.posonlyargs + node.args.args
+        if len(non_kw_only_args) == 1 and not node.args.kwonlyargs:
+            if _is_Generator(returns):
+                self._Y058_error(node, non_kw_only_args, "Iterator")
+            elif (
+                isinstance(returns, ast.Subscript)
+                and _is_Generator(returns.value)
+                and isinstance(returns.slice, ast.Tuple)
+            ):
+                elts = returns.slice.elts
+                if (
+                    len(elts) == 3
+                    and (_is_Any(elts[1]) or _is_None(elts[1]))
+                    and (_is_Any(elts[2]) or _is_None(elts[2]))
+                ):
+                    example_returns = f"Iterator[{unparse(returns.slice.elts[0])}]"
+                    self._Y058_error(node, non_kw_only_args, example_returns)
 
     def _check_aiter_returns(
         self, node: ast.FunctionDef, returns: ast.expr | None
@@ -1723,6 +1756,20 @@ class PyiVisitor(ast.NodeVisitor):
                 bad_cls="AsyncIterable",
             )
             self.error(node, msg)
+            return
+        non_kw_only_args = node.args.posonlyargs + node.args.args
+        if len(non_kw_only_args) == 1 and not node.args.kwonlyargs:
+            if _is_AsyncGenerator(returns):
+                self._Y058_error(node, non_kw_only_args, "AsyncIterator")
+            elif (
+                isinstance(returns, ast.Subscript)
+                and _is_AsyncGenerator(returns.value)
+                and isinstance(returns.slice, ast.Tuple)
+            ):
+                elts = returns.slice.elts
+                if len(elts) == 2 and (_is_Any(elts[1]) or _is_None(elts[1])):
+                    example_returns = f"AsyncIterator[{unparse(returns.slice.elts[0])}]"
+                    self._Y058_error(node, non_kw_only_args, example_returns)
 
     def _visit_synchronous_method(self, node: ast.FunctionDef) -> None:
         method_name = node.name
@@ -2124,6 +2171,10 @@ Y056 = (
 )
 Y057 = (
     "Y057 Do not use {module}.ByteString, which has unclear semantics and is deprecated"
+)
+Y058 = (
+    'Y058 Use "{good_cls}" as the return value for simple "{iter_method}" methods, '
+    'e.g. "{example}"'
 )
 Y090 = (
     'Y090 "{original}" means '

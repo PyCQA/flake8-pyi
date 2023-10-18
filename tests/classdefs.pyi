@@ -5,7 +5,14 @@ import builtins
 import collections.abc
 import typing
 from abc import abstractmethod
-from collections.abc import AsyncIterable, AsyncIterator, Iterable, Iterator
+from collections.abc import (
+    AsyncGenerator,
+    AsyncIterable,
+    AsyncIterator,
+    Generator,
+    Iterable,
+    Iterator,
+)
 from typing import Any, overload
 
 import typing_extensions
@@ -94,11 +101,29 @@ class BadIterator4(Iterator[int]):
 class IteratorReturningIterable:
     def __iter__(self) -> Iterable[str]: ...  # Y045 "__iter__" methods should return an Iterator, not an Iterable
 
+class IteratorReturningSimpleGenerator1:
+    def __iter__(self) -> Generator: ...  # Y058 Use "Iterator" as the return value for simple "__iter__" methods, e.g. "def __iter__(self) -> Iterator: ..."
+
+class IteratorReturningSimpleGenerator2:
+    def __iter__(self) -> collections.abc.Generator[str, Any, None]: ...  # Y058 Use "Iterator" as the return value for simple "__iter__" methods, e.g. "def __iter__(self) -> Iterator[str]: ..."
+
+class IteratorReturningComplexGenerator:
+    def __iter__(self) -> Generator[str, int, bytes]: ...
+
 class BadAsyncIterator(collections.abc.AsyncIterator[str]):
     def __aiter__(self) -> typing.AsyncIterator[str]: ...  # Y034 "__aiter__" methods in classes like "BadAsyncIterator" usually return "self" at runtime. Consider using "typing_extensions.Self" in "BadAsyncIterator.__aiter__", e.g. "def __aiter__(self) -> Self: ..."  # Y022 Use "collections.abc.AsyncIterator[T]" instead of "typing.AsyncIterator[T]" (PEP 585 syntax)
 
 class AsyncIteratorReturningAsyncIterable:
     def __aiter__(self) -> AsyncIterable[str]: ...  # Y045 "__aiter__" methods should return an AsyncIterator, not an AsyncIterable
+
+class AsyncIteratorReturningSimpleAsyncGenerator1:
+    def __aiter__(self) -> AsyncGenerator: ...  # Y058 Use "AsyncIterator" as the return value for simple "__aiter__" methods, e.g. "def __aiter__(self) -> AsyncIterator: ..."
+
+class AsyncIteratorReturningSimpleAsyncGenerator2:
+    def __aiter__(self) -> collections.abc.AsyncGenerator[str, Any]: ...  # Y058 Use "AsyncIterator" as the return value for simple "__aiter__" methods, e.g. "def __aiter__(self) -> AsyncIterator[str]: ..."
+
+class AsyncIteratorReturningComplexAsyncGenerator:
+    def __aiter__(self) -> AsyncGenerator[str, int]: ...
 
 class Abstract(Iterator[str]):
     @abstractmethod

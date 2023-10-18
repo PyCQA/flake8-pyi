@@ -60,6 +60,7 @@ The following warnings are currently emitted by default:
 | Y055 | Unions of the form `type[X] \| type[Y]` can be simplified to `type[X \| Y]`. Similarly, `Union[type[X], type[Y]]` can be simplified to `type[Union[X, Y]]`.
 | Y056 | Do not call methods such as `.append()`, `.extend()` or `.remove()` on `__all__`. Different type checkers have varying levels of support for calling these methods on `__all__`. Use `+=` instead, which is known to be supported by all major type checkers.
 | Y057 | Do not use `typing.ByteString` or `collections.abc.ByteString`. These types have unclear semantics, and are deprecated; use  `typing_extensions.Buffer` or a union such as `bytes \| bytearray \| memoryview` instead. See [PEP 688](https://peps.python.org/pep-0688/) for more details.
+| Y058 | Use `Iterator` rather than `Generator` as the return value for simple `__iter__` methods, and `AsyncIterator` rather than `AsyncGenerator` as the return value for simple `__aiter__` methods. Using `(Async)Iterator` for these methods is simpler and more elegant, and reflects the fact that the precise kind of iterator returned from an `__iter__` method is usually an implementation detail that could change at any time, and should not be relied upon.
 
 ## Warnings disabled by default
 
