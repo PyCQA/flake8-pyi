@@ -76,3 +76,4 @@ recommend only using `--extend-select`, never `--select`.
 | Code | Description
 |------|------------
 | Y090 | `tuple[int]` means "a tuple of length 1, in which the sole element is of type `int`". Consider using `tuple[int, ...]` instead, which means "a tuple of arbitrary (possibly 0) length, in which all elements are of type `int`".
+| Y091 | `Callable[<parameter_list>, None]` or `Callable[<parameter_list>, Any]` is generally a mistake in the context of a parameter annotation for a function or method. The returned value from a callback is generally ignored at runtime, so `Callable[<parameter_list>, object]` is usually a better annotation in this kind of situation.

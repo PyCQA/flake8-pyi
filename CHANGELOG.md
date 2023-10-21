@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+* Introduce Y091, which warns if `Callable[<parameter_list>, Any]` or
+  `Callable[<parameter_list>, None]` is used as an argument annotation in a
+  function or method. Most of the time, the returned object from callbacks like
+  these is ignored at runtime, so the annotation you're probably looking for is
+  `Callable[<parameter_list>, object]`.
+
+  This error code is disabled by default due to the risk of false-positive
+  errors. To enable it, use the `--extend-select=Y091` option.
 * The undocumented `pyi.__version__` and `pyi.PyiTreeChecker.version`
   attributes has been removed. Use `flake8 --version` from the command line, or
   `importlib.metadata.version("flake8_pyi")` at runtime, to determine the
