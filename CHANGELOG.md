@@ -8,6 +8,7 @@ New error codes:
   `AsyncGenerator` as the return value for simple `__aiter__` methods.
 * Introduce Y059: `Generic[]` should always be the last base class, if it is
   present in the bases of a class.
+* Introduce Y060, which flags redundant inheritance from `Generic[]`.
 
 Other changes:
 * The undocumented `pyi.__version__` and `pyi.PyiTreeChecker.version`

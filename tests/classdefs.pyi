@@ -9,6 +9,7 @@ from collections.abc import (
     AsyncGenerator,
     AsyncIterable,
     AsyncIterator,
+    Container,
     Generator,
     Iterable,
     Iterator,
@@ -160,6 +161,7 @@ def __eq__(self, other: Any) -> bool: ...
 def __ne__(self, other: Any) -> bool: ...
 def __imul__(self, other: Any) -> list[str]: ...
 
+_S = TypeVar("_S")
 _T = TypeVar("_T")
 
 class GoodGeneric(Generic[_T]): ...
@@ -171,3 +173,13 @@ class BadGeneric(Generic[_T], int): ...  # Y059 "Generic[]" should always be the
 class BadGeneric2(int, typing.Generic[_T], str): ...  # Y059 "Generic[]" should always be the last base class
 class BadGeneric3(typing_extensions.Generic[_T], int, str): ...  # Y059 "Generic[]" should always be the last base class
 class BadGeneric4(Generic[_T], Iterable[int], str): ...  # Y059 "Generic[]" should always be the last base class
+
+class RedundantGeneric1(Iterable[_T], Generic[_T]): ...  # Y060 Redundant inheritance from "Generic[]"; class would be inferred as generic anyway
+class RedundantGeneric2(Generic[_S], GoodGeneric[_S]): ...  # Y059 "Generic[]" should always be the last base class  # Y060 Redundant inheritance from "Generic[]"; class would be inferred as generic anyway
+
+# Strictly speaking these inheritances from Generic are "redundant",
+# but people may consider it more readable to explicitly inherit from Generic,
+# so we deliberately don't flag them with Y060
+class GoodGeneric3(Container[_S], Iterator[_T], Generic[_S, _T]): ...
+class GoodGeneric4(int, Iterator[_T], str, Generic[_T]): ...
+class BadGeneric5(object, Generic[_T], Container[_T]): ...  # Y040 Do not inherit from "object" explicitly, as it is redundant in Python 3  # Y059 "Generic[]" should always be the last base class
