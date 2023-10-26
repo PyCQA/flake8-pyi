@@ -347,6 +347,7 @@ _is_Generator = partial(
 _is_AsyncGenerator = partial(
     _is_object, name="AsyncGenerator", from_=_TYPING_MODULES | {"collections.abc"}
 )
+_is_Generic = partial(_is_object, name="Generic", from_=_TYPING_MODULES)
 
 
 def _is_object_or_Unused(node: ast.expr | None) -> bool:
@@ -1539,6 +1540,24 @@ class PyiVisitor(ast.NodeVisitor):
         else:
             self.error(node, Y007)
 
+    def _check_class_bases(self, bases: list[ast.expr]) -> None:
+        Y040_encountered = False
+        Y059_encountered = False
+        num_bases = len(bases)
+
+        for i, base_node in enumerate(bases, start=1):
+            if not Y040_encountered and _is_builtins_object(base_node):
+                self.error(base_node, Y040)
+                Y040_encountered = True
+            if (
+                not Y059_encountered
+                and i < num_bases
+                and isinstance(base_node, ast.Subscript)
+                and _is_Generic(base_node.value)
+            ):
+                self.error(base_node, Y059)
+                Y059_encountered = True
+
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         if node.name.startswith("_") and not self.in_class.active:
             for base in node.bases:
@@ -1555,8 +1574,7 @@ class PyiVisitor(ast.NodeVisitor):
             self.generic_visit(node)
         self.current_class_node = old_class_node
 
-        if any(_is_builtins_object(base_node) for base_node in node.bases):
-            self.error(node, Y040)
+        self._check_class_bases(node.bases)
 
         # empty class body should contain "..." not "pass"
         if len(node.body) == 1:
@@ -2176,6 +2194,7 @@ Y058 = (
     'Y058 Use "{good_cls}" as the return value for simple "{iter_method}" methods, '
     'e.g. "{example}"'
 )
+Y059 = 'Y059 "Generic[]" should always be the last base class'
 Y090 = (
     'Y090 "{original}" means '
     '"a tuple of length 1, in which the sole element is of type {typ!r}". '

@@ -2,13 +2,18 @@
 
 ## Unreleased
 
+New error codes:
+* Introduce Y058: Use `Iterator` rather than `Generator` as the return value
+  for simple `__iter__` methods, and `AsyncIterator` rather than
+  `AsyncGenerator` as the return value for simple `__aiter__` methods.
+* Introduce Y059: `Generic[]` should always be the last base class, if it is
+  present in the bases of a class.
+
+Other changes:
 * The undocumented `pyi.__version__` and `pyi.PyiTreeChecker.version`
   attributes has been removed. Use `flake8 --version` from the command line, or
   `importlib.metadata.version("flake8_pyi")` at runtime, to determine the
   version of `flake8-pyi` installed at runtime.
-* Introduce Y058: Use `Iterator` rather than `Generator` as the return value
-  for simple `__iter__` methods, and `AsyncIterator` rather than
-  `AsyncGenerator` as the return value for simple `__aiter__` methods.
 
 ## 23.10.0
 
