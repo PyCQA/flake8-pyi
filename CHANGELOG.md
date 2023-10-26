@@ -7,7 +7,7 @@ New error codes:
   for simple `__iter__` methods, and `AsyncIterator` rather than
   `AsyncGenerator` as the return value for simple `__aiter__` methods.
 * Introduce Y059: `Generic[]` should always be the last base class, if it is
-  present in a bases tuple.
+  present in the bases of a class.
 
 Other changes:
 * The undocumented `pyi.__version__` and `pyi.PyiTreeChecker.version`
