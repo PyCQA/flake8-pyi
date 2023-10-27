@@ -147,6 +147,7 @@ from typing_extensions import runtime_checkable  # Y023 Use "typing.runtime_chec
 from collections import namedtuple  # Y024 Use "typing.NamedTuple" instead of "collections.namedtuple"
 from collections.abc import Set  # Y025 Use "from collections.abc import Set as AbstractSet" to avoid confusion with "builtins.set"
 from typing import AbstractSet  # Y038 Use "from collections.abc import Set as AbstractSet" instead of "from typing import AbstractSet" (PEP 585 syntax)
+from typing_extensions import AbstractSet  # Y038 Use "from collections.abc import Set as AbstractSet" instead of "from typing_extensions import AbstractSet" (PEP 585 syntax)
 from typing import Text  # Y039 Use "str" instead of "typing.Text"
 from typing import ByteString  # Y057 Do not use typing.ByteString, which has unclear semantics and is deprecated
 from collections.abc import ByteString  # Y057 Do not use collections.abc.ByteString, which has unclear semantics and is deprecated
