@@ -998,7 +998,7 @@ class PyiVisitor(ast.NodeVisitor):
             self._check_import_or_attribute(node, module_name, object_name)
 
         if module_name in _TYPING_MODULES and "AbstractSet" in imported_names:
-            self.error(node, Y038)
+            self.error(node, Y038.format(module=module_name))
 
     def _check_for_typevarlike_assignments(
         self, node: ast.Assign, function: ast.expr, object_name: str
@@ -2161,7 +2161,7 @@ Y036 = "Y036 Badly defined {method_name} method: {details}"
 Y037 = "Y037 Use PEP 604 union types instead of {old_syntax} (e.g. {example})."
 Y038 = (
     'Y038 Use "from collections.abc import Set as AbstractSet" '
-    'instead of "from typing import AbstractSet" (PEP 585 syntax)'
+    'instead of "from {module} import AbstractSet" (PEP 585 syntax)'
 )
 Y039 = 'Y039 Use "str" instead of "typing.Text"'
 Y040 = 'Y040 Do not inherit from "object" explicitly, as it is redundant in Python 3'
