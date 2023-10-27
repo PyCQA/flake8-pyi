@@ -1544,26 +1544,27 @@ class PyiVisitor(ast.NodeVisitor):
         Y040_encountered = False
         Y059_encountered = False
         Generic_basenode: ast.Subscript | None = None
+        subscript_bases: list[ast.Subscript] = []
         num_bases = len(bases)
 
         for i, base_node in enumerate(bases, start=1):
             if not Y040_encountered and _is_builtins_object(base_node):
                 self.error(base_node, Y040)
                 Y040_encountered = True
-            if isinstance(base_node, ast.Subscript) and _is_Generic(base_node.value):
-                Generic_basenode = base_node
-                if i < num_bases and not Y059_encountered:
-                    Y059_encountered = True
-                    self.error(base_node, Y059)
+            if isinstance(base_node, ast.Subscript):
+                subscript_bases.append(base_node)
+                if _is_Generic(base_node.value):
+                    Generic_basenode = base_node
+                    if i < num_bases and not Y059_encountered:
+                        Y059_encountered = True
+                        self.error(base_node, Y059)
 
-        if (
-            Generic_basenode is not None
-            and num_bases == 2
-            and isinstance(bases[0], ast.Subscript)
-            and isinstance(bases[1], ast.Subscript)
-            and ast.dump(bases[0].slice) == ast.dump(bases[1].slice)
-        ):
-            self.error(Generic_basenode, Y060)
+        if Generic_basenode is not None:
+            assert subscript_bases
+            if len(subscript_bases) == 2 and ast.dump(
+                subscript_bases[0].slice
+            ) == ast.dump(subscript_bases[1].slice):
+                self.error(Generic_basenode, Y060)
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         if node.name.startswith("_") and not self.in_class.active:
