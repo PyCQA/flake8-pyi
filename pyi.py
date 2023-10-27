@@ -294,8 +294,7 @@ def _is_object(node: ast.AST | None, name: str, *, from_: Container[str]) -> boo
         where <parent> is a string that can be found within the `from_` collection of
         strings.
 
-    >>> modules = _TYPING_MODULES | {"collections.abc"}
-    >>> _is_AsyncIterator = partial(_is_object, name="AsyncIterator", from_=modules)
+    >>> _is_AsyncIterator = partial(_is_object, name="AsyncIterator", from_=_TYPING_OR_COLLECTIONS_ABC)
     >>> _is_AsyncIterator(_ast_node_for("AsyncIterator"))
     True
     >>> _is_AsyncIterator(_ast_node_for("typing.AsyncIterator"))
@@ -477,7 +476,7 @@ def _get_collections_abc_obj_id(node: ast.expr | None) -> str | None:
     if not isinstance(node, ast.Subscript):
         return None
     return _get_name_of_class_if_from_modules(
-        node.value, modules=_TYPING_MODULES | {"collections.abc"}
+        node.value, modules=_TYPING_OR_COLLECTIONS_ABC
     )
 
 
