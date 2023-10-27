@@ -15,6 +15,8 @@ Other changes:
   attributes has been removed. Use `flake8 --version` from the command line, or
   `importlib.metadata.version("flake8_pyi")` at runtime, to determine the
   version of `flake8-pyi` installed at runtime.
+* Y038 now flags `from typing_extensions import AbstractSet` as well as
+  `from typing import AbstractSet`.
 
 ## 23.10.0
 

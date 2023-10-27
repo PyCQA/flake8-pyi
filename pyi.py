@@ -282,6 +282,7 @@ def _is_name(node: ast.AST | None, name: str) -> bool:
 
 
 _TYPING_MODULES = frozenset({"typing", "typing_extensions"})
+_TYPING_OR_COLLECTIONS_ABC = _TYPING_MODULES | {"collections.abc"}
 
 
 def _is_object(node: ast.AST | None, name: str, *, from_: Container[str]) -> bool:
@@ -326,7 +327,7 @@ _is_TypedDict = partial(
 )
 _is_Literal = partial(_is_object, name="Literal", from_=_TYPING_MODULES)
 _is_abstractmethod = partial(_is_object, name="abstractmethod", from_={"abc"})
-_is_Any = partial(_is_object, name="Any", from_={"typing"})
+_is_Any = partial(_is_object, name="Any", from_=_TYPING_MODULES)
 _is_overload = partial(_is_object, name="overload", from_=_TYPING_MODULES)
 _is_final = partial(_is_object, name="final", from_=_TYPING_MODULES)
 _is_Self = partial(_is_object, name="Self", from_=({"_typeshed"} | _TYPING_MODULES))
@@ -334,18 +335,16 @@ _is_TracebackType = partial(_is_object, name="TracebackType", from_={"types"})
 _is_builtins_object = partial(_is_object, name="object", from_={"builtins"})
 _is_builtins_type = partial(_is_object, name="type", from_={"builtins"})
 _is_Unused = partial(_is_object, name="Unused", from_={"_typeshed"})
-_is_Iterable = partial(_is_object, name="Iterable", from_={"typing", "collections.abc"})
+_is_Iterable = partial(_is_object, name="Iterable", from_=_TYPING_OR_COLLECTIONS_ABC)
 _is_AsyncIterable = partial(
-    _is_object, name="AsyncIterable", from_={"collections.abc"} | _TYPING_MODULES
+    _is_object, name="AsyncIterable", from_=_TYPING_OR_COLLECTIONS_ABC
 )
 _is_Protocol = partial(_is_object, name="Protocol", from_=_TYPING_MODULES)
 _is_NoReturn = partial(_is_object, name="NoReturn", from_=_TYPING_MODULES)
 _is_Final = partial(_is_object, name="Final", from_=_TYPING_MODULES)
-_is_Generator = partial(
-    _is_object, name="Generator", from_=_TYPING_MODULES | {"collections.abc"}
-)
+_is_Generator = partial(_is_object, name="Generator", from_=_TYPING_OR_COLLECTIONS_ABC)
 _is_AsyncGenerator = partial(
-    _is_object, name="AsyncGenerator", from_=_TYPING_MODULES | {"collections.abc"}
+    _is_object, name="AsyncGenerator", from_=_TYPING_OR_COLLECTIONS_ABC
 )
 _is_Generic = partial(_is_object, name="Generic", from_=_TYPING_MODULES)
 
@@ -998,7 +997,7 @@ class PyiVisitor(ast.NodeVisitor):
         for object_name in imported_names:
             self._check_import_or_attribute(node, module_name, object_name)
 
-        if module_name == "typing" and "AbstractSet" in imported_names:
+        if module_name in _TYPING_MODULES and "AbstractSet" in imported_names:
             self.error(node, Y038)
 
     def _check_for_typevarlike_assignments(

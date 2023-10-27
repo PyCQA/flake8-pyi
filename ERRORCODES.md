@@ -40,7 +40,7 @@ The following warnings are currently emitted by default:
 | Y035 | `__all__`, `__match_args__` and `__slots__` in a stub file should always have values, as these special variables in a `.pyi` file have identical semantics in a stub as at runtime. E.g. write `__all__ = ["foo", "bar"]` instead of `__all__: list[str]`.
 | Y036 | Y036 detects common errors in `__exit__` and `__aexit__` methods. For example, the first argument in an `__exit__` method should either be annotated with `object`, `_typeshed.Unused` (a special alias for `object`) or `type[BaseException] \| None`.
 | Y037 | Use PEP 604 syntax instead of `typing.Union` and `typing.Optional`. E.g. use `str \| int` instead of `Union[str, int]`, and use `str \| None` instead of `Optional[str]`.
-| Y038 | Use `from collections.abc import Set as AbstractSet` instead of `from typing import AbstractSet`.
+| Y038 | Use `from collections.abc import Set as AbstractSet` instead of `from typing import AbstractSet` or `from typing_extensions import AbstractSet`.
 | Y039 | Use `str` instead of `typing.Text`.
 | Y040 | Never explicitly inherit from `object`, as all classes implicitly inherit from `object` in Python 3.
 | Y041 | Y041 detects redundant numeric unions in the context of parameter annotations. For example, PEP 484 specifies that type checkers should allow `int` objects to be passed to a function, even if the function states that it accepts a `float`. As such, `int` is redundant in the union `int \| float` in the context of a parameter annotation. In the same way, `int` is sometimes redundant in the union `int \| complex`, and `float` is sometimes redundant in the union `float \| complex`.
