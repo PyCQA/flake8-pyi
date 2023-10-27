@@ -17,6 +17,7 @@ Other changes:
   version of `flake8-pyi` installed at runtime.
 * Y038 now flags `from typing_extensions import AbstractSet` as well as
   `from typing import AbstractSet`.
+* Y022 and Y037 now flag more imports from `typing_extensions`.
 
 ## 23.10.0
 
