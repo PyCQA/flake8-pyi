@@ -1,8 +1,14 @@
+# flags: --extend-ignore=F401,F811
+#
+# Note: DO NOT RUN ISORT ON THIS FILE.
+# It's excluded in our pyproject.toml.
+
 import typing
-from typing import (  # Y037 Use PEP 604 union types instead of typing.Optional (e.g. "int | None" instead of "Optional[int]"). # Y037 Use PEP 604 union types instead of typing.Union (e.g. "int | str" instead of "Union[int, str]").
-    Optional,
-    Union,
-)
+import typing_extensions
+from typing import Optional  # Y037 Use PEP 604 union types instead of typing.Optional (e.g. "int | None" instead of "Optional[int]").
+from typing import Union  # Y037 Use PEP 604 union types instead of typing.Union (e.g. "int | str" instead of "Union[int, str]").
+from typing_extensions import Optional  # Y037 Use PEP 604 union types instead of typing_extensions.Optional (e.g. "int | None" instead of "Optional[int]").
+from typing_extensions import Union  # Y037 Use PEP 604 union types instead of typing_extensions.Union (e.g. "int | str" instead of "Union[int, str]").
 
 x1: Optional[str]
 x2: Optional
@@ -14,6 +20,10 @@ y1: typing.Optional[str]  # Y037 Use PEP 604 union types instead of typing.Optio
 y2: typing.Optional  # Y037 Use PEP 604 union types instead of typing.Optional (e.g. "int | None" instead of "Optional[int]").
 y3: typing.Union[str, int]  # Y037 Use PEP 604 union types instead of typing.Union (e.g. "int | str" instead of "Union[int, str]").
 y4: typing.Union  # Y037 Use PEP 604 union types instead of typing.Union (e.g. "int | str" instead of "Union[int, str]").
+y5: typing_extensions.Optional[str]  # Y037 Use PEP 604 union types instead of typing_extensions.Optional (e.g. "int | None" instead of "Optional[int]").
+y6: typing_extensions.Optional  # Y037 Use PEP 604 union types instead of typing_extensions.Optional (e.g. "int | None" instead of "Optional[int]").
+y7: typing_extensions.Union[str, int]  # Y037 Use PEP 604 union types instead of typing_extensions.Union (e.g. "int | str" instead of "Union[int, str]").
+y8: typing_extensions.Union  # Y037 Use PEP 604 union types instead of typing_extensions.Union (e.g. "int | str" instead of "Union[int, str]").
 
 
 def f1(x: Optional[str] = ...) -> None: ...

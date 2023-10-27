@@ -82,7 +82,7 @@ local_scheme = "no-local-version"
 [tool.isort]
 profile = "black"
 combine_as_imports = true
-skip = ["tests/imports.pyi"]
+skip = ["tests/imports.pyi", "tests/pep604_union_types.pyi"]
 skip_gitignore = true
 
 [tool.black]

@@ -15,6 +15,7 @@ Other changes:
   attributes has been removed. Use `flake8 --version` from the command line, or
   `importlib.metadata.version("flake8_pyi")` at runtime, to determine the
   version of `flake8-pyi` installed at runtime.
+* Y022 and Y037 now flag more imports from `typing_extensions`.
 
 ## 23.10.0
 
