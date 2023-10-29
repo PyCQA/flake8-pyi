@@ -63,6 +63,7 @@ The following warnings are currently emitted by default:
 | Y058 | Use `Iterator` rather than `Generator` as the return value for simple `__iter__` methods, and `AsyncIterator` rather than `AsyncGenerator` as the return value for simple `__aiter__` methods. Using `(Async)Iterator` for these methods is simpler and more elegant, and reflects the fact that the precise kind of iterator returned from an `__iter__` method is usually an implementation detail that could change at any time, and should not be relied upon.
 | Y059 | `Generic[]` should always be the last base class, if it is present in a class's bases tuple. At runtime, if `Generic[]` is not the final class in a the bases tuple, this [can cause the class creation to fail](https://github.com/python/cpython/issues/106102). In a stub file, however, this rule is enforced purely for stylistic consistency.
 | Y060 | Redundant inheritance from `Generic[]`. For example, `class Foo(Iterable[_T], Generic[_T]): ...` can be written more simply as `class Foo(Iterable[_T]): ...`.<br><br>To avoid false-positive errors, and to avoid complexity in the implementation, this check is deliberately conservative: it only looks at classes that have exactly two bases.
+| Y061 | Do not use `None` inside a `Literal[]` slice. For example, use `Literal["foo"] \| None` instead of `Literal["foo", None]`. While both are legal according to [PEP 586](https://peps.python.org/pep-0586/), the former is preferred for stylistic consistency.
 
 ## Warnings disabled by default
 

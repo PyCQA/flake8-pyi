@@ -1359,7 +1359,7 @@ class PyiVisitor(ast.NodeVisitor):
         self.visit(subscripted_object)
         if subscripted_object_name == "Literal":
             with self.string_literals_allowed.enabled():
-                self.visit(node.slice)
+                self._visit_typing_Literal(node)
             return
 
         if isinstance(node.slice, ast.Tuple):
@@ -1368,6 +1368,25 @@ class PyiVisitor(ast.NodeVisitor):
             self.visit(node.slice)
             if subscripted_object_name in {"tuple", "Tuple"}:
                 self._Y090_error(node)
+
+    def _visit_typing_Literal(self, node: ast.Subscript) -> None:
+        if isinstance(node.slice, ast.Constant) and _is_None(node.slice):
+            # Special case for `Literal[None]`
+            self.error(node.slice, Y061.format(suggestion="None"))
+        elif isinstance(node.slice, ast.Tuple):
+            elts = node.slice.elts
+            for i, elt in enumerate(elts):
+                if _is_None(elt):
+                    elts_without_none = elts[:i] + elts[i + 1 :]
+                    if len(elts_without_none) == 1:
+                        new_literal_slice = unparse(elts_without_none[0])
+                    else:
+                        new_slice_node = ast.Tuple(elts=elts_without_none)
+                        new_literal_slice = unparse(new_slice_node).strip("()")
+                    suggestion = f"Literal[{new_literal_slice}] | None"
+                    self.error(elt, Y061.format(suggestion=suggestion))
+                    break  # Only report the first `None`
+        self.visit(node.slice)
 
     def _visit_slice_tuple(self, node: ast.Tuple, parent: str | None) -> None:
         if parent == "Union":
@@ -2180,6 +2199,7 @@ Y060 = (
     'Y060 Redundant inheritance from "Generic[]"; '
     "class would be inferred as generic anyway"
 )
+Y061 = 'Y061 None inside "Literal[]" expression. Replace with "{suggestion}"'
 Y090 = (
     'Y090 "{original}" means '
     '"a tuple of length 1, in which the sole element is of type {typ!r}". '
