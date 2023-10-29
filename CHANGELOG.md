@@ -9,7 +9,8 @@ New error codes:
 * Introduce Y059: `Generic[]` should always be the last base class, if it is
   present in the bases of a class.
 * Introduce Y060, which flags redundant inheritance from `Generic[]`.
-* Introduce Y061: `None` should not appear inside `Literal[]`, e.g. `Literal["foo", None]`. Use `Literal["foo"] | None` instead.
+* Introduce Y061: Do not use `None` inside a `Literal[]` slice.
+  For example, use `Literal["foo"] | None` instead of `Literal["foo", None]`.
 
 Other changes:
 * The undocumented `pyi.__version__` and `pyi.PyiTreeChecker.version`
