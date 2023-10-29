@@ -1378,20 +1378,12 @@ class PyiVisitor(ast.NodeVisitor):
             for i, elt in enumerate(elts):
                 if _is_None(elt):
                     elts_without_none = elts[:i] + elts[i + 1 :]
-                    slice_without_none = (
-                        elts_without_none[0]
-                        if len(elts_without_none) == 1
-                        else ast.Tuple(elts=elts_without_none)
-                    )
-                    suggestion = unparse(
-                        ast.BinOp(
-                            op=ast.BitOr(),
-                            left=ast.Subscript(
-                                value=node.value, slice=slice_without_none
-                            ),
-                            right=ast.Constant(value=None),
-                        )
-                    )
+                    if len(elts_without_none) == 1:
+                        new_literal_slice = unparse(elts_without_none[0])
+                    else:
+                        new_slice_node = ast.Tuple(elts=elts_without_none)
+                        new_literal_slice = unparse(new_slice_node).strip("()")
+                    suggestion = f"Literal[{new_literal_slice}] | None"
                     self.error(elt, Y061.format(suggestion=suggestion))
                     break  # Only report the first `None`
         self.visit(node.slice)
