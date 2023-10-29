@@ -2199,7 +2199,7 @@ Y060 = (
     'Y060 Redundant inheritance from "Generic[]"; '
     "class would be inferred as generic anyway"
 )
-Y061 = "Y061 None inside Literal[...] expression. Replace with {suggestion}"
+Y061 = 'Y061 None inside "Literal[]" expression. Replace with "{suggestion}"'
 Y090 = (
     'Y090 "{original}" means '
     '"a tuple of length 1, in which the sole element is of type {typ!r}". '
