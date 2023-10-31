@@ -20,6 +20,13 @@ Other changes:
 * Y038 now flags `from typing_extensions import AbstractSet` as well as
   `from typing import AbstractSet`.
 * Y022 and Y037 now flag more imports from `typing_extensions`.
+* Y034 now attempts to avoid flagging methods inside classes that inherit from
+  `builtins.type`, `abc.ABCMeta` and/or `enum.EnumMeta`. Classes that have one
+  or more of these as bases are metaclasses, and PEP 673
+  [forbids the use of `typing(_extensions).Self`](https://peps.python.org/pep-0673/#valid-locations-for-self)
+  for metaclasses. While reliably determining whether a class is a metaclass in
+  all cases would be impossible for flake8-pyi, the new heuristics should
+  reduce the number of false positives from this check.
 
 ## 23.10.0
 
