@@ -826,19 +826,19 @@ def _is_enum_class(node: ast.ClassDef) -> bool:
 _COMMON_METACLASSES = {"type": "builtins", "ABCMeta": "abc", "EnumMeta": "enum"}
 
 
+def _is_metaclass_base(node: ast.expr) -> bool:
+    if isinstance(node, ast.Name):
+        return node.id in _COMMON_METACLASSES
+    return (
+        isinstance(node, ast.Attribute)
+        and base.attr in _COMMON_METACLASSES
+        and _is_name(base.value, _COMMON_METACLASSES[base.attr])
+    )
+
+
 def _is_metaclass(node: ast.ClassDef) -> bool:
     """Best-effort attempt to determine if a class is a metaclass or not."""
-    for base in node.bases:
-        if isinstance(base, ast.Name):
-            if base.id in _COMMON_METACLASSES:
-                return True
-        elif isinstance(base, ast.Attribute):
-            if base.attr in _COMMON_METACLASSES and _is_name(
-                base.value, _COMMON_METACLASSES[base.attr]
-            ):
-                return True
-    else:
-        return False
+    return any(_is_metaclass_base(base) for base in node.bases)
 
 
 @dataclass
