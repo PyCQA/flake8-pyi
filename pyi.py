@@ -831,8 +831,8 @@ def _is_metaclass_base(node: ast.expr) -> bool:
         return node.id in _COMMON_METACLASSES
     return (
         isinstance(node, ast.Attribute)
-        and base.attr in _COMMON_METACLASSES
-        and _is_name(base.value, _COMMON_METACLASSES[base.attr])
+        and node.attr in _COMMON_METACLASSES
+        and _is_name(node.value, _COMMON_METACLASSES[node.attr])
     )
 
 
