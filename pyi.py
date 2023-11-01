@@ -823,7 +823,12 @@ def _is_enum_class(node: ast.ClassDef) -> bool:
     return any(_is_enum_base(base) for base in node.bases)
 
 
-_COMMON_METACLASSES = {"type": "builtins", "ABCMeta": "abc", "EnumMeta": "enum"}
+_COMMON_METACLASSES = {
+    "type": "builtins",
+    "ABCMeta": "abc",
+    "EnumMeta": "enum",
+    "EnumType": "enum",
+}
 
 
 def _is_metaclass_base(node: ast.expr) -> bool:
