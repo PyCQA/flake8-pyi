@@ -9,12 +9,24 @@ New error codes:
 * Introduce Y059: `Generic[]` should always be the last base class, if it is
   present in the bases of a class.
 * Introduce Y060, which flags redundant inheritance from `Generic[]`.
+* Introduce Y061: Do not use `None` inside a `Literal[]` slice.
+  For example, use `Literal["foo"] | None` instead of `Literal["foo", None]`.
 
 Other changes:
 * The undocumented `pyi.__version__` and `pyi.PyiTreeChecker.version`
   attributes has been removed. Use `flake8 --version` from the command line, or
   `importlib.metadata.version("flake8_pyi")` at runtime, to determine the
   version of `flake8-pyi` installed at runtime.
+* Y038 now flags `from typing_extensions import AbstractSet` as well as
+  `from typing import AbstractSet`.
+* Y022 and Y037 now flag more imports from `typing_extensions`.
+* Y034 now attempts to avoid flagging methods inside classes that inherit from
+  `builtins.type`, `abc.ABCMeta` and/or `enum.EnumMeta`. Classes that have one
+  or more of these as bases are metaclasses, and PEP 673
+  [forbids the use of `typing(_extensions).Self`](https://peps.python.org/pep-0673/#valid-locations-for-self)
+  for metaclasses. While reliably determining whether a class is a metaclass in
+  all cases would be impossible for flake8-pyi, the new heuristics should
+  reduce the number of false positives from this check.
 
 ## 23.10.0
 

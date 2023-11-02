@@ -63,93 +63,69 @@ class TypeVarInfo(NamedTuple):
 
 
 _MAPPING_SLICE = "KeyType, ValueType"
-_TYPE_SLICE = "MyClass"
-_COUNTER_SLICE = "KeyType"
-_COROUTINE_SLICE = "YieldType, SendType, ReturnType"
-_ASYNCGEN_SLICE = "YieldType, SendType"
 
 # Y022: Use stdlib imports instead of aliases from typing/typing_extensions
 _BAD_Y022_IMPORTS: dict[str, tuple[str, str | None]] = {
-    # typing aliases for collections
-    "typing.Counter": ("collections.Counter", _COUNTER_SLICE),
-    "typing.Deque": ("collections.deque", "T"),
-    "typing.DefaultDict": ("collections.defaultdict", _MAPPING_SLICE),
-    "typing.ChainMap": ("collections.ChainMap", _MAPPING_SLICE),
-    "typing.OrderedDict": ("collections.OrderedDict", _MAPPING_SLICE),
-    # typing aliases for builtins
-    "typing.Dict": ("dict", _MAPPING_SLICE),
-    "typing.FrozenSet": ("frozenset", "T"),
-    "typing.List": ("list", "T"),
-    "typing.Set": ("set", "T"),
-    "typing.Tuple": ("tuple", "Foo, Bar"),
-    "typing.Type": ("type", _TYPE_SLICE),
-    # typing aliases for contextlib
-    "typing.ContextManager": ("contextlib.AbstractContextManager", "T"),
-    "typing.AsyncContextManager": ("contextlib.AbstractAsyncContextManager", "T"),
-    # typing aliases for re
-    "typing.Match": ("re.Match", "T"),
-    "typing.Pattern": ("re.Pattern", "T"),
-    # typing_extensions aliases for collections
-    "typing_extensions.Counter": ("collections.Counter", _COUNTER_SLICE),
-    "typing_extensions.Deque": ("collections.deque", "T"),
-    "typing_extensions.DefaultDict": ("collections.defaultdict", _MAPPING_SLICE),
-    "typing_extensions.ChainMap": ("collections.ChainMap", _MAPPING_SLICE),
-    "typing_extensions.OrderedDict": ("collections.OrderedDict", _MAPPING_SLICE),
-    # One typing_extensions alias for a builtin
-    "typing_extensions.Type": ("type", _TYPE_SLICE),
-    # Typing_extensions aliases for contextlib
-    "typing_extensions.ContextManager": ("contextlib.AbstractContextManager", "T"),
-    "typing_extensions.AsyncContextManager": (
-        "contextlib.AbstractAsyncContextManager",
-        "T",
-    ),
-    # typing aliases for collections.abc
-    # typing.AbstractSet and typing.ByteString are deliberately omitted
+    # Aliases for collections
+    "Counter": ("collections.Counter", "KeyType"),
+    "Deque": ("collections.deque", "T"),
+    "DefaultDict": ("collections.defaultdict", _MAPPING_SLICE),
+    "ChainMap": ("collections.ChainMap", _MAPPING_SLICE),
+    "OrderedDict": ("collections.OrderedDict", _MAPPING_SLICE),
+    # Aliases for builtins
+    "Dict": ("dict", _MAPPING_SLICE),
+    "FrozenSet": ("frozenset", "T"),
+    "List": ("list", "T"),
+    "Set": ("set", "T"),
+    "Tuple": ("tuple", "Foo, Bar"),
+    "Type": ("type", "MyClass"),
+    # Aliases for contextlib
+    "ContextManager": ("contextlib.AbstractContextManager", "T"),
+    "AsyncContextManager": ("contextlib.AbstractAsyncContextManager", "T"),
+    # Aliases for re
+    "Match": ("re.Match", "T"),
+    "Pattern": ("re.Pattern", "T"),
+    # Aliases for collections.abc
+    # AbstractSet and ByteString are deliberately omitted
     # (special-cased elsewhere).
     # If the second element of the tuple is `None`,
     # it signals that the object shouldn't be parameterized
-    "typing.Collection": ("collections.abc.Collection", "T"),
-    "typing.ItemsView": ("collections.abc.ItemsView", _MAPPING_SLICE),
-    "typing.KeysView": ("collections.abc.KeysView", "KeyType"),
-    "typing.Mapping": ("collections.abc.Mapping", _MAPPING_SLICE),
-    "typing.MappingView": ("collections.abc.MappingView", None),
-    "typing.MutableMapping": ("collections.abc.MutableMapping", _MAPPING_SLICE),
-    "typing.MutableSequence": ("collections.abc.MutableSequence", "T"),
-    "typing.MutableSet": ("collections.abc.MutableSet", "T"),
-    "typing.Sequence": ("collections.abc.Sequence", "T"),
-    "typing.ValuesView": ("collections.abc.ValuesView", "ValueType"),
-    "typing.Iterable": ("collections.abc.Iterable", "T"),
-    "typing.Iterator": ("collections.abc.Iterator", "T"),
-    "typing.Generator": (
-        "collections.abc.Generator",
-        "YieldType, SendType, ReturnType",
-    ),
-    "typing.Hashable": ("collections.abc.Hashable", None),
-    "typing.Reversible": ("collections.abc.Reversible", "T"),
-    "typing.Sized": ("collections.abc.Sized", None),
-    "typing.Coroutine": ("collections.abc.Coroutine", _COROUTINE_SLICE),
-    "typing.AsyncGenerator": ("collections.abc.AsyncGenerator", _ASYNCGEN_SLICE),
-    "typing.AsyncIterator": ("collections.abc.AsyncIterator", "T"),
-    "typing.AsyncIterable": ("collections.abc.AsyncIterable", "T"),
-    "typing.Awaitable": ("collections.abc.Awaitable", "T"),
-    "typing.Callable": ("collections.abc.Callable", None),
-    "typing.Container": ("collections.abc.Container", "T"),
-    # typing_extensions aliases for collections.abc
-    "typing_extensions.Awaitable": ("collections.abc.Awaitable", "T"),
-    "typing_extensions.Coroutine": ("collections.abc.Coroutine", _COROUTINE_SLICE),
-    "typing_extensions.AsyncIterable": ("collections.abc.AsyncIterable", "T"),
-    "typing_extensions.AsyncIterator": ("collections.abc.AsyncIterator", "T"),
-    "typing_extensions.AsyncGenerator": (
-        "collections.abc.AsyncGenerator",
-        _ASYNCGEN_SLICE,
-    ),
+    "Collection": ("collections.abc.Collection", "T"),
+    "ItemsView": ("collections.abc.ItemsView", _MAPPING_SLICE),
+    "KeysView": ("collections.abc.KeysView", "KeyType"),
+    "Mapping": ("collections.abc.Mapping", _MAPPING_SLICE),
+    "MappingView": ("collections.abc.MappingView", None),
+    "MutableMapping": ("collections.abc.MutableMapping", _MAPPING_SLICE),
+    "MutableSequence": ("collections.abc.MutableSequence", "T"),
+    "MutableSet": ("collections.abc.MutableSet", "T"),
+    "Sequence": ("collections.abc.Sequence", "T"),
+    "ValuesView": ("collections.abc.ValuesView", "ValueType"),
+    "Iterable": ("collections.abc.Iterable", "T"),
+    "Iterator": ("collections.abc.Iterator", "T"),
+    "Generator": ("collections.abc.Generator", "YieldType, SendType, ReturnType"),
+    "Hashable": ("collections.abc.Hashable", None),
+    "Reversible": ("collections.abc.Reversible", "T"),
+    "Sized": ("collections.abc.Sized", None),
+    "Coroutine": ("collections.abc.Coroutine", "YieldType, SendType, ReturnType"),
+    "AsyncGenerator": ("collections.abc.AsyncGenerator", "YieldType, SendType"),
+    "AsyncIterator": ("collections.abc.AsyncIterator", "T"),
+    "AsyncIterable": ("collections.abc.AsyncIterable", "T"),
+    "Awaitable": ("collections.abc.Awaitable", "T"),
+    "Callable": ("collections.abc.Callable", None),
+    "Container": ("collections.abc.Container", "T"),
 }
 
 # Y023: Import things from typing instead of typing_extensions
 # if they're available from the typing module on 3.7+
 _BAD_TYPINGEXTENSIONS_Y023_IMPORTS = frozenset(
     {
+        "AnyStr",
+        "BinaryIO",
+        "ForwardRef",
+        "Generic",
+        "IO",
         "Protocol",
+        "TextIO",
         "runtime_checkable",
         "NewType",
         "overload",
@@ -282,6 +258,7 @@ def _is_name(node: ast.AST | None, name: str) -> bool:
 
 
 _TYPING_MODULES = frozenset({"typing", "typing_extensions"})
+_TYPING_OR_COLLECTIONS_ABC = _TYPING_MODULES | {"collections.abc"}
 
 
 def _is_object(node: ast.AST | None, name: str, *, from_: Container[str]) -> bool:
@@ -293,8 +270,7 @@ def _is_object(node: ast.AST | None, name: str, *, from_: Container[str]) -> boo
         where <parent> is a string that can be found within the `from_` collection of
         strings.
 
-    >>> modules = _TYPING_MODULES | {"collections.abc"}
-    >>> _is_AsyncIterator = partial(_is_object, name="AsyncIterator", from_=modules)
+    >>> _is_AsyncIterator = partial(_is_object, name="AsyncIterator", from_=_TYPING_OR_COLLECTIONS_ABC)
     >>> _is_AsyncIterator(_ast_node_for("AsyncIterator"))
     True
     >>> _is_AsyncIterator(_ast_node_for("typing.AsyncIterator"))
@@ -326,7 +302,7 @@ _is_TypedDict = partial(
 )
 _is_Literal = partial(_is_object, name="Literal", from_=_TYPING_MODULES)
 _is_abstractmethod = partial(_is_object, name="abstractmethod", from_={"abc"})
-_is_Any = partial(_is_object, name="Any", from_={"typing"})
+_is_Any = partial(_is_object, name="Any", from_=_TYPING_MODULES)
 _is_overload = partial(_is_object, name="overload", from_=_TYPING_MODULES)
 _is_final = partial(_is_object, name="final", from_=_TYPING_MODULES)
 _is_Self = partial(_is_object, name="Self", from_=({"_typeshed"} | _TYPING_MODULES))
@@ -334,18 +310,16 @@ _is_TracebackType = partial(_is_object, name="TracebackType", from_={"types"})
 _is_builtins_object = partial(_is_object, name="object", from_={"builtins"})
 _is_builtins_type = partial(_is_object, name="type", from_={"builtins"})
 _is_Unused = partial(_is_object, name="Unused", from_={"_typeshed"})
-_is_Iterable = partial(_is_object, name="Iterable", from_={"typing", "collections.abc"})
+_is_Iterable = partial(_is_object, name="Iterable", from_=_TYPING_OR_COLLECTIONS_ABC)
 _is_AsyncIterable = partial(
-    _is_object, name="AsyncIterable", from_={"collections.abc"} | _TYPING_MODULES
+    _is_object, name="AsyncIterable", from_=_TYPING_OR_COLLECTIONS_ABC
 )
 _is_Protocol = partial(_is_object, name="Protocol", from_=_TYPING_MODULES)
 _is_NoReturn = partial(_is_object, name="NoReturn", from_=_TYPING_MODULES)
 _is_Final = partial(_is_object, name="Final", from_=_TYPING_MODULES)
-_is_Generator = partial(
-    _is_object, name="Generator", from_=_TYPING_MODULES | {"collections.abc"}
-)
+_is_Generator = partial(_is_object, name="Generator", from_=_TYPING_OR_COLLECTIONS_ABC)
 _is_AsyncGenerator = partial(
-    _is_object, name="AsyncGenerator", from_=_TYPING_MODULES | {"collections.abc"}
+    _is_object, name="AsyncGenerator", from_=_TYPING_OR_COLLECTIONS_ABC
 )
 _is_Generic = partial(_is_object, name="Generic", from_=_TYPING_MODULES)
 
@@ -478,7 +452,7 @@ def _get_collections_abc_obj_id(node: ast.expr | None) -> str | None:
     if not isinstance(node, ast.Subscript):
         return None
     return _get_name_of_class_if_from_modules(
-        node.value, modules=_TYPING_MODULES | {"collections.abc"}
+        node.value, modules=_TYPING_OR_COLLECTIONS_ABC
     )
 
 
@@ -505,6 +479,11 @@ def _has_bad_hardcoded_returns(
     method: ast.FunctionDef | ast.AsyncFunctionDef, *, classdef: ast.ClassDef
 ) -> bool:
     """Return `True` if `function` should be rewritten with `typing_extensions.Self`."""
+    # PEP 673 forbids the use of `typing(_extensions).Self` in metaclasses.
+    # Do our best to avoid false positives here:
+    if _is_metaclass(classdef):
+        return False
+
     # Much too complex for our purposes to worry
     # about overloaded functions or abstractmethods
     if any(
@@ -844,6 +823,29 @@ def _is_enum_class(node: ast.ClassDef) -> bool:
     return any(_is_enum_base(base) for base in node.bases)
 
 
+_COMMON_METACLASSES = {
+    "type": "builtins",
+    "ABCMeta": "abc",
+    "EnumMeta": "enum",
+    "EnumType": "enum",
+}
+
+
+def _is_metaclass_base(node: ast.expr) -> bool:
+    if isinstance(node, ast.Name):
+        return node.id in _COMMON_METACLASSES
+    return (
+        isinstance(node, ast.Attribute)
+        and node.attr in _COMMON_METACLASSES
+        and _is_name(node.value, _COMMON_METACLASSES[node.attr])
+    )
+
+
+def _is_metaclass(node: ast.ClassDef) -> bool:
+    """Best-effort attempt to determine if a class is a metaclass or not."""
+    return any(_is_metaclass_base(base) for base in node.bases)
+
+
 @dataclass
 class NestingCounter:
     """Class to help the PyiVisitor keep track of internal state"""
@@ -922,12 +924,22 @@ class PyiVisitor(ast.NodeVisitor):
             error_message = Y057.format(module=module_name)
 
         # Y022 errors
-        elif fullname in _BAD_Y022_IMPORTS:
-            good_cls_name, slice_contents = _BAD_Y022_IMPORTS[fullname]
+        elif module_name in _TYPING_MODULES and object_name in _BAD_Y022_IMPORTS:
+            good_cls_name, slice_contents = _BAD_Y022_IMPORTS[object_name]
             params = "" if slice_contents is None else f"[{slice_contents}]"
             error_message = Y022.format(
                 good_syntax=f'"{good_cls_name}{params}"',
                 bad_syntax=f'"{fullname}{params}"',
+            )
+
+        # Y037 errors
+        elif module_name in _TYPING_MODULES and object_name == "Optional":
+            error_message = Y037.format(
+                old_syntax=fullname, example='"int | None" instead of "Optional[int]"'
+            )
+        elif module_name in _TYPING_MODULES and object_name == "Union":
+            error_message = Y037.format(
+                old_syntax=fullname, example='"int | str" instead of "Union[int, str]"'
             )
 
         # Y023 errors
@@ -948,16 +960,6 @@ class PyiVisitor(ast.NodeVisitor):
         # Y024 errors
         elif fullname == "collections.namedtuple":
             error_message = Y024
-
-        # Y037 errors
-        elif fullname == "typing.Optional":
-            error_message = Y037.format(
-                old_syntax=fullname, example='"int | None" instead of "Optional[int]"'
-            )
-        elif fullname == "typing.Union":
-            error_message = Y037.format(
-                old_syntax=fullname, example='"int | str" instead of "Union[int, str]"'
-            )
 
         # Y039 errors
         elif fullname == "typing.Text":
@@ -998,8 +1000,8 @@ class PyiVisitor(ast.NodeVisitor):
         for object_name in imported_names:
             self._check_import_or_attribute(node, module_name, object_name)
 
-        if module_name == "typing" and "AbstractSet" in imported_names:
-            self.error(node, Y038)
+        if module_name in _TYPING_MODULES and "AbstractSet" in imported_names:
+            self.error(node, Y038.format(module=module_name))
 
     def _check_for_typevarlike_assignments(
         self, node: ast.Assign, function: ast.expr, object_name: str
@@ -1385,7 +1387,7 @@ class PyiVisitor(ast.NodeVisitor):
         self.visit(subscripted_object)
         if subscripted_object_name == "Literal":
             with self.string_literals_allowed.enabled():
-                self.visit(node.slice)
+                self._visit_typing_Literal(node)
             return
 
         if isinstance(node.slice, ast.Tuple):
@@ -1394,6 +1396,25 @@ class PyiVisitor(ast.NodeVisitor):
             self.visit(node.slice)
             if subscripted_object_name in {"tuple", "Tuple"}:
                 self._Y090_error(node)
+
+    def _visit_typing_Literal(self, node: ast.Subscript) -> None:
+        if isinstance(node.slice, ast.Constant) and _is_None(node.slice):
+            # Special case for `Literal[None]`
+            self.error(node.slice, Y061.format(suggestion="None"))
+        elif isinstance(node.slice, ast.Tuple):
+            elts = node.slice.elts
+            for i, elt in enumerate(elts):
+                if _is_None(elt):
+                    elts_without_none = elts[:i] + elts[i + 1 :]
+                    if len(elts_without_none) == 1:
+                        new_literal_slice = unparse(elts_without_none[0])
+                    else:
+                        new_slice_node = ast.Tuple(elts=elts_without_none)
+                        new_literal_slice = unparse(new_slice_node).strip("()")
+                    suggestion = f"Literal[{new_literal_slice}] | None"
+                    self.error(elt, Y061.format(suggestion=suggestion))
+                    break  # Only report the first `None`
+        self.visit(node.slice)
 
     def _visit_slice_tuple(self, node: ast.Tuple, parent: str | None) -> None:
         if parent == "Union":
@@ -2163,7 +2184,7 @@ Y036 = "Y036 Badly defined {method_name} method: {details}"
 Y037 = "Y037 Use PEP 604 union types instead of {old_syntax} (e.g. {example})."
 Y038 = (
     'Y038 Use "from collections.abc import Set as AbstractSet" '
-    'instead of "from typing import AbstractSet" (PEP 585 syntax)'
+    'instead of "from {module} import AbstractSet" (PEP 585 syntax)'
 )
 Y039 = 'Y039 Use "str" instead of "typing.Text"'
 Y040 = 'Y040 Do not inherit from "object" explicitly, as it is redundant in Python 3'
@@ -2207,6 +2228,7 @@ Y060 = (
     'Y060 Redundant inheritance from "Generic[]"; '
     "class would be inferred as generic anyway"
 )
+Y061 = 'Y061 None inside "Literal[]" expression. Replace with "{suggestion}"'
 Y090 = (
     'Y090 "{original}" means '
     '"a tuple of length 1, in which the sole element is of type {typ!r}". '
