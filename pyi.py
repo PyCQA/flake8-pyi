@@ -129,11 +129,13 @@ _BAD_TYPINGEXTENSIONS_Y023_IMPORTS = frozenset(
         "runtime_checkable",
         "NewType",
         "overload",
-        "Text",
         "NoReturn",
         # ClassVar deliberately omitted,
         # as it's the only one in this group that should be parameterised.
         # It is special-cased elsewhere.
+        #
+        # Text is also deliberately omitted,
+        # as you shouldn't be importing it from anywhere! (Y039)
     }
 )
 
@@ -942,6 +944,10 @@ class PyiVisitor(ast.NodeVisitor):
                 old_syntax=fullname, example='"int | str" instead of "Union[int, str]"'
             )
 
+        # Y039 errors
+        elif module_name in _TYPING_MODULES and object_name == "Text":
+            error_message = Y039.format(module=module_name)
+
         # Y023 errors
         elif module_name == "typing_extensions":
             if object_name in _BAD_TYPINGEXTENSIONS_Y023_IMPORTS:
@@ -960,10 +966,6 @@ class PyiVisitor(ast.NodeVisitor):
         # Y024 errors
         elif fullname == "collections.namedtuple":
             error_message = Y024
-
-        # Y039 errors
-        elif fullname == "typing.Text":
-            error_message = Y039
 
         else:
             return
@@ -2185,7 +2187,7 @@ Y038 = (
     'Y038 Use "from collections.abc import Set as AbstractSet" '
     'instead of "from {module} import AbstractSet" (PEP 585 syntax)'
 )
-Y039 = 'Y039 Use "str" instead of "typing.Text"'
+Y039 = 'Y039 Use "str" instead of "{module}.Text"'
 Y040 = 'Y040 Do not inherit from "object" explicitly, as it is redundant in Python 3'
 Y041 = (
     'Y041 Use "{implicit_supertype}" '
