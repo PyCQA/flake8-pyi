@@ -479,6 +479,11 @@ def _has_bad_hardcoded_returns(
     method: ast.FunctionDef | ast.AsyncFunctionDef, *, classdef: ast.ClassDef
 ) -> bool:
     """Return `True` if `function` should be rewritten with `typing_extensions.Self`."""
+    # PEP 673 forbids the use of `typing(_extensions).Self` in metaclasses.
+    # Do our best to avoid false positives here:
+    if _is_metaclass(classdef):
+        return False
+
     # Much too complex for our purposes to worry
     # about overloaded functions or abstractmethods
     if any(
@@ -816,6 +821,29 @@ def _is_enum_base(node: ast.expr) -> bool:
 
 def _is_enum_class(node: ast.ClassDef) -> bool:
     return any(_is_enum_base(base) for base in node.bases)
+
+
+_COMMON_METACLASSES = {
+    "type": "builtins",
+    "ABCMeta": "abc",
+    "EnumMeta": "enum",
+    "EnumType": "enum",
+}
+
+
+def _is_metaclass_base(node: ast.expr) -> bool:
+    if isinstance(node, ast.Name):
+        return node.id in _COMMON_METACLASSES
+    return (
+        isinstance(node, ast.Attribute)
+        and node.attr in _COMMON_METACLASSES
+        and _is_name(node.value, _COMMON_METACLASSES[node.attr])
+    )
+
+
+def _is_metaclass(node: ast.ClassDef) -> bool:
+    """Best-effort attempt to determine if a class is a metaclass or not."""
+    return any(_is_metaclass_base(base) for base in node.bases)
 
 
 @dataclass
