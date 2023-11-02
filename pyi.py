@@ -925,41 +925,47 @@ class PyiVisitor(ast.NodeVisitor):
         if fullname in {"typing.ByteString", "collections.abc.ByteString"}:
             error_message = Y057.format(module=module_name)
 
-        # Y022 errors
-        elif module_name in _TYPING_MODULES and object_name in _BAD_Y022_IMPORTS:
-            good_cls_name, slice_contents = _BAD_Y022_IMPORTS[object_name]
-            params = "" if slice_contents is None else f"[{slice_contents}]"
-            error_message = Y022.format(
-                good_syntax=f'"{good_cls_name}{params}"',
-                bad_syntax=f'"{fullname}{params}"',
-            )
-
-        # Y037 errors
-        elif module_name in _TYPING_MODULES and object_name == "Optional":
-            error_message = Y037.format(
-                old_syntax=fullname, example='"int | None" instead of "Optional[int]"'
-            )
-        elif module_name in _TYPING_MODULES and object_name == "Union":
-            error_message = Y037.format(
-                old_syntax=fullname, example='"int | str" instead of "Union[int, str]"'
-            )
-
-        # Y039 errors
-        elif module_name in _TYPING_MODULES and object_name == "Text":
-            error_message = Y039.format(module=module_name)
-
-        # Y023 errors
-        elif module_name == "typing_extensions":
-            if object_name in _BAD_TYPINGEXTENSIONS_Y023_IMPORTS:
-                error_message = Y023.format(
-                    good_syntax=f'"typing.{object_name}"',
-                    bad_syntax=f'"typing_extensions.{object_name}"',
+        elif module_name in _TYPING_MODULES:
+            # Y022 errors
+            if object_name in _BAD_Y022_IMPORTS:
+                good_cls_name, slice_contents = _BAD_Y022_IMPORTS[object_name]
+                params = "" if slice_contents is None else f"[{slice_contents}]"
+                error_message = Y022.format(
+                    good_syntax=f'"{good_cls_name}{params}"',
+                    bad_syntax=f'"{fullname}{params}"',
                 )
-            elif object_name == "ClassVar":
-                error_message = Y023.format(
-                    good_syntax='"typing.ClassVar[T]"',
-                    bad_syntax='"typing_extensions.ClassVar[T]"',
+
+            # Y037 errors
+            elif object_name == "Optional":
+                error_message = Y037.format(
+                    old_syntax=fullname,
+                    example='"int | None" instead of "Optional[int]"',
                 )
+            elif object_name == "Union":
+                error_message = Y037.format(
+                    old_syntax=fullname,
+                    example='"int | str" instead of "Union[int, str]"',
+                )
+
+            # Y039 errors
+            elif object_name == "Text":
+                error_message = Y039.format(module=module_name)
+
+            # Y023 errors
+            elif module_name == "typing_extensions":
+                if object_name in _BAD_TYPINGEXTENSIONS_Y023_IMPORTS:
+                    error_message = Y023.format(
+                        good_syntax=f'"typing.{object_name}"',
+                        bad_syntax=f'"typing_extensions.{object_name}"',
+                    )
+                elif object_name == "ClassVar":
+                    error_message = Y023.format(
+                        good_syntax='"typing.ClassVar[T]"',
+                        bad_syntax='"typing_extensions.ClassVar[T]"',
+                    )
+                else:
+                    return
+
             else:
                 return
 
