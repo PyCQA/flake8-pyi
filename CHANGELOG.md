@@ -27,6 +27,8 @@ Other changes:
   for metaclasses. While reliably determining whether a class is a metaclass in
   all cases would be impossible for flake8-pyi, the new heuristics should
   reduce the number of false positives from this check.
+* Attempting to import `typing_extensions.Text` now causes Y039 to be emitted
+  rather than Y023.
 
 ## 23.10.0
 
