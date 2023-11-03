@@ -129,11 +129,13 @@ _BAD_TYPINGEXTENSIONS_Y023_IMPORTS = frozenset(
         "runtime_checkable",
         "NewType",
         "overload",
-        "Text",
         "NoReturn",
         # ClassVar deliberately omitted,
         # as it's the only one in this group that should be parameterised.
         # It is special-cased elsewhere.
+        #
+        # Text is also deliberately omitted,
+        # as you shouldn't be importing it from anywhere! (Y039)
     }
 )
 
@@ -846,6 +848,63 @@ def _is_metaclass(node: ast.ClassDef) -> bool:
     return any(_is_metaclass_base(base) for base in node.bases)
 
 
+def _check_import_or_attribute(
+    node: ast.Attribute | ast.ImportFrom, module_name: str, object_name: str
+) -> str | None:
+    """If `node` represents a bad import, return the approriate error message.
+
+    Else, return None.
+    """
+    fullname = f"{module_name}.{object_name}"
+
+    # Y057 errors
+    if fullname in {"typing.ByteString", "collections.abc.ByteString"}:
+        return Y057.format(module=module_name)
+
+    # Y024 errors
+    if fullname == "collections.namedtuple":
+        return Y024
+
+    if module_name in _TYPING_MODULES:
+        # Y022 errors
+        if object_name in _BAD_Y022_IMPORTS:
+            good_cls_name, slice_contents = _BAD_Y022_IMPORTS[object_name]
+            params = "" if slice_contents is None else f"[{slice_contents}]"
+            return Y022.format(
+                good_syntax=f'"{good_cls_name}{params}"',
+                bad_syntax=f'"{fullname}{params}"',
+            )
+
+        # Y037 errors
+        if object_name == "Optional":
+            return Y037.format(
+                old_syntax=fullname, example='"int | None" instead of "Optional[int]"'
+            )
+        if object_name == "Union":
+            return Y037.format(
+                old_syntax=fullname, example='"int | str" instead of "Union[int, str]"'
+            )
+
+        # Y039 errors
+        if object_name == "Text":
+            return Y039.format(module=module_name)
+
+    # Y023 errors
+    if module_name == "typing_extensions":
+        if object_name in _BAD_TYPINGEXTENSIONS_Y023_IMPORTS:
+            return Y023.format(
+                good_syntax=f'"typing.{object_name}"',
+                bad_syntax=f'"typing_extensions.{object_name}"',
+            )
+        if object_name == "ClassVar":
+            return Y023.format(
+                good_syntax='"typing.ClassVar[T]"',
+                bad_syntax='"typing_extensions.ClassVar[T]"',
+            )
+
+    return None
+
+
 @dataclass
 class NestingCounter:
     """Class to help the PyiVisitor keep track of internal state"""
@@ -914,67 +973,12 @@ class PyiVisitor(ast.NodeVisitor):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(filename={self.filename!r})"
 
-    def _check_import_or_attribute(
-        self, node: ast.Attribute | ast.ImportFrom, module_name: str, object_name: str
-    ) -> None:
-        fullname = f"{module_name}.{object_name}"
-
-        # Y057 errors
-        if fullname in {"typing.ByteString", "collections.abc.ByteString"}:
-            error_message = Y057.format(module=module_name)
-
-        # Y022 errors
-        elif module_name in _TYPING_MODULES and object_name in _BAD_Y022_IMPORTS:
-            good_cls_name, slice_contents = _BAD_Y022_IMPORTS[object_name]
-            params = "" if slice_contents is None else f"[{slice_contents}]"
-            error_message = Y022.format(
-                good_syntax=f'"{good_cls_name}{params}"',
-                bad_syntax=f'"{fullname}{params}"',
-            )
-
-        # Y037 errors
-        elif module_name in _TYPING_MODULES and object_name == "Optional":
-            error_message = Y037.format(
-                old_syntax=fullname, example='"int | None" instead of "Optional[int]"'
-            )
-        elif module_name in _TYPING_MODULES and object_name == "Union":
-            error_message = Y037.format(
-                old_syntax=fullname, example='"int | str" instead of "Union[int, str]"'
-            )
-
-        # Y023 errors
-        elif module_name == "typing_extensions":
-            if object_name in _BAD_TYPINGEXTENSIONS_Y023_IMPORTS:
-                error_message = Y023.format(
-                    good_syntax=f'"typing.{object_name}"',
-                    bad_syntax=f'"typing_extensions.{object_name}"',
-                )
-            elif object_name == "ClassVar":
-                error_message = Y023.format(
-                    good_syntax='"typing.ClassVar[T]"',
-                    bad_syntax='"typing_extensions.ClassVar[T]"',
-                )
-            else:
-                return
-
-        # Y024 errors
-        elif fullname == "collections.namedtuple":
-            error_message = Y024
-
-        # Y039 errors
-        elif fullname == "typing.Text":
-            error_message = Y039
-
-        else:
-            return
-
-        self.error(node, error_message)
-
     def visit_Attribute(self, node: ast.Attribute) -> None:
         self.generic_visit(node)
-        self._check_import_or_attribute(
+        if error_msg := _check_import_or_attribute(
             node=node, module_name=unparse(node.value), object_name=node.attr
-        )
+        ):
+            self.error(node, error_msg)
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         self.generic_visit(node)
@@ -998,7 +1002,8 @@ class PyiVisitor(ast.NodeVisitor):
             self.error(node, Y025)
 
         for object_name in imported_names:
-            self._check_import_or_attribute(node, module_name, object_name)
+            if error_msg := _check_import_or_attribute(node, module_name, object_name):
+                self.error(node, error_msg)
 
         if module_name in _TYPING_MODULES and "AbstractSet" in imported_names:
             self.error(node, Y038.format(module=module_name))
@@ -2186,7 +2191,7 @@ Y038 = (
     'Y038 Use "from collections.abc import Set as AbstractSet" '
     'instead of "from {module} import AbstractSet" (PEP 585 syntax)'
 )
-Y039 = 'Y039 Use "str" instead of "typing.Text"'
+Y039 = 'Y039 Use "str" instead of "{module}.Text"'
 Y040 = 'Y040 Do not inherit from "object" explicitly, as it is redundant in Python 3'
 Y041 = (
     'Y041 Use "{implicit_supertype}" '
