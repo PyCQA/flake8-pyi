@@ -12,7 +12,7 @@ from contextlib import contextmanager
 from copy import deepcopy
 from dataclasses import dataclass
 from functools import partial
-from itertools import chain, zip_longest
+from itertools import chain, groupby, zip_longest
 from keyword import iskeyword
 from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple, Union
 
@@ -60,6 +60,14 @@ class Error(NamedTuple):
 class TypeVarInfo(NamedTuple):
     cls_name: str
     name: str
+
+
+def all_equal(iterable):
+    """Returns True if all the elements are equal to each other.
+
+    Taken straight from the CPython itertools documentation."""
+    g = groupby(iterable)
+    return next(g, True) and not next(g, False)
 
 
 _MAPPING_SLICE = "KeyType, ValueType"
@@ -1587,9 +1595,9 @@ class PyiVisitor(ast.NodeVisitor):
 
         if Generic_basenode is not None:
             assert subscript_bases
-            if len(subscript_bases) == 2 and ast.dump(
-                subscript_bases[0].slice
-            ) == ast.dump(subscript_bases[1].slice):
+            if len(subscript_bases) > 1 and all_equal(
+                ast.dump(subscript_base.slice) for subscript_base in subscript_bases
+            ):
                 self.error(Generic_basenode, Y060)
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
