@@ -67,6 +67,7 @@ dev = [
     "mypy==1.6.0",
     "pre-commit-hooks==4.5.0",  # Must match .pre-commit-config.yaml
     "pytest==7.4.2",
+    "pytest-xdist==3.3.1",
     "types-pyflakes<4",
 ]
 
@@ -104,5 +105,5 @@ module = 'flake8.*'
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
-addopts = "--doctest-modules"
+addopts = "--doctest-modules -nauto"
 filterwarnings = ["error"]
