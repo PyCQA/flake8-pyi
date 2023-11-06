@@ -65,7 +65,7 @@ class TypeVarInfo(NamedTuple):
 def all_equal(iterable: Iterable[object]) -> bool:
     """Returns True if all the elements are equal to each other.
 
-    Taken straight from the CPython itertools documentation."""
+    Adapted from the CPython itertools documentation."""
     g = groupby(iterable)
     next(g, True)
     return not next(g, False)
