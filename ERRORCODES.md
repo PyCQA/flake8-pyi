@@ -64,7 +64,7 @@ The following warnings are currently emitted by default:
 | Y059 | `Generic[]` should always be the last base class, if it is present in a class's bases tuple. At runtime, if `Generic[]` is not the final class in a the bases tuple, this [can cause the class creation to fail](https://github.com/python/cpython/issues/106102). In a stub file, however, this rule is enforced purely for stylistic consistency.
 | Y060 | Redundant inheritance from `Generic[]`. For example, `class Foo(Iterable[_T], Generic[_T]): ...` can be written more simply as `class Foo(Iterable[_T]): ...`.<br><br>To avoid false-positive errors, and to avoid complexity in the implementation, this check is deliberately conservative: it only looks at classes that have exactly two bases.
 | Y061 | Do not use `None` inside a `Literal[]` slice. For example, use `Literal["foo"] \| None` instead of `Literal["foo", None]`. While both are legal according to [PEP 586](https://peps.python.org/pep-0586/), the former is preferred for stylistic consistency.
-| Y062 | Protocol methods should not be positional-or-keyword. Usually, a positional-only argument is better.
+| Y062 | Protocol methods should not have positional-or-keyword parameters. Usually, a positional-only parameter is better.
 
 ## Warnings disabled by default
 
