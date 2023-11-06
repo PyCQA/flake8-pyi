@@ -67,8 +67,8 @@ def all_equal(iterable: Iterable[object]) -> bool:
 
     Taken straight from the CPython itertools documentation."""
     g = groupby(iterable)
-    # TODO: not great that mypy hates a recipe from the itertools docs:
-    return next(g, True) and not next(g, False)  # type: ignore[arg-type]
+    next(g, True)
+    return not next(g, False)
 
 
 _MAPPING_SLICE = "KeyType, ValueType"
