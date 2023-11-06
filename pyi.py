@@ -2251,7 +2251,7 @@ Y060 = (
 )
 Y061 = 'Y061 None inside "Literal[]" expression. Replace with "{suggestion}"'
 Y062 = (
-    'Y058 Argument "{arg}" to protocol method "{method}" should not be positional-or-keyword'
+    'Y062 Argument "{arg}" to protocol method "{method}" should not be positional-or-keyword'
     " (suggestion: make it positional-only)"
 )
 Y090 = (
