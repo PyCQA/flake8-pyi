@@ -2027,8 +2027,8 @@ class PyiVisitor(ast.NodeVisitor):
 
         if self.in_class.active:
             self.check_self_typevars(node)
-        if self.in_protocol.active:
-            self.check_arg_kinds(node)
+            if self.in_protocol.active:
+                self.check_arg_kinds(node)
 
     def visit_arg(self, node: ast.arg) -> None:
         if _is_NoReturn(node.annotation):
