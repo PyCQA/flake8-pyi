@@ -14,6 +14,7 @@ from collections.abc import (
     Generator,
     Iterable,
     Iterator,
+    Mapping,
 )
 from enum import EnumMeta
 from typing import Any, Generic, TypeVar, overload
@@ -222,6 +223,7 @@ class Corrected5(Container[_T]): ...
 # so we deliberately don't flag it with Y060
 class GoodGeneric5(Container[_S], Iterator[_T], Generic[_S, _T]): ...
 
-# And this one definitely isn't redundant,
+# And these definitely arent't redundant,
 # since the order of the type variables is changed via the inheritance from Generic:
 class GoodGeneric6(Container[_S], Iterator[_T], Generic[_T, _S]): ...
+class GoodGeneric7(Mapping[_S, _T], Generic[_T, _S]): ...
