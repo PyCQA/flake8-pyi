@@ -1,5 +1,9 @@
 # Change Log
 
+## Unreleased
+
+* Introduce Y058: Protocol method parameters should not be positional-or-keyword.
+
 ## 23.6.0
 
 Features:

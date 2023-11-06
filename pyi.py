@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import contextlib
 import logging
 import re
 import sys
@@ -897,6 +898,7 @@ class PyiVisitor(ast.NodeVisitor):
         self.string_literals_allowed = NestingCounter()
         self.in_function = NestingCounter()
         self.in_class = NestingCounter()
+        self.in_protocol = NestingCounter()
         self.visiting_arg = NestingCounter()
 
     def __repr__(self) -> str:
@@ -1517,24 +1519,34 @@ class PyiVisitor(ast.NodeVisitor):
             self.error(node, Y007)
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        class_is_protocol = class_is_typeddict = False
+        for base in node.bases:
+            if _is_Protocol(base):
+                class_is_protocol = True
+            if _is_TypedDict(base):
+                class_is_typeddict = True
+
         if node.name.startswith("_") and not self.in_class.active:
-            for base in node.bases:
-                if _is_Protocol(base):
-                    self.protocol_defs[node.name].append(node)
-                    break
-                if _is_TypedDict(base):
-                    self.class_based_typeddicts[node.name].append(node)
-                    break
+            if class_is_protocol:
+                self.protocol_defs[node.name].append(node)
+            if class_is_typeddict:
+                self.class_based_typeddicts[node.name].append(node)
 
         old_class_node = self.current_class_node
         self.current_class_node = node
-        with self.in_class.enabled():
+        with contextlib.ExitStack() as stack:
+            stack.enter_context(self.in_class.enabled())
+            if class_is_protocol:
+                stack.enter_context(self.in_protocol.enabled())
             self.generic_visit(node)
         self.current_class_node = old_class_node
 
         if any(_is_builtins_object(base_node) for base_node in node.bases):
             self.error(node, Y040)
 
+        self.check_class_pass_and_ellipsis(node)
+
+    def check_class_pass_and_ellipsis(self, node: ast.ClassDef) -> None:
         # empty class body should contain "..." not "pass"
         if len(node.body) == 1:
             statement = node.body[0]
@@ -1872,6 +1884,10 @@ class PyiVisitor(ast.NodeVisitor):
                 return_annotation=return_annotation,
             )
 
+    def check_arg_kinds(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
+        for pos_or_kw in node.args.args[1:]:  # exclude "self"
+            self.error(pos_or_kw, Y058.format(arg=pos_or_kw.arg, method=node.name))
+
     def _visit_function(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         with self.in_function.enabled():
             self.generic_visit(node)
@@ -1895,6 +1911,8 @@ class PyiVisitor(ast.NodeVisitor):
 
         if self.in_class.active:
             self.check_self_typevars(node)
+        if self.in_protocol.active:
+            self.check_arg_kinds(node)
 
     def visit_arg(self, node: ast.arg) -> None:
         if _is_NoReturn(node.annotation):
@@ -2108,4 +2126,8 @@ Y056 = (
 )
 Y057 = (
     "Y057 Do not use {module}.ByteString, which has unclear semantics and is deprecated"
+)
+Y058 = (
+    'Y058 Argument "{arg}" to protocol method "{method}" should not be positional-or-keyword'
+    " (suggestion: make it positional-only)"
 )
