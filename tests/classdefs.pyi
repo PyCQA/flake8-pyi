@@ -3,10 +3,20 @@
 import abc
 import builtins
 import collections.abc
+import enum
 import typing
-from abc import abstractmethod
-from collections.abc import AsyncIterable, AsyncIterator, Iterable, Iterator
-from typing import Any, overload
+from abc import ABCMeta, abstractmethod
+from collections.abc import (
+    AsyncGenerator,
+    AsyncIterable,
+    AsyncIterator,
+    Container,
+    Generator,
+    Iterable,
+    Iterator,
+)
+from enum import EnumMeta
+from typing import Any, Generic, TypeVar, overload
 
 import typing_extensions
 from _typeshed import Self
@@ -94,11 +104,53 @@ class BadIterator4(Iterator[int]):
 class IteratorReturningIterable:
     def __iter__(self) -> Iterable[str]: ...  # Y045 "__iter__" methods should return an Iterator, not an Iterable
 
+class IteratorReturningSimpleGenerator1:
+    def __iter__(self) -> Generator: ...  # Y058 Use "Iterator" as the return value for simple "__iter__" methods, e.g. "def __iter__(self) -> Iterator: ..."
+
+class IteratorReturningSimpleGenerator2:
+    def __iter__(self) -> collections.abc.Generator[str, Any, None]: ...  # Y058 Use "Iterator" as the return value for simple "__iter__" methods, e.g. "def __iter__(self) -> Iterator[str]: ..."
+
+class IteratorReturningComplexGenerator:
+    def __iter__(self) -> Generator[str, int, bytes]: ...
+
 class BadAsyncIterator(collections.abc.AsyncIterator[str]):
     def __aiter__(self) -> typing.AsyncIterator[str]: ...  # Y034 "__aiter__" methods in classes like "BadAsyncIterator" usually return "self" at runtime. Consider using "typing_extensions.Self" in "BadAsyncIterator.__aiter__", e.g. "def __aiter__(self) -> Self: ..."  # Y022 Use "collections.abc.AsyncIterator[T]" instead of "typing.AsyncIterator[T]" (PEP 585 syntax)
 
 class AsyncIteratorReturningAsyncIterable:
     def __aiter__(self) -> AsyncIterable[str]: ...  # Y045 "__aiter__" methods should return an AsyncIterator, not an AsyncIterable
+
+class AsyncIteratorReturningSimpleAsyncGenerator1:
+    def __aiter__(self) -> AsyncGenerator: ...  # Y058 Use "AsyncIterator" as the return value for simple "__aiter__" methods, e.g. "def __aiter__(self) -> AsyncIterator: ..."
+
+class AsyncIteratorReturningSimpleAsyncGenerator2:
+    def __aiter__(self) -> collections.abc.AsyncGenerator[str, Any]: ...  # Y058 Use "AsyncIterator" as the return value for simple "__aiter__" methods, e.g. "def __aiter__(self) -> AsyncIterator[str]: ..."
+
+class AsyncIteratorReturningComplexAsyncGenerator:
+    def __aiter__(self) -> AsyncGenerator[str, int]: ...
+
+class MetaclassInWhichSelfCannotBeUsed(type):
+    def __new__(cls) -> MetaclassInWhichSelfCannotBeUsed: ...
+    def __enter__(self) -> MetaclassInWhichSelfCannotBeUsed: ...
+    async def __aenter__(self) -> MetaclassInWhichSelfCannotBeUsed: ...
+    def __isub__(self, other: MetaclassInWhichSelfCannotBeUsed) -> MetaclassInWhichSelfCannotBeUsed: ...
+
+class MetaclassInWhichSelfCannotBeUsed2(EnumMeta):
+    def __new__(cls) -> MetaclassInWhichSelfCannotBeUsed2: ...
+    def __enter__(self) -> MetaclassInWhichSelfCannotBeUsed2: ...
+    async def __aenter__(self) -> MetaclassInWhichSelfCannotBeUsed2: ...
+    def __isub__(self, other: MetaclassInWhichSelfCannotBeUsed2) -> MetaclassInWhichSelfCannotBeUsed2: ...
+
+class MetaclassInWhichSelfCannotBeUsed3(enum.EnumType):
+    def __new__(cls) -> MetaclassInWhichSelfCannotBeUsed3: ...
+    def __enter__(self) -> MetaclassInWhichSelfCannotBeUsed3: ...
+    async def __aenter__(self) -> MetaclassInWhichSelfCannotBeUsed3: ...
+    def __isub__(self, other: MetaclassInWhichSelfCannotBeUsed3) -> MetaclassInWhichSelfCannotBeUsed3: ...
+
+class MetaclassInWhichSelfCannotBeUsed4(ABCMeta):
+    def __new__(cls) -> MetaclassInWhichSelfCannotBeUsed4: ...
+    def __enter__(self) -> MetaclassInWhichSelfCannotBeUsed4: ...
+    async def __aenter__(self) -> MetaclassInWhichSelfCannotBeUsed4: ...
+    def __isub__(self, other: MetaclassInWhichSelfCannotBeUsed4) -> MetaclassInWhichSelfCannotBeUsed4: ...
 
 class Abstract(Iterator[str]):
     @abstractmethod
@@ -134,3 +186,26 @@ def __str__(self) -> str: ...
 def __eq__(self, other: Any) -> bool: ...
 def __ne__(self, other: Any) -> bool: ...
 def __imul__(self, other: Any) -> list[str]: ...
+
+_S = TypeVar("_S")
+_T = TypeVar("_T")
+
+class GoodGeneric(Generic[_T]): ...
+class GoodGeneric2(int, typing.Generic[_T]): ...
+class BreaksAtRuntimeButWhatever(int, str, typing_extensions.Generic[_T]): ...
+class DoesntTypeCheckButWhatever(Iterable[int], str, Generic[_T]): ...
+
+class BadGeneric(Generic[_T], int): ...  # Y059 "Generic[]" should always be the last base class
+class BadGeneric2(int, typing.Generic[_T], str): ...  # Y059 "Generic[]" should always be the last base class
+class BadGeneric3(typing_extensions.Generic[_T], int, str): ...  # Y059 "Generic[]" should always be the last base class
+class BadGeneric4(Generic[_T], Iterable[int], str): ...  # Y059 "Generic[]" should always be the last base class
+
+class RedundantGeneric1(Iterable[_T], Generic[_T]): ...  # Y060 Redundant inheritance from "Generic[]"; class would be inferred as generic anyway
+class RedundantGeneric2(Generic[_S], GoodGeneric[_S]): ...  # Y059 "Generic[]" should always be the last base class  # Y060 Redundant inheritance from "Generic[]"; class would be inferred as generic anyway
+
+# Strictly speaking these inheritances from Generic are "redundant",
+# but people may consider it more readable to explicitly inherit from Generic,
+# so we deliberately don't flag them with Y060
+class GoodGeneric3(Container[_S], Iterator[_T], Generic[_S, _T]): ...
+class GoodGeneric4(int, Iterator[_T], str, Generic[_T]): ...
+class BadGeneric5(object, Generic[_T], Container[_T]): ...  # Y040 Do not inherit from "object" explicitly, as it is redundant in Python 3  # Y059 "Generic[]" should always be the last base class

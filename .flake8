@@ -24,10 +24,10 @@
 #           produces false positives if you're surrounding things with double quotes
 
 [flake8]
+extend-select = B9
 max-line-length = 80
 max-complexity = 12
 noqa-require-code = true
-select = B,C,E,F,W,Y,B9,NQA
 per-file-ignores =
   *.py: B905, B907, B950, E203, E501, W503, W291, W293
   *.pyi: B, E301, E302, E305, E501, E701, E704, W503

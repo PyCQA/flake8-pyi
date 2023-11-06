@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
 [project]
@@ -60,13 +60,14 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "black==23.3.0",            # Must match .pre-commit-config.yaml
-    "flake8-bugbear==23.6.5",
+    "black==23.9.1",            # Must match .pre-commit-config.yaml
+    "flake8-bugbear==23.9.16",
     "flake8-noqa==1.3.2",
     "isort==5.12.0",            # Must match .pre-commit-config.yaml
-    "mypy==1.4.1",
-    "pre-commit-hooks==4.4.0",  # Must match .pre-commit-config.yaml
-    "pytest==7.4.0",
+    "mypy==1.6.0",
+    "pre-commit-hooks==4.5.0",  # Must match .pre-commit-config.yaml
+    "pytest==7.4.2",
+    "pytest-xdist==3.3.1",
     "types-pyflakes<4",
 ]
 
@@ -74,12 +75,15 @@ dev = [
 "flake8.extension" = {Y0 = "pyi:PyiTreeChecker"}
 
 [tool.hatch.version]
-path = "pyi.py"
+source = "vcs"
+
+[tool.hatch.version.raw-options]
+local_scheme = "no-local-version"
 
 [tool.isort]
 profile = "black"
 combine_as_imports = true
-skip = ["tests/imports.pyi"]
+skip = ["tests/imports.pyi", "tests/pep604_union_types.pyi"]
 skip_gitignore = true
 
 [tool.black]
@@ -101,5 +105,5 @@ module = 'flake8.*'
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
-addopts = "--doctest-modules"
+addopts = "--doctest-modules -nauto"
 filterwarnings = ["error"]

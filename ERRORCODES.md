@@ -1,6 +1,6 @@
 ## List of warnings
 
-The following warnings are currently emitted:
+The following warnings are currently emitted by default:
 
 | Code | Description
 |------|-------------
@@ -39,9 +39,9 @@ The following warnings are currently emitted:
 | Y034 | Y034 detects common errors where certain methods are annotated as having a fixed return type, despite returning `self` at runtime. Such methods should be annotated with `typing_extensions.Self`. This check looks for:<br><br>&nbsp;&nbsp;**1.**&nbsp;&nbsp;Any in-place BinOp dunder methods (`__iadd__`, `__ior__`, etc.) that do not return `Self`.<br>&nbsp;&nbsp;**2.**&nbsp;&nbsp;`__new__`, `__enter__` and `__aenter__` methods that return the class's name unparameterised.<br>&nbsp;&nbsp;**3.**&nbsp;&nbsp;`__iter__` methods that return `Iterator`, even if the class inherits directly from `Iterator`.<br>&nbsp;&nbsp;**4.**&nbsp;&nbsp;`__aiter__` methods that return `AsyncIterator`, even if the class inherits directly from `AsyncIterator`.<br><br>This check excludes methods decorated with `@overload` or `@abstractmethod`.
 | Y035 | `__all__`, `__match_args__` and `__slots__` in a stub file should always have values, as these special variables in a `.pyi` file have identical semantics in a stub as at runtime. E.g. write `__all__ = ["foo", "bar"]` instead of `__all__: list[str]`.
 | Y036 | Y036 detects common errors in `__exit__` and `__aexit__` methods. For example, the first argument in an `__exit__` method should either be annotated with `object`, `_typeshed.Unused` (a special alias for `object`) or `type[BaseException] \| None`.
-| Y037 | Use PEP 604 syntax instead of `typing.Union` and `typing.Optional`. E.g. use `str \| int` instead of `Union[str, int]`, and use `str \| None` instead of `Optional[str]`.
-| Y038 | Use `from collections.abc import Set as AbstractSet` instead of `from typing import AbstractSet`.
-| Y039 | Use `str` instead of `typing.Text`.
+| Y037 | Use PEP 604 syntax instead of `typing(_extensions).Union` and `typing(_extensions).Optional`. E.g. use `str \| int` instead of `Union[str, int]`, and use `str \| None` instead of `Optional[str]`.
+| Y038 | Use `from collections.abc import Set as AbstractSet` instead of `from typing import AbstractSet` or `from typing_extensions import AbstractSet`.
+| Y039 | Use `str` instead of `typing.Text` or `typing_extensions.Text`.
 | Y040 | Never explicitly inherit from `object`, as all classes implicitly inherit from `object` in Python 3.
 | Y041 | Y041 detects redundant numeric unions in the context of parameter annotations. For example, PEP 484 specifies that type checkers should allow `int` objects to be passed to a function, even if the function states that it accepts a `float`. As such, `int` is redundant in the union `int \| float` in the context of a parameter annotation. In the same way, `int` is sometimes redundant in the union `int \| complex`, and `float` is sometimes redundant in the union `float \| complex`.
 | Y042 | Type alias names should use CamelCase rather than snake_case.
@@ -60,4 +60,24 @@ The following warnings are currently emitted:
 | Y055 | Unions of the form `type[X] \| type[Y]` can be simplified to `type[X \| Y]`. Similarly, `Union[type[X], type[Y]]` can be simplified to `type[Union[X, Y]]`.
 | Y056 | Do not call methods such as `.append()`, `.extend()` or `.remove()` on `__all__`. Different type checkers have varying levels of support for calling these methods on `__all__`. Use `+=` instead, which is known to be supported by all major type checkers.
 | Y057 | Do not use `typing.ByteString` or `collections.abc.ByteString`. These types have unclear semantics, and are deprecated; use  `typing_extensions.Buffer` or a union such as `bytes \| bytearray \| memoryview` instead. See [PEP 688](https://peps.python.org/pep-0688/) for more details.
-| Y058 | Protocol methods should not be positional-or-keyword. Usually, a positional-only argument is better.
+| Y058 | Use `Iterator` rather than `Generator` as the return value for simple `__iter__` methods, and `AsyncIterator` rather than `AsyncGenerator` as the return value for simple `__aiter__` methods. Using `(Async)Iterator` for these methods is simpler and more elegant, and reflects the fact that the precise kind of iterator returned from an `__iter__` method is usually an implementation detail that could change at any time, and should not be relied upon.
+| Y059 | `Generic[]` should always be the last base class, if it is present in a class's bases tuple. At runtime, if `Generic[]` is not the final class in a the bases tuple, this [can cause the class creation to fail](https://github.com/python/cpython/issues/106102). In a stub file, however, this rule is enforced purely for stylistic consistency.
+| Y060 | Redundant inheritance from `Generic[]`. For example, `class Foo(Iterable[_T], Generic[_T]): ...` can be written more simply as `class Foo(Iterable[_T]): ...`.<br><br>To avoid false-positive errors, and to avoid complexity in the implementation, this check is deliberately conservative: it only looks at classes that have exactly two bases.
+| Y061 | Do not use `None` inside a `Literal[]` slice. For example, use `Literal["foo"] \| None` instead of `Literal["foo", None]`. While both are legal according to [PEP 586](https://peps.python.org/pep-0586/), the former is preferred for stylistic consistency.
+| Y062 | Protocol methods should not be positional-or-keyword. Usually, a positional-only argument is better.
+
+## Warnings disabled by default
+
+The following error codes are also provided, but are disabled by default due to
+the risk of false-positive errors. To enable these error codes, use
+`--extend-select={code1,code2,...}` on the command line or in your flake8
+configuration file.
+
+Note that `--extend-select` **will not work** if you have
+`--select` specified on the command line or in your configuration file. We
+recommend only using `--extend-select`, never `--select`.
+
+| Code | Description
+|------|------------
+| Y090 | `tuple[int]` means "a tuple of length 1, in which the sole element is of type `int`". Consider using `tuple[int, ...]` instead, which means "a tuple of arbitrary (possibly 0) length, in which all elements are of type `int`".
+>>>>>>> upstream/main

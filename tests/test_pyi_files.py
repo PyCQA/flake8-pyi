@@ -35,12 +35,13 @@ def test_pyi_file(path: str) -> None:
             expected_output += f"{path}:{lineno}: {match.group(1)}{message}\n"
 
     bad_flag_msg = (
-        "--ignore flags in test files override the .flake8 config file. "
-        "Use --extend-ignore instead."
-    )
+        "--{flag} flags in test files override the .flake8 config file. "
+        "Use --extend-{flag} instead."
+    ).format
+
     for flag in flags:
         option = flag.split("=")[0]
-        assert option != "--ignore", bad_flag_msg
+        assert option not in {"--ignore", "--select"}, bad_flag_msg(option[2:])
 
     # Silence DeprecationWarnings from our dependencies (pyflakes, flake8-bugbear, etc.)
     #
