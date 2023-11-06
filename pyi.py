@@ -2000,7 +2000,7 @@ class PyiVisitor(ast.NodeVisitor):
 
     def check_arg_kinds(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         for pos_or_kw in node.args.args[1:]:  # exclude "self"
-            self.error(pos_or_kw, Y058.format(arg=pos_or_kw.arg, method=node.name))
+            self.error(pos_or_kw, Y062.format(arg=pos_or_kw.arg, method=node.name))
 
     def _visit_function(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         with self.in_function.enabled():
