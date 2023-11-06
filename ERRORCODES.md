@@ -80,4 +80,3 @@ recommend only using `--extend-select`, never `--select`.
 | Code | Description
 |------|------------
 | Y090 | `tuple[int]` means "a tuple of length 1, in which the sole element is of type `int`". Consider using `tuple[int, ...]` instead, which means "a tuple of arbitrary (possibly 0) length, in which all elements are of type `int`".
->>>>>>> upstream/main

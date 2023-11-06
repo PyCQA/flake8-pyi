@@ -1617,7 +1617,6 @@ class PyiVisitor(ast.NodeVisitor):
         self.current_class_node = old_class_node
 
         self._check_class_bases(node.bases)
-
         self.check_class_pass_and_ellipsis(node)
 
     def check_class_pass_and_ellipsis(self, node: ast.ClassDef) -> None:
