@@ -62,12 +62,13 @@ class TypeVarInfo(NamedTuple):
     name: str
 
 
-def all_equal(iterable):
+def all_equal(iterable: Iterable[object]) -> bool:
     """Returns True if all the elements are equal to each other.
 
     Taken straight from the CPython itertools documentation."""
     g = groupby(iterable)
-    return next(g, True) and not next(g, False)
+    # TODO: not great that mypy hates a recipe from the itertools docs:
+    return next(g, True) and not next(g, False)  # type: ignore[arg-type]
 
 
 _MAPPING_SLICE = "KeyType, ValueType"
