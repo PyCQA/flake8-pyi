@@ -2253,8 +2253,8 @@ Y060 = (
 )
 Y061 = 'Y061 None inside "Literal[]" expression. Replace with "{suggestion}"'
 Y062 = (
-    'Y062 Argument "{arg}" to protocol method "{method}" should not be positional-or-keyword'
-    " (suggestion: make it positional-only)"
+    'Y062 Argument "{arg}" to protocol method "{method}" should probably not be positional-or-keyword. '
+    " Make it positional-only, since usually you don't want to mandate a specific argument name"
 )
 Y090 = (
     'Y090 "{original}" means '
