@@ -308,7 +308,9 @@ def _is_object(node: ast.AST | None, name: str, *, from_: Container[str]) -> boo
 _is_BaseException = partial(_is_object, name="BaseException", from_={"builtins"})
 _is_TypeAlias = partial(_is_object, name="TypeAlias", from_=_TYPING_MODULES)
 _is_NamedTuple = partial(_is_object, name="NamedTuple", from_=_TYPING_MODULES)
-_is_deprecated = partial(_is_object, name="deprecated", from_={"typing_extensions", "warnings"})
+_is_deprecated = partial(
+    _is_object, name="deprecated", from_={"typing_extensions", "warnings"}
+)
 _is_TypedDict = partial(
     _is_object, name="TypedDict", from_=_TYPING_MODULES | {"mypy_extensions"}
 )
@@ -1184,7 +1186,10 @@ class PyiVisitor(ast.NodeVisitor):
     def visit_Constant(self, node: ast.Constant) -> None:
         if isinstance(node.value, str) and not self.string_literals_allowed.active:
             self.error(node, Y020)
-        elif isinstance(node.value, (str, bytes)) and not self.long_strings_allowed.active:
+        elif (
+            isinstance(node.value, (str, bytes))
+            and not self.long_strings_allowed.active
+        ):
             if len(node.value) > 50:
                 self.error(node, Y053)
         elif isinstance(node.value, (int, float, complex)):
