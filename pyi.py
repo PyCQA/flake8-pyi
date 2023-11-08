@@ -1432,7 +1432,9 @@ class PyiVisitor(ast.NodeVisitor):
             elts = node.slice.elts
             for i, elt in enumerate(elts):
                 if _is_None(elt):
-                    elts_without_none = elts[:i] + elts[i + 1 :]
+                    elts_without_none = elts[:i] + [
+                        elt for elt in elts[i + 1 :] if not _is_None(elt)
+                    ]
                     if len(elts_without_none) == 1:
                         new_literal_slice = unparse(elts_without_none[0])
                     else:
