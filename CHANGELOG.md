@@ -1,15 +1,15 @@
 # Change Log
 
-## Unreleased
+## 23.11.0
 
 New error codes:
-* Introduce Y058: Use `Iterator` rather than `Generator` as the return value
+* Y058: Use `Iterator` rather than `Generator` as the return value
   for simple `__iter__` methods, and `AsyncIterator` rather than
   `AsyncGenerator` as the return value for simple `__aiter__` methods.
-* Introduce Y059: `Generic[]` should always be the last base class, if it is
+* Y059: `Generic[]` should always be the last base class, if it is
   present in the bases of a class.
-* Introduce Y060, which flags redundant inheritance from `Generic[]`.
-* Introduce Y061: Do not use `None` inside a `Literal[]` slice.
+* Y060, which flags redundant inheritance from `Generic[]`.
+* Y061: Do not use `None` inside a `Literal[]` slice.
   For example, use `Literal["foo"] | None` instead of `Literal["foo", None]`.
 
 Other changes:
