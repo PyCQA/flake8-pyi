@@ -29,6 +29,7 @@ Other changes:
   reduce the number of false positives from this check.
 * Attempting to import `typing_extensions.Text` now causes Y039 to be emitted
   rather than Y023.
+* Y053 will no longer be emitted for the argument to `@typing_extensions.deprecated`.
 
 ## 23.10.0
 
