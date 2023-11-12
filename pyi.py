@@ -1488,7 +1488,7 @@ class PyiVisitor(ast.NodeVisitor):
         for member_list in analysis.members_by_dump.values():
             if len(member_list) > 1 and not _is_None(member_list[0]):
                 self.error(member_list[1], Y062.format(unparse(member_list[1])))
-            
+
         self.visit(node.slice)
 
     def _visit_slice_tuple(self, node: ast.Tuple, parent: str | None) -> None:
