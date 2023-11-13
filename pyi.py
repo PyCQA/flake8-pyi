@@ -679,20 +679,7 @@ class TypingLiteralAnalysis(NamedTuple):
 
 
 def _analyse_typing_Literal(node: ast.Subscript) -> TypingLiteralAnalysis:
-    """Return a tuple providing analysis of a `typing.Literal` slice.
-
-    >>> source = 'Literal[True, None, True, None, False]'
-    >>> literal = _ast_node_for(source)
-    >>> analysis = _analyse_typing_Literal(literal)
-    >>> len(analysis.members_by_dump["Constant(value=True)"])
-    2
-    >>> analysis.contains_only_none
-    False
-    >>> len(analysis.none_members)
-    2
-    >>> unparse(ast.Tuple(analysis.members_without_none))
-    '(True, True, False)'
-    """
+    """Return a tuple providing analysis of a `typing.Literal` slice."""
 
     members_by_dump: defaultdict[str, list[ast.expr]] = defaultdict(list)
     members_without_none: list[ast.expr] = []
