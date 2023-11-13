@@ -9,4 +9,5 @@ Literal[True, True]  # Y062 Duplicate "Literal[]" member "True"
 Literal[True, True, True]  # Y062 Duplicate "Literal[]" member "True"
 Literal[True, False, True, False]  # Y062 Duplicate "Literal[]" member "True" # Y062 Duplicate "Literal[]" member "False"
 
-Literal[None, True, None, True]  # Y061 None inside "Literal[]" expression. Replace with "Literal[True, True] | None" # Y062 Duplicate "Literal[]" member "True"
+# If both Y061 and Y062 would be emitted, only emit Y062
+Literal[None, True, None, True]  # Y062 Duplicate "Literal[]" member "True"

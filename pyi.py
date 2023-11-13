@@ -1461,20 +1461,23 @@ class PyiVisitor(ast.NodeVisitor):
     def _visit_typing_Literal(self, node: ast.Subscript) -> None:
         analysis = _analyse_typing_Literal(node)
 
-        if analysis.contains_only_none:
-            self.error(node.slice, Y061.format(suggestion="None"))
-        elif analysis.none_members:
-            if len(analysis.members_without_none) == 1:
-                new_literal_slice = unparse(analysis.members_without_none[0])
-            else:
-                new_slice_node = ast.Tuple(elts=analysis.members_without_none)
-                new_literal_slice = unparse(new_slice_node).strip("()")
-            suggestion = f"Literal[{new_literal_slice}] | None"
-            self.error(analysis.none_members[0], Y061.format(suggestion=suggestion))
-
+        Y062_encountered = False
         for member_list in analysis.members_by_dump.values():
             if len(member_list) > 1 and not _is_None(member_list[0]):
+                Y062_encountered = True
                 self.error(member_list[1], Y062.format(unparse(member_list[1])))
+
+        if not Y062_encountered:
+            if analysis.contains_only_none:
+                self.error(node.slice, Y061.format(suggestion="None"))
+            elif analysis.none_members:
+                if len(analysis.members_without_none) == 1:
+                    new_literal_slice = unparse(analysis.members_without_none[0])
+                else:
+                    new_slice_node = ast.Tuple(elts=analysis.members_without_none)
+                    new_literal_slice = unparse(new_slice_node).strip("()")
+                suggestion = f"Literal[{new_literal_slice}] | None"
+                self.error(analysis.none_members[0], Y061.format(suggestion=suggestion))
 
         self.visit(node.slice)
 
