@@ -397,9 +397,12 @@ def _is_type_or_Type(node: ast.expr) -> bool:
 
 
 if sys.version_info >= (3, 9):
+
     def _is_None(node: ast.expr) -> bool:
         return isinstance(node, ast.Constant) and node.value is None
+
 else:
+
     def _is_None(node: Union[ast.expr, ast.slice]) -> bool:
         if isinstance(node, ast.Constant):
             return node.value is None
