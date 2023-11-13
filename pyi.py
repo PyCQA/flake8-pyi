@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import contextlib
 import logging
 import re
 import sys
@@ -982,6 +983,7 @@ class PyiVisitor(ast.NodeVisitor):
         self.long_strings_allowed = NestingCounter()
         self.in_function = NestingCounter()
         self.in_class = NestingCounter()
+        self.in_protocol = NestingCounter()
         self.visiting_arg = NestingCounter()
 
     def __repr__(self) -> str:
@@ -1617,23 +1619,32 @@ class PyiVisitor(ast.NodeVisitor):
                 self.error(Generic_basenode, Y060)
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        class_is_protocol = class_is_typeddict = False
+        for base in node.bases:
+            if _is_Protocol(base):
+                class_is_protocol = True
+            if _is_TypedDict(base):
+                class_is_typeddict = True
+
         if node.name.startswith("_") and not self.in_class.active:
-            for base in node.bases:
-                if _is_Protocol(base):
-                    self.protocol_defs[node.name].append(node)
-                    break
-                if _is_TypedDict(base):
-                    self.class_based_typeddicts[node.name].append(node)
-                    break
+            if class_is_protocol:
+                self.protocol_defs[node.name].append(node)
+            if class_is_typeddict:
+                self.class_based_typeddicts[node.name].append(node)
 
         old_class_node = self.current_class_node
         self.current_class_node = node
-        with self.in_class.enabled():
+        with contextlib.ExitStack() as stack:
+            stack.enter_context(self.in_class.enabled())
+            if class_is_protocol:
+                stack.enter_context(self.in_protocol.enabled())
             self.generic_visit(node)
         self.current_class_node = old_class_node
 
         self._check_class_bases(node.bases)
+        self.check_class_pass_and_ellipsis(node)
 
+    def check_class_pass_and_ellipsis(self, node: ast.ClassDef) -> None:
         # empty class body should contain "..." not "pass"
         if len(node.body) == 1:
             statement = node.body[0]
@@ -2012,6 +2023,12 @@ class PyiVisitor(ast.NodeVisitor):
                 return_annotation=return_annotation,
             )
 
+    def check_arg_kinds(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
+        for pos_or_kw in node.args.args[1:]:  # exclude "self"
+            if pos_or_kw.arg.startswith("__"):
+                continue
+            self.error(pos_or_kw, Y062.format(arg=pos_or_kw.arg, method=node.name))
+
     def _visit_function(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         with self.in_function.enabled():
             self.generic_visit(node)
@@ -2035,6 +2052,8 @@ class PyiVisitor(ast.NodeVisitor):
 
         if self.in_class.active:
             self.check_self_typevars(node)
+            if self.in_protocol.active:
+                self.check_arg_kinds(node)
 
     def visit_arg(self, node: ast.arg) -> None:
         if _is_NoReturn(node.annotation):
@@ -2258,6 +2277,10 @@ Y060 = (
     "class would be inferred as generic anyway"
 )
 Y061 = 'Y061 None inside "Literal[]" expression. Replace with "{suggestion}"'
+Y062 = (
+    'Y062 Argument "{arg}" to protocol method "{method}" should probably not be positional-or-keyword. '
+    "Make it positional-only, since usually you don't want to mandate a specific argument name"
+)
 Y090 = (
     'Y090 "{original}" means '
     '"a tuple of length 1, in which the sole element is of type {typ!r}". '
