@@ -396,8 +396,16 @@ def _is_type_or_Type(node: ast.expr) -> bool:
     return cls_name in {"type", "Type"}
 
 
-def _is_None(node: ast.expr) -> bool:
-    return isinstance(node, ast.Constant) and node.value is None
+if sys.version_info >= (3, 9):
+    def _is_None(node: ast.expr) -> bool:
+        return isinstance(node, ast.Constant) and node.value is None
+else:
+    def _is_None(node: Union[ast.expr, ast.slice]) -> bool:
+        if isinstance(node, ast.Constant):
+            return node.value is None
+        elif isinstance(node, ast.Index):
+            return node.value is None
+        return False
 
 
 class ExitArgAnalysis(NamedTuple):
@@ -672,18 +680,19 @@ def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
 
 
 class TypingLiteralAnalysis(NamedTuple):
-    members_by_dump: defaultdict[str, list[ast.expr]]
-    members_without_none: list[ast.expr]
-    none_members: list[ast.expr]
+    members_by_dump: defaultdict[str, list[_SliceContents]]
+    members_without_none: list[_SliceContents]
+    none_members: list[_SliceContents]
     contains_only_none: bool
 
 
 def _analyse_typing_Literal(node: ast.Subscript) -> TypingLiteralAnalysis:
     """Return a tuple providing analysis of a `typing.Literal` slice."""
 
-    members_by_dump: defaultdict[str, list[ast.expr]] = defaultdict(list)
-    members_without_none: list[ast.expr] = []
-    none_members: list[ast.expr] = []
+    members: Sequence[_SliceContents]
+    members_by_dump: defaultdict[str, list[_SliceContents]] = defaultdict(list)
+    members_without_none: list[_SliceContents] = []
+    none_members: list[_SliceContents] = []
 
     if isinstance(node.slice, ast.Tuple):
         members = node.slice.elts
