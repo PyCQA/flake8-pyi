@@ -396,19 +396,8 @@ def _is_type_or_Type(node: ast.expr) -> bool:
     return cls_name in {"type", "Type"}
 
 
-if sys.version_info >= (3, 9):
-
-    def _is_None(node: ast.expr) -> bool:
-        return isinstance(node, ast.Constant) and node.value is None
-
-else:
-
-    def _is_None(node: Union[ast.expr, ast.slice]) -> bool:
-        if isinstance(node, ast.Constant):
-            return node.value is None
-        elif isinstance(node, ast.Index):
-            return node.value is None
-        return False
+def _is_None(node: ast.expr) -> bool:
+    return isinstance(node, ast.Constant) and node.value is None
 
 
 class ExitArgAnalysis(NamedTuple):
@@ -704,7 +693,7 @@ def _analyse_typing_Literal(node: ast.Subscript) -> TypingLiteralAnalysis:
 
     for member in members:
         members_by_dump[ast.dump(member)].append(member)
-        if _is_None(member):
+        if _is_None(member):  # type: ignore[arg-type,unused-ignore]
             none_members.append(member)
         else:
             members_without_none.append(member)
@@ -1475,7 +1464,7 @@ class PyiVisitor(ast.NodeVisitor):
 
         Y062_encountered = False
         for member_list in analysis.members_by_dump.values():
-            if len(member_list) > 1 and not _is_None(member_list[0]):
+            if len(member_list) > 1 and not _is_None(member_list[0]):  # type: ignore[arg-type,unused-ignore]
                 Y062_encountered = True
                 self.error(member_list[1], Y062.format(unparse(member_list[1])))
 
