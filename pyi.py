@@ -671,6 +671,43 @@ def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
     )
 
 
+class TypingLiteralAnalysis(NamedTuple):
+    members_by_dump: defaultdict[str, list[_SliceContents]]
+    members_without_none: list[_SliceContents]
+    none_members: list[_SliceContents]
+    contains_only_none: bool
+
+
+def _analyse_typing_Literal(node: ast.Subscript) -> TypingLiteralAnalysis:
+    """Return a tuple providing analysis of a `typing.Literal` slice."""
+
+    members: Sequence[_SliceContents]
+    members_by_dump: defaultdict[str, list[_SliceContents]] = defaultdict(list)
+    members_without_none: list[_SliceContents] = []
+    none_members: list[_SliceContents] = []
+
+    if isinstance(node.slice, ast.Tuple):
+        members = node.slice.elts
+    else:
+        members = [node.slice]
+
+    for member in members:
+        members_by_dump[ast.dump(member)].append(member)
+        # https://github.com/PyCQA/flake8-pyi/pull/449#discussion_r1391804472
+        # TODO: Remove the `type: ignore` when we drop support for py38
+        if _is_None(member):  # type: ignore[arg-type,unused-ignore]
+            none_members.append(member)
+        else:
+            members_without_none.append(member)
+
+    return TypingLiteralAnalysis(
+        members_by_dump=members_by_dump,
+        members_without_none=members_without_none,
+        none_members=none_members,
+        contains_only_none=bool(none_members and not members_without_none),
+    )
+
+
 _ALLOWED_MATH_ATTRIBUTES_IN_DEFAULTS = frozenset(
     {"math.inf", "math.nan", "math.e", "math.pi", "math.tau"}
 )
@@ -1425,24 +1462,28 @@ class PyiVisitor(ast.NodeVisitor):
                 self._Y090_error(node)
 
     def _visit_typing_Literal(self, node: ast.Subscript) -> None:
-        if isinstance(node.slice, ast.Constant) and _is_None(node.slice):
-            # Special case for `Literal[None]`
-            self.error(node.slice, Y061.format(suggestion="None"))
-        elif isinstance(node.slice, ast.Tuple):
-            elts = node.slice.elts
-            for i, elt in enumerate(elts):
-                if _is_None(elt):
-                    elts_without_none = elts[:i] + [
-                        elt for elt in elts[i + 1 :] if not _is_None(elt)
-                    ]
-                    if len(elts_without_none) == 1:
-                        new_literal_slice = unparse(elts_without_none[0])
-                    else:
-                        new_slice_node = ast.Tuple(elts=elts_without_none)
-                        new_literal_slice = unparse(new_slice_node).strip("()")
-                    suggestion = f"Literal[{new_literal_slice}] | None"
-                    self.error(elt, Y061.format(suggestion=suggestion))
-                    break  # Only report the first `None`
+        analysis = _analyse_typing_Literal(node)
+
+        Y062_encountered = False
+        for member_list in analysis.members_by_dump.values():
+            # https://github.com/PyCQA/flake8-pyi/pull/449#discussion_r1391804472
+            # TODO: Remove the `type: ignore` when we drop support for py38
+            if len(member_list) > 1 and not _is_None(member_list[0]):  # type: ignore[arg-type,unused-ignore]
+                Y062_encountered = True
+                self.error(member_list[1], Y062.format(unparse(member_list[1])))
+
+        if not Y062_encountered:
+            if analysis.contains_only_none:
+                self.error(node.slice, Y061.format(suggestion="None"))
+            elif analysis.none_members:
+                if len(analysis.members_without_none) == 1:
+                    new_literal_slice = unparse(analysis.members_without_none[0])
+                else:
+                    new_slice_node = ast.Tuple(elts=analysis.members_without_none)
+                    new_literal_slice = unparse(new_slice_node).strip("()")
+                suggestion = f"Literal[{new_literal_slice}] | None"
+                self.error(analysis.none_members[0], Y061.format(suggestion=suggestion))
+
         self.visit(node.slice)
 
     def _visit_slice_tuple(self, node: ast.Tuple, parent: str | None) -> None:
@@ -2258,6 +2299,7 @@ Y060 = (
     "class would be inferred as generic anyway"
 )
 Y061 = 'Y061 None inside "Literal[]" expression. Replace with "{suggestion}"'
+Y062 = 'Y062 Duplicate "Literal[]" member "{}"'
 Y090 = (
     'Y090 "{original}" means '
     '"a tuple of length 1, in which the sole element is of type {typ!r}". '
