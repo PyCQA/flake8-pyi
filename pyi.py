@@ -693,6 +693,8 @@ def _analyse_typing_Literal(node: ast.Subscript) -> TypingLiteralAnalysis:
 
     for member in members:
         members_by_dump[ast.dump(member)].append(member)
+        # https://github.com/PyCQA/flake8-pyi/pull/449#discussion_r1391804472
+        # TODO: Remove the `type: ignore` when we drop support for py38
         if _is_None(member):  # type: ignore[arg-type,unused-ignore]
             none_members.append(member)
         else:
@@ -1464,6 +1466,8 @@ class PyiVisitor(ast.NodeVisitor):
 
         Y062_encountered = False
         for member_list in analysis.members_by_dump.values():
+            # https://github.com/PyCQA/flake8-pyi/pull/449#discussion_r1391804472
+            # TODO: Remove the `type: ignore` when we drop support for py38
             if len(member_list) > 1 and not _is_None(member_list[0]):  # type: ignore[arg-type,unused-ignore]
                 Y062_encountered = True
                 self.error(member_list[1], Y062.format(unparse(member_list[1])))

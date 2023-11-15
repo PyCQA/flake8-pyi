@@ -5,6 +5,9 @@
 New error codes:
 * Y062: Disallow duplicate elements inside `Literal[]` slices.
 
+Other changes:
+* Y061 is no longer emitted in situations where Y062 would also be emitted.
+
 ## 23.11.0
 
 New error codes:
