@@ -54,7 +54,7 @@ class Error(NamedTuple):
     lineno: int
     col: int
     message: str
-    type: type
+    type: type[PyiTreeChecker]
 
 
 class TypeVarInfo(NamedTuple):
@@ -1336,7 +1336,7 @@ class PyiVisitor(ast.NodeVisitor):
 
     def _check_for_Y051_violations(self, analysis: UnionAnalysis) -> None:
         """Search for redundant unions such as `str | Literal["foo"]`, etc."""
-        seen_builtins: set[type] = set()
+        seen_builtins: set[type[object]] = set()
         for literal in analysis.combined_literal_members:
             if not isinstance(literal, ast.Constant):
                 continue
