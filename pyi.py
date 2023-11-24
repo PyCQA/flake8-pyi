@@ -1655,7 +1655,8 @@ class PyiVisitor(ast.NodeVisitor):
             if len(subscript_bases) > 1 and all_equal(
                 ast.dump(subscript_base.slice) for subscript_base in subscript_bases
             ):
-                self.error(Generic_basenode, Y060)
+                msg = Y060.format(redundant_base=unparse(Generic_basenode))
+                self.error(Generic_basenode, msg)
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         if node.name.startswith("_") and not self.in_class.active:
@@ -2295,7 +2296,7 @@ Y058 = (
 )
 Y059 = 'Y059 "Generic[]" should always be the last base class'
 Y060 = (
-    'Y060 Redundant inheritance from "Generic[]"; '
+    'Y060 Redundant inheritance from "{redundant_base}"; '
     "class would be inferred as generic anyway"
 )
 Y061 = 'Y061 None inside "Literal[]" expression. Replace with "{suggestion}"'

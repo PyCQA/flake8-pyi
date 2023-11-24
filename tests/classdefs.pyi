@@ -203,19 +203,19 @@ class GoodGeneric3(int, str, typing_extensions.Generic[_T]): ...
 class BadGeneric4(Generic[_T], Iterable[int], str): ...  # Y059 "Generic[]" should always be the last base class
 class GoodGeneric4(Iterable[int], str, Generic[_T]): ...
 
-class RedundantGeneric1(Iterable[_T], Generic[_T]): ...  # Y060 Redundant inheritance from "Generic[]"; class would be inferred as generic anyway
+class RedundantGeneric1(Iterable[_T], Generic[_T]): ...  # Y060 Redundant inheritance from "Generic[_T]"; class would be inferred as generic anyway
 class Corrected1(Iterable[_T]): ...
 
-class RedundantGeneric2(Generic[_S], GoodGeneric[_S]): ...  # Y059 "Generic[]" should always be the last base class  # Y060 Redundant inheritance from "Generic[]"; class would be inferred as generic anyway
+class RedundantGeneric2(Generic[_S], GoodGeneric[_S]): ...  # Y059 "Generic[]" should always be the last base class  # Y060 Redundant inheritance from "Generic[_S]"; class would be inferred as generic anyway
 class Corrected2(GoodGeneric[_S]): ...
 
-class RedundantGeneric3(int, Iterator[_T], str, float, memoryview, bytes, Generic[_T]): ...  # Y060 Redundant inheritance from "Generic[]"; class would be inferred as generic anyway
+class RedundantGeneric3(int, Iterator[_T], str, float, memoryview, bytes, Generic[_T]): ...  # Y060 Redundant inheritance from "Generic[_T]"; class would be inferred as generic anyway
 class Corrected3(int, Iterator[_T], str, float, memoryview, bytes): ...
 
-class RedundantGeneric4(Iterable[_T], Iterator[_T], Generic[_T]): ...  # Y060 Redundant inheritance from "Generic[]"; class would be inferred as generic anyway
+class RedundantGeneric4(Iterable[_T], Iterator[_T], Generic[_T]): ...  # Y060 Redundant inheritance from "Generic[_T]"; class would be inferred as generic anyway
 class Corrected4(Iterable[_T], Iterator[_T]): ...
 
-class BadAndRedundantGeneric(object, Generic[_T], Container[_T]): ...  # Y040 Do not inherit from "object" explicitly, as it is redundant in Python 3  # Y059 "Generic[]" should always be the last base class  # Y060 Redundant inheritance from "Generic[]"; class would be inferred as generic anyway
+class BadAndRedundantGeneric(object, Generic[_T], Container[_T]): ...  # Y040 Do not inherit from "object" explicitly, as it is redundant in Python 3  # Y059 "Generic[]" should always be the last base class  # Y060 Redundant inheritance from "Generic[_T]"; class would be inferred as generic anyway
 class Corrected5(Container[_T]): ...
 
 # Strictly speaking this inheritance from Generic is "redundant",

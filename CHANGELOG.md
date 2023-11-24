@@ -7,6 +7,7 @@ New error codes:
 
 Other changes:
 * Y061 is no longer emitted in situations where Y062 would also be emitted.
+* Improve error message for Y060.
 
 ## 23.11.0
 
