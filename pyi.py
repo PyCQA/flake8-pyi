@@ -2054,7 +2054,11 @@ class PyiVisitor(ast.NodeVisitor):
         ):
             self._Y019_error(method, cls_typevar)
 
-    def check_self_typevars(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
+    def check_self_typevars(
+        self,
+        node: ast.FunctionDef | ast.AsyncFunctionDef,
+        decorator_names: AbstractSet[str],
+    ) -> None:
         pos_or_keyword_args = node.args.posonlyargs + node.args.args
 
         if not pos_or_keyword_args:
@@ -2067,12 +2071,6 @@ class PyiVisitor(ast.NodeVisitor):
 
         if not isinstance(first_arg_annotation, (ast.Name, ast.Subscript)):
             return
-
-        decorator_names = {
-            decorator.id
-            for decorator in node.decorator_list
-            if isinstance(decorator, ast.Name)
-        }
 
         if "classmethod" in decorator_names or node.name == "__new__":
             self._check_class_method_for_bad_typevars(
@@ -2088,6 +2086,33 @@ class PyiVisitor(ast.NodeVisitor):
                 first_arg_annotation=first_arg_annotation,
                 return_annotation=return_annotation,
             )
+
+    @staticmethod
+    def _is_positional_pre_570_argname(name: str) -> bool:
+        # https://peps.python.org/pep-0484/#positional-only-arguments
+        return name.startswith("__") and len(name) >= 3 and not name.endswith("__")
+
+    def _check_pep570_syntax_used_where_applicable(
+        self,
+        node: ast.FunctionDef | ast.AsyncFunctionDef,
+        decorator_names: AbstractSet[str],
+    ) -> None:
+        if node.args.posonlyargs:
+            return
+        pos_or_kw_args = node.args.args
+        try:
+            first_param = pos_or_kw_args[0]
+        except IndexError:
+            return
+        if self.enclosing_class_ctx is None or "staticmethod" in decorator_names:
+            uses_old_syntax = self._is_positional_pre_570_argname(first_param.arg)
+        else:
+            uses_old_syntax = self._is_positional_pre_570_argname(first_param.arg) or (
+                len(pos_or_kw_args) >= 2
+                and self._is_positional_pre_570_argname(pos_or_kw_args[1].arg)
+            )
+        if uses_old_syntax:
+            self.error(node, Y063)
 
     def _visit_function(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         with self.in_function.enabled():
@@ -2110,8 +2135,14 @@ class PyiVisitor(ast.NodeVisitor):
             ):
                 self.error(statement, Y010)
 
+        decorator_names = {
+            decorator.id
+            for decorator in node.decorator_list
+            if isinstance(decorator, ast.Name)
+        }
+        self._check_pep570_syntax_used_where_applicable(node, decorator_names)
         if self.enclosing_class_ctx is not None:
-            self.check_self_typevars(node)
+            self.check_self_typevars(node, decorator_names)
 
     def visit_arg(self, node: ast.arg) -> None:
         if _is_NoReturn(node.annotation):
@@ -2336,6 +2367,7 @@ Y060 = (
 )
 Y061 = 'Y061 None inside "Literal[]" expression. Replace with "{suggestion}"'
 Y062 = 'Y062 Duplicate "Literal[]" member "{}"'
+Y063 = "Y063 Use PEP-570 syntax to indicate positional-only arguments"
 Y090 = (
     'Y090 "{original}" means '
     '"a tuple of length 1, in which the sole element is of type {typ!r}". '

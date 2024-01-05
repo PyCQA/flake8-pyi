@@ -4,6 +4,10 @@
 
 New error codes:
 * Y062: Disallow duplicate elements inside `Literal[]` slices.
+* Y063: Use [PEP 570 syntax](https://peps.python.org/pep-0570/) to mark
+  positional-only arguments, rather than
+  [the older Python 3.7-compatible syntax](https://peps.python.org/pep-0484/#positional-only-arguments)
+  described in PEP 484.
 
 Other features:
 * Support flake8>=7.0.0
