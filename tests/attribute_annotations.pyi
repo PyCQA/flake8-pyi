@@ -49,7 +49,7 @@ field13: Final = b"foo"
 field14: Final = True
 field15: _Final = True
 field16: typing.Final = "foo"
-field17: typing_extensions.Final = "foo"
+field17: typing_extensions.Final = "foo"  # Y023 Use "typing.Final" instead of "typing_extensions.Final"
 field18: Final = -24j
 field181: Final = field18
 field182: Final = os.pathsep
@@ -96,7 +96,7 @@ class Foo:
     field12: Final = True
     field13: _Final = True
     field14: typing.Final = "foo"
-    field15: typing_extensions.Final = "foo"
+    field15: typing_extensions.Final = "foo"  # Y023 Use "typing.Final" instead of "typing_extensions.Final"
     # Standalone strings used to cause issues
     field16 = "x"  # Y052 Need type annotation for "field16"
     if sys.platform == "linux":

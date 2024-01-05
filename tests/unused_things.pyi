@@ -1,10 +1,10 @@
 import sys
 import typing
-from typing import Protocol, TypedDict, TypeVar
+from typing import Literal, Protocol, TypedDict, TypeVar
 
 import mypy_extensions
 import typing_extensions
-from typing_extensions import Literal, TypeAlias
+from typing_extensions import TypeAlias
 
 _T = TypeVar("_T")
 
@@ -41,7 +41,7 @@ def uses__UsedAlias(arg: _UsedAlias) -> None: ...
 class _UnusedTypedDict(TypedDict):  # Y049 TypedDict "_UnusedTypedDict" is not used
     foo: str
 
-class _UnusedTypedDict2(typing_extensions.TypedDict):  # Y049 TypedDict "_UnusedTypedDict2" is not used
+class _UnusedTypedDict2(typing_extensions.TypedDict):  # Y049 TypedDict "_UnusedTypedDict2" is not used # Y023 Use "typing.TypedDict" instead of "typing_extensions.TypedDict"
     bar: int
 
 class _UnusedTypedDict3(mypy_extensions.TypedDict):  # Y049 TypedDict "_UnusedTypedDict3" is not used
@@ -59,7 +59,7 @@ class _UsedTypedDict2(TypedDict):
 def uses__UsedTypeDict2(arg: _UsedTypedDict2) -> None: ...
 
 _UnusedTypedDict4 = TypedDict("_UnusedTypedDict4", {"-": int, "def": str})  # Y049 TypedDict "_UnusedTypedDict4" is not used
-_UnusedTypedDict5 = typing_extensions.TypedDict("_UnusedTypedDict5", {"foo": bytes, "bar": str})  # Y049 TypedDict "_UnusedTypedDict5" is not used  # Y031 Use class-based syntax for TypedDicts where possible
+_UnusedTypedDict5 = typing_extensions.TypedDict("_UnusedTypedDict5", {"foo": bytes, "bar": str})  # Y049 TypedDict "_UnusedTypedDict5" is not used  # Y023 Use "typing.TypedDict" instead of "typing_extensions.TypedDict" # Y031 Use class-based syntax for TypedDicts where possible
 _UsedTypedDict3 = mypy_extensions.TypedDict("_UsedTypedDict3", {".": list[int]})
 
 uses__UsedTypedDict3: _UsedTypedDict3

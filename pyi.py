@@ -125,26 +125,39 @@ _BAD_Y022_IMPORTS: dict[str, tuple[str, str | None]] = {
 }
 
 # Y023: Import things from typing instead of typing_extensions
-# if they're available from the typing module on 3.7+
+# if they're available from the typing module on 3.8+
 _BAD_TYPINGEXTENSIONS_Y023_IMPORTS = frozenset(
     {
+        "Any",
         "AnyStr",
         "BinaryIO",
+        "Final",
         "ForwardRef",
         "Generic",
         "IO",
+        "Literal",
         "Protocol",
         "TextIO",
         "runtime_checkable",
         "NewType",
+        "SupportsAbs",
+        "SupportsComplex",
+        "SupportsFloat",
+        "SupportsIndex",
+        "SupportsInt",
+        "SupportsRound",
+        "TypedDict",
+        "TypeVar",
+        "final",
         "overload",
         "NoReturn",
         # ClassVar deliberately omitted,
         # as it's the only one in this group that should be parameterised.
         # It is special-cased elsewhere.
         #
-        # Text is also deliberately omitted,
-        # as you shouldn't be importing it from anywhere! (Y039)
+        # Text/Optional/Union are also deliberately omitted,
+        # as well as the various stdlib aliases in typing(_extensions),
+        # as you shouldn't be importing them from anywhere! (Y039)
     }
 )
 
