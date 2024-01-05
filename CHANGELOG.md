@@ -9,6 +9,8 @@ Other features:
 * Support flake8>=7.0.0
 * Y061 is no longer emitted in situations where Y062 would also be emitted.
 * Improve error message for Y060.
+* Y023 now bans more imports from `typing_extensions` now that typeshed has
+  dropped support for Python 3.7.
 
 Bugfixes:
 * Y016: Fix false positive if a method had positional-only parameters (using

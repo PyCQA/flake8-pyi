@@ -7,6 +7,7 @@ from collections.abc import Mapping
 from typing import (
     Annotated,
     Any,
+    Literal,
     Optional,
     ParamSpec as _ParamSpec,
     TypeAlias,
@@ -17,7 +18,6 @@ from typing import (
 from weakref import WeakValueDictionary
 
 import typing_extensions
-from typing_extensions import Literal
 
 class Foo:
     def baz(self) -> None: ...
@@ -33,7 +33,7 @@ S = Optional[str]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g.
 T = Annotated[int, "some very useful metadata"]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "T: TypeAlias = Annotated[int, 'some very useful metadata']"
 U = typing.Literal["ham", "bacon"]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "U: TypeAlias = typing.Literal['ham', 'bacon']"
 V = Literal["[(", ")]"]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "V: TypeAlias = Literal['[(', ')]']"
-X = typing_extensions.Literal["foo", "bar"]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "X: TypeAlias = typing_extensions.Literal['foo', 'bar']"
+X = typing_extensions.Literal["foo", "bar"]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "X: TypeAlias = typing_extensions.Literal['foo', 'bar']"  # Y023 Use "typing.Literal" instead of "typing_extensions.Literal"
 Y = int | str  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "Y: TypeAlias = int | str"
 Z = Union[str, bytes]  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "Z: TypeAlias = Union[str, bytes]"
 ZZ = None  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "ZZ: TypeAlias = None"
@@ -44,7 +44,7 @@ IntArray: TypeAlias = array.array[int]
 FooWeakDict: TypeAlias = WeakValueDictionary[str, Foo]
 A: typing.TypeAlias = typing.Literal["ham", "bacon"]
 B: typing_extensions.TypeAlias = Literal["spam", "eggs"]
-C: TypeAlias = typing_extensions.Literal["foo", "bar"]
+C: TypeAlias = typing_extensions.Literal["foo", "bar"]  # Y023 Use "typing.Literal" instead of "typing_extensions.Literal"
 D: TypeAlias = int | str
 E: TypeAlias = Union[str, bytes]
 F: TypeAlias = int

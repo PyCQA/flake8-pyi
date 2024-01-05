@@ -43,6 +43,7 @@ from re import Match, Pattern
 from typing import (
     Any,
     ClassVar,
+    Final,
     Generic,
     Protocol,
     TypeVar,
@@ -55,24 +56,22 @@ from typing import (
     SupportsRound,
     BinaryIO,
     IO,
+    Literal,
     NamedTuple,
     TextIO,
+    TypedDict,
     AnyStr,
     NewType,
     NoReturn,
+    final,
     overload,
 )
 from typing_extensions import (
     Concatenate,
-    Final,
     ParamSpec,
-    SupportsIndex,
-    final,
-    Literal,
     TypeAlias,
     TypeGuard,
     Annotated,
-    TypedDict,
 )
 
 # BAD IMPORTS (Y022 code)
@@ -142,6 +141,10 @@ from typing_extensions import Pattern  # Y022 Use "re.Pattern[T]" instead of "ty
 # BAD IMPORTS (Y023 code)
 from typing_extensions import ClassVar  # Y023 Use "typing.ClassVar[T]" instead of "typing_extensions.ClassVar[T]"
 from typing_extensions import runtime_checkable  # Y023 Use "typing.runtime_checkable" instead of "typing_extensions.runtime_checkable"
+from typing_extensions import Literal  # Y023 Use "typing.Literal" instead of "typing_extensions.Literal"
+from typing_extensions import final  # Y023 Use "typing.final" instead of "typing_extensions.final"
+from typing_extensions import Final  # Y023 Use "typing.Final" instead of "typing_extensions.Final"
+from typing_extensions import TypedDict  # Y023 Use "typing.TypedDict" instead of "typing_extensions.TypedDict"
 
 # BAD IMPORTS: OTHER
 from collections import namedtuple  # Y024 Use "typing.NamedTuple" instead of "collections.namedtuple"
@@ -157,8 +160,8 @@ from collections.abc import ByteString  # Y057 Do not use collections.abc.ByteSt
 foo: typing.SupportsIndex
 baz: re.Pattern[str]
 
-@typing_extensions.final
-def bar(arg: collections.abc.Sized) -> typing_extensions.Literal[True]: ...
+@typing.final
+def bar(arg: collections.abc.Sized) -> typing.Literal[True]: ...
 
 class Fish:
     blah: collections.deque[int]
@@ -182,8 +185,10 @@ class Spam:
     def meth3(self, g: typing_extensions.AsyncContextManager[Any] = ...) -> None: ...  # Y022 Use "contextlib.AbstractAsyncContextManager[T]" instead of "typing_extensions.AsyncContextManager[T]" (PEP 585 syntax)
 
 # BAD ATTRIBUTE ACCESS (Y023 code)
+@typing_extensions.final  # Y023 Use "typing.final" instead of "typing_extensions.final"
 class Foo:
     attribute: typing_extensions.ClassVar[int]  # Y023 Use "typing.ClassVar[T]" instead of "typing_extensions.ClassVar[T]"
+    attribute2: typing_extensions.Final[int]  # Y023 Use "typing.Final" instead of "typing_extensions.Final"
 
 # BAD ATTRIBUTE ACCESS: OTHER
 j: collections.namedtuple  # Y024 Use "typing.NamedTuple" instead of "collections.namedtuple"
