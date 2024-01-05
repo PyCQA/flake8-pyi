@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## 24.1.0
 
 New error codes:
 * Y062: Disallow duplicate elements inside `Literal[]` slices.
