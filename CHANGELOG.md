@@ -15,6 +15,8 @@ Bugfixes:
   [PEP 570 syntax](https://peps.python.org/pep-0570/) and the first
   positional-or-keyword parameter following the positional-only parameters used
   a custom TypeVar (see #455).
+* Y046: Fix false negative where an unused protocol would not be detected if
+  the protocol was generic.
 
 ## 23.11.0
 

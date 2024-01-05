@@ -6,8 +6,13 @@ import mypy_extensions
 import typing_extensions
 from typing_extensions import Literal, TypeAlias
 
+_T = TypeVar("_T")
+
 class _Foo(Protocol):  # Y046 Protocol "_Foo" is not used
     bar: int
+
+class _GenericFoo(Protocol[_T]):  # Y046 Protocol "_GenericFoo" is not used
+    bar: _T
 
 class _Bar(typing.Protocol):  # Y046 Protocol "_Bar" is not used
     bar: int
@@ -21,7 +26,11 @@ class UnusedButPublicProtocol(Protocol):
 class _UsedPrivateProtocol(Protocol):
     bar: int
 
+class _UsedPrivateGenericProtocol(Protocol[_T]):
+    bar: _T
+
 def uses__UsedPrivateProtocol(arg: _UsedPrivateProtocol) -> None: ...
+def uses__UsedPrivateGenericProtocol(arg: _UsedPrivateGenericProtocol) -> None: ...
 
 _UnusedPrivateAlias: TypeAlias = str | int  # Y047 Type alias "_UnusedPrivateAlias" is not used
 PublicAlias: TypeAlias = str | int
@@ -83,3 +92,8 @@ else:
     class _ConditionallyDefinedUnusedProtocol(Protocol):
         foo: int
         bar: str
+
+# Tests to make sure we handle edge-cases in the AST correctly:
+class Strange: ...
+class _NotAProtocol(Strange[Strange][Strange].Protocol): ...
+class _AlsoNotAProtocol(Protocol[Protocol][Protocol][Protocol]): ...
