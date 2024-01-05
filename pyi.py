@@ -2020,7 +2020,7 @@ class PyiVisitor(ast.NodeVisitor):
             self._Y019_error(method, cls_typevar)
 
     def check_self_typevars(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
-        pos_or_keyword_args = node.args.args
+        pos_or_keyword_args = node.args.posonlyargs + node.args.args
 
         if not pos_or_keyword_args:
             return
