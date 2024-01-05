@@ -5,9 +5,16 @@
 New error codes:
 * Y062: Disallow duplicate elements inside `Literal[]` slices.
 
-Other changes:
+Other features:
+* Support flake8>=7.0.0
 * Y061 is no longer emitted in situations where Y062 would also be emitted.
 * Improve error message for Y060.
+
+Bugfixes:
+* Y016: Fix false positive if a method had positional-only parameters (using
+  [PEP 570 syntax](https://peps.python.org/pep-0570/) and the first
+  positional-or-keyword parameter following the positional-only parameters used
+  a custom TypeVar (see #455).
 
 ## 23.11.0
 

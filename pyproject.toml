@@ -47,7 +47,7 @@ classifiers = [
     "Topic :: Software Development :: Quality Assurance",
 ]
 dependencies = [
-    "flake8 >= 6.0.0, < 7.0.0",
+    "flake8 >= 6.0.0, < 8.0.0",
     "pyflakes >= 2.1.1",
     "ast-decompiler >= 0.7.0, < 1.0; python_version < '3.9'",
 ]
@@ -66,7 +66,7 @@ dev = [
     "isort==5.13.2",            # Must match .pre-commit-config.yaml
     "mypy==1.8.0",
     "pre-commit-hooks==4.5.0",  # Must match .pre-commit-config.yaml
-    "pytest==7.4.3",
+    "pytest==7.4.4",
     "pytest-xdist==3.5.0",
     "types-pyflakes<4",
 ]
