@@ -749,7 +749,10 @@ def _analyze_classdef(node: ast.ClassDef) -> EnclosingClassContext:
         if isinstance(node, ast.Name):
             return node.id
         if isinstance(node, ast.Attribute):
-            return f"{_unravel(node.value)}.{node.attr}"
+            value = _unravel(node.value)
+            if value is None:
+                return None
+            return f"{value}.{node.attr}"
         return None
 
     def _analyze_base_node(
@@ -758,7 +761,10 @@ def _analyze_classdef(node: ast.ClassDef) -> EnclosingClassContext:
         if isinstance(base_node, ast.Name):
             return ClassBase(None, base_node.id)
         if isinstance(base_node, ast.Attribute):
-            return ClassBase(_unravel(base_node.value), base_node.attr)
+            value = _unravel(base_node.value)
+            if value is None:
+                return None
+            return ClassBase(value, base_node.attr)
         if isinstance(base_node, ast.Subscript) and top_level:
             return _analyze_base_node(base_node.value, top_level=False)
         return None
