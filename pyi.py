@@ -2054,11 +2054,7 @@ class PyiVisitor(ast.NodeVisitor):
         ):
             self._Y019_error(method, cls_typevar)
 
-    def check_self_typevars(
-        self,
-        node: ast.FunctionDef | ast.AsyncFunctionDef,
-        decorator_names: AbstractSet[str],
-    ) -> None:
+    def check_self_typevars(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         pos_or_keyword_args = node.args.posonlyargs + node.args.args
 
         if not pos_or_keyword_args:
@@ -2071,6 +2067,12 @@ class PyiVisitor(ast.NodeVisitor):
 
         if not isinstance(first_arg_annotation, (ast.Name, ast.Subscript)):
             return
+
+        decorator_names = {
+            decorator.id
+            for decorator in node.decorator_list
+            if isinstance(decorator, ast.Name)
+        }
 
         if "classmethod" in decorator_names or node.name == "__new__":
             self._check_class_method_for_bad_typevars(
@@ -2093,9 +2095,7 @@ class PyiVisitor(ast.NodeVisitor):
         return name.startswith("__") and len(name) >= 3 and not name.endswith("__")
 
     def _check_pep570_syntax_used_where_applicable(
-        self,
-        node: ast.FunctionDef | ast.AsyncFunctionDef,
-        decorator_names: AbstractSet[str],
+        self, node: ast.FunctionDef | ast.AsyncFunctionDef
     ) -> None:
         if node.args.posonlyargs:
             return
@@ -2104,7 +2104,10 @@ class PyiVisitor(ast.NodeVisitor):
             first_param = pos_or_kw_args[0]
         except IndexError:
             return
-        if self.enclosing_class_ctx is None or "staticmethod" in decorator_names:
+        if self.enclosing_class_ctx is None or any(
+            isinstance(decorator, ast.Name) and decorator.id == "staticmethod"
+            for decorator in node.decorator_list
+        ):
             uses_old_syntax = self._is_positional_pre_570_argname(first_param.arg)
         else:
             uses_old_syntax = self._is_positional_pre_570_argname(first_param.arg) or (
@@ -2135,14 +2138,9 @@ class PyiVisitor(ast.NodeVisitor):
             ):
                 self.error(statement, Y010)
 
-        decorator_names = {
-            decorator.id
-            for decorator in node.decorator_list
-            if isinstance(decorator, ast.Name)
-        }
-        self._check_pep570_syntax_used_where_applicable(node, decorator_names)
+        self._check_pep570_syntax_used_where_applicable(node)
         if self.enclosing_class_ctx is not None:
-            self.check_self_typevars(node, decorator_names)
+            self.check_self_typevars(node)
 
     def visit_arg(self, node: ast.arg) -> None:
         if _is_NoReturn(node.annotation):
