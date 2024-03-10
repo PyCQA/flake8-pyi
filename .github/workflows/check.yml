@@ -70,11 +70,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           allow-prereleases: true
-      - name: Install uv (Windows)
-        if: ${{ runner.os == 'Windows' }}
-        run: irm https://astral.sh/uv/install.ps1 | iex
-      - name: Install uv (Unix)
-        if: ${{ runner.os != 'Windows' }}
-        run: curl -LsSf https://astral.sh/uv/install.sh | sh
-      - run: uv pip install -e .[dev] --system
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: pip install -e .[dev]
       - run: python3 -m pytest -vv
