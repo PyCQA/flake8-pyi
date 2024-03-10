@@ -1,5 +1,13 @@
 # Change Log
 
+## Unreleased
+
+New error codes:
+* Y063: Use [PEP 570 syntax](https://peps.python.org/pep-0570/) to mark
+  positional-only arguments, rather than
+  [the older Python 3.7-compatible syntax](https://peps.python.org/pep-0484/#positional-only-arguments)
+  described in PEP 484.
+
 ## 24.1.0
 
 New error codes:

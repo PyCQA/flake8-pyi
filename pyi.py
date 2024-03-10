@@ -2089,6 +2089,34 @@ class PyiVisitor(ast.NodeVisitor):
                 return_annotation=return_annotation,
             )
 
+    @staticmethod
+    def _is_positional_pre_570_argname(name: str) -> bool:
+        # https://peps.python.org/pep-0484/#positional-only-arguments
+        return name.startswith("__") and len(name) >= 3 and not name.endswith("__")
+
+    def _check_pep570_syntax_used_where_applicable(
+        self, node: ast.FunctionDef | ast.AsyncFunctionDef
+    ) -> None:
+        if node.args.posonlyargs:
+            return
+        pos_or_kw_args = node.args.args
+        try:
+            first_param = pos_or_kw_args[0]
+        except IndexError:
+            return
+        if self.enclosing_class_ctx is None or any(
+            isinstance(decorator, ast.Name) and decorator.id == "staticmethod"
+            for decorator in node.decorator_list
+        ):
+            uses_old_syntax = self._is_positional_pre_570_argname(first_param.arg)
+        else:
+            uses_old_syntax = self._is_positional_pre_570_argname(first_param.arg) or (
+                len(pos_or_kw_args) >= 2
+                and self._is_positional_pre_570_argname(pos_or_kw_args[1].arg)
+            )
+        if uses_old_syntax:
+            self.error(node, Y063)
+
     def _visit_function(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         with self.in_function.enabled():
             self.generic_visit(node)
@@ -2110,6 +2138,7 @@ class PyiVisitor(ast.NodeVisitor):
             ):
                 self.error(statement, Y010)
 
+        self._check_pep570_syntax_used_where_applicable(node)
         if self.enclosing_class_ctx is not None:
             self.check_self_typevars(node)
 
@@ -2336,6 +2365,7 @@ Y060 = (
 )
 Y061 = 'Y061 None inside "Literal[]" expression. Replace with "{suggestion}"'
 Y062 = 'Y062 Duplicate "Literal[]" member "{}"'
+Y063 = "Y063 Use PEP-570 syntax to indicate positional-only arguments"
 Y090 = (
     'Y090 "{original}" means '
     '"a tuple of length 1, in which the sole element is of type {typ!r}". '
