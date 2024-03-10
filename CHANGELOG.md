@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## 24.3.0
 
 New error codes:
 * Y063: Use [PEP 570 syntax](https://peps.python.org/pep-0570/) to mark
