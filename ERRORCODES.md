@@ -77,6 +77,7 @@ The following warnings are currently emitted by default:
 | Y061 | Do not use `None` inside a `Literal[]` slice. For example, use `Literal["foo"] \| None` instead of `Literal["foo", None]`. While both are legal according to [PEP 586](https://peps.python.org/pep-0586/), the former is preferred for stylistic consistency. Note that this warning is not emitted if Y062 is emitted for the same `Literal[]` slice. For example, `Literal[None, None, True, True]` only causes Y062 to be emitted. | Style
 | Y062 | `Literal[]` slices shouldn't contain duplicates, e.g. `Literal[True, True]` is not allowed. | Redundant code
 | Y063 | Use [PEP 570 syntax](https://peps.python.org/pep-0570/) (e.g. `def foo(x: int, /) -> None: ...`) to denote positional-only arguments, rather than [the older Python 3.7-compatible syntax described in PEP 484](https://peps.python.org/pep-0484/#positional-only-arguments) (`def foo(__x: int) -> None: ...`, etc.). | Style
+| Y064 | Use simpler syntax to define final literal types. For example, use `x: Final = 42` instead of `x: Final[Literal[42]]`. | Style
 
 ## Warnings disabled by default
 
