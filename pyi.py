@@ -1041,6 +1041,7 @@ class PyiVisitor(ast.NodeVisitor):
     long_strings_allowed: NestingCounter
     in_function: NestingCounter
     visiting_arg: NestingCounter
+    Y061_suppressed: NestingCounter
 
     # This is only relevant for visiting classes
     enclosing_class_ctx: EnclosingClassContext | None = None
@@ -1058,6 +1059,7 @@ class PyiVisitor(ast.NodeVisitor):
         self.long_strings_allowed = NestingCounter()
         self.in_function = NestingCounter()
         self.visiting_arg = NestingCounter()
+        self.Y061_suppressed = NestingCounter()
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(filename={self.filename!r})"
@@ -1318,7 +1320,14 @@ class PyiVisitor(ast.NodeVisitor):
         )
 
         self.visit(node_target)
-        self.visit(node_annotation)
+
+        Y064_encountered = self._check_for_Y064_violations(node)
+        if Y064_encountered:
+            with self.Y061_suppressed.enabled():
+                self.visit(node_annotation)
+        else:
+            self.visit(node_annotation)
+
         if node_value is not None:
             if is_typealias:
                 self.visit(node_value)
@@ -1353,6 +1362,35 @@ class PyiVisitor(ast.NodeVisitor):
         def visit_TypeAlias(self, node: ast.TypeAlias) -> None:
             self.generic_visit(node)
             self._check_typealias(node=node, alias_name=node.name.id)
+
+    def _check_for_Y064_violations(self, node: ast.AnnAssign) -> bool:
+        annotation = node.annotation
+
+        if node.value or not isinstance(annotation, ast.Subscript):
+            return False
+
+        value = annotation.value
+        slice_ = annotation.slice
+
+        if (
+            _is_Final(value)
+            and isinstance(slice_, ast.Subscript)
+            and _is_Literal(slice_.value)
+            and isinstance(slice_.slice, ast.Constant)
+        ):
+            final = ast.Name(id="Final", ctx=ast.Load())
+            suggestion = ast.AnnAssign(
+                target=node.target,
+                annotation=final,
+                value=slice_.slice,
+                simple=node.simple,
+            )
+            self.error(
+                node,
+                Y064.format(suggestion=unparse(suggestion), original=unparse(node)),
+            )
+            return True
+        return False
 
     def _check_union_members(
         self, members: Sequence[ast.expr], is_pep_604_union: bool
@@ -1513,7 +1551,7 @@ class PyiVisitor(ast.NodeVisitor):
                 Y062_encountered = True
                 self.error(member_list[1], Y062.format(unparse(member_list[1])))
 
-        if not Y062_encountered:
+        if not Y062_encountered and not self.Y061_suppressed.active:
             if analysis.contains_only_none:
                 self.error(node.slice, Y061.format(suggestion="None"))
             elif analysis.none_members:
@@ -2366,6 +2404,7 @@ Y060 = (
 Y061 = 'Y061 None inside "Literal[]" expression. Replace with "{suggestion}"'
 Y062 = 'Y062 Duplicate "Literal[]" member "{}"'
 Y063 = "Y063 Use PEP-570 syntax to indicate positional-only arguments"
+Y064 = 'Y064 Use "{suggestion}" instead of "{original}"'
 Y090 = (
     'Y090 "{original}" means '
     '"a tuple of length 1, in which the sole element is of type {typ!r}". '
