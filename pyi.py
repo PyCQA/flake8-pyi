@@ -1543,7 +1543,7 @@ class PyiVisitor(ast.NodeVisitor):
                 and not (
                     isinstance(node.slice, ast.Subscript)
                     and _get_name_of_class_if_from_modules(
-                        node.slice.value, modules=_TYPING_MODULES | {"builtins"}
+                        node.slice.value, modules=_TYPING_MODULES
                     )
                     == "Unpack"
                 )
