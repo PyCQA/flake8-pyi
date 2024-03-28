@@ -1537,7 +1537,17 @@ class PyiVisitor(ast.NodeVisitor):
             self._visit_slice_tuple(node.slice, subscripted_object_name)
         else:
             self.visit(node.slice)
-            if subscripted_object_name in {"tuple", "Tuple"}:
+            if (
+                subscripted_object_name in {"tuple", "Tuple"}
+                and not isinstance(node.slice, ast.Starred)
+                and not (
+                    isinstance(node.slice, ast.Subscript)
+                    and _get_name_of_class_if_from_modules(
+                        node.slice.value, modules=_TYPING_MODULES | {"builtins"}
+                    )
+                    == "Unpack"
+                )
+            ):
                 self._Y090_error(node)
 
     def _visit_typing_Literal(self, node: ast.Subscript) -> None:
