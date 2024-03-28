@@ -1540,7 +1540,6 @@ class PyiVisitor(ast.NodeVisitor):
             self.visit(node.slice)
             if (
                 subscripted_object_name in {"tuple", "Tuple"}
-                and not isinstance(node.slice, ast.Starred)
                 and not (
                     isinstance(node.slice, ast.Subscript)
                     and _is_Unpack(node.slice.value)
