@@ -349,6 +349,7 @@ _is_AsyncGenerator = partial(
     _is_object, name="AsyncGenerator", from_=_TYPING_OR_COLLECTIONS_ABC
 )
 _is_Generic = partial(_is_object, name="Generic", from_=_TYPING_MODULES)
+_is_Unpack = partial(_is_object, name="Unpack", from_=_TYPING_MODULES)
 
 
 def _is_object_or_Unused(node: ast.expr | None) -> bool:
@@ -1537,7 +1538,9 @@ class PyiVisitor(ast.NodeVisitor):
             self._visit_slice_tuple(node.slice, subscripted_object_name)
         else:
             self.visit(node.slice)
-            if subscripted_object_name in {"tuple", "Tuple"}:
+            if subscripted_object_name in {"tuple", "Tuple"} and not (
+                isinstance(node.slice, ast.Subscript) and _is_Unpack(node.slice.value)
+            ):
                 self._Y090_error(node)
 
     def _visit_typing_Literal(self, node: ast.Subscript) -> None:

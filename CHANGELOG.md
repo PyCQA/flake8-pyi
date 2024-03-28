@@ -1,5 +1,8 @@
 # Change Log
 
+Bugfixes:
+* Y090: Fix false positive for `tuple[Unpack[Ts]]`.
+
 ## 24.3.0
 
 New error codes:
