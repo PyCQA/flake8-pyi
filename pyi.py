@@ -349,6 +349,7 @@ _is_AsyncGenerator = partial(
     _is_object, name="AsyncGenerator", from_=_TYPING_OR_COLLECTIONS_ABC
 )
 _is_Generic = partial(_is_object, name="Generic", from_=_TYPING_MODULES)
+_is_Unpack = partial(_is_object, name="Unpack", from_=_TYPING_MODULES)
 
 
 def _is_object_or_Unused(node: ast.expr | None) -> bool:
@@ -1542,10 +1543,7 @@ class PyiVisitor(ast.NodeVisitor):
                 and not isinstance(node.slice, ast.Starred)
                 and not (
                     isinstance(node.slice, ast.Subscript)
-                    and _get_name_of_class_if_from_modules(
-                        node.slice.value, modules=_TYPING_MODULES
-                    )
-                    == "Unpack"
+                    and _is_Unpack(node.slice.value)
                 )
             ):
                 self._Y090_error(node)
