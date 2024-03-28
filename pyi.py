@@ -1538,12 +1538,8 @@ class PyiVisitor(ast.NodeVisitor):
             self._visit_slice_tuple(node.slice, subscripted_object_name)
         else:
             self.visit(node.slice)
-            if (
-                subscripted_object_name in {"tuple", "Tuple"}
-                and not (
-                    isinstance(node.slice, ast.Subscript)
-                    and _is_Unpack(node.slice.value)
-                )
+            if subscripted_object_name in {"tuple", "Tuple"} and not (
+                isinstance(node.slice, ast.Subscript) and _is_Unpack(node.slice.value)
             ):
                 self._Y090_error(node)
 
