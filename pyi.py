@@ -2164,7 +2164,7 @@ class PyiVisitor(ast.NodeVisitor):
             self.generic_visit(node)
 
         if node.name != "__getattr__" and node.returns and _is_Incomplete(node.returns):
-            self.error(node.returns, Y065)
+            self.error(node.returns, Y065.format(what="return type"))
 
         body = node.body
         if len(body) > 1:
@@ -2191,7 +2191,7 @@ class PyiVisitor(ast.NodeVisitor):
         if _is_NoReturn(node.annotation):
             self.error(node, Y050)
         if _is_Incomplete(node.annotation):
-            self.error(node, Y065)
+            self.error(node, Y065.format(what=f'parameter "{node.arg}"'))
         with self.visiting_arg.enabled():
             self.generic_visit(node)
 
@@ -2414,7 +2414,7 @@ Y061 = 'Y061 None inside "Literal[]" expression. Replace with "{suggestion}"'
 Y062 = 'Y062 Duplicate "Literal[]" member "{}"'
 Y063 = "Y063 Use PEP-570 syntax to indicate positional-only arguments"
 Y064 = 'Y064 Use "{suggestion}" instead of "{original}"'
-Y065 = 'Y065 Don\'t use bare "Incomplete", leave unannotated'
+Y065 = 'Y065 Leave {what} unannotated rather than using "Incomplete"'
 Y090 = (
     'Y090 "{original}" means '
     '"a tuple of length 1, in which the sole element is of type {typ!r}". '
