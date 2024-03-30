@@ -1,5 +1,8 @@
 # Change Log
 
+New error codes:
+* Y065: Don't use bare `Incomplete` in argument and return annotations.
+
 Bugfixes:
 * Y090: Fix false positive for `tuple[Unpack[Ts]]`.
 
