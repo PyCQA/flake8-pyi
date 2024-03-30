@@ -337,6 +337,7 @@ _is_TracebackType = partial(_is_object, name="TracebackType", from_={"types"})
 _is_builtins_object = partial(_is_object, name="object", from_={"builtins"})
 _is_builtins_type = partial(_is_object, name="type", from_={"builtins"})
 _is_Unused = partial(_is_object, name="Unused", from_={"_typeshed"})
+_is_Incomplete = partial(_is_object, name="Incomplete", from_={"_typeshed"})
 _is_Iterable = partial(_is_object, name="Iterable", from_=_TYPING_OR_COLLECTIONS_ABC)
 _is_AsyncIterable = partial(
     _is_object, name="AsyncIterable", from_=_TYPING_OR_COLLECTIONS_ABC
@@ -2162,6 +2163,9 @@ class PyiVisitor(ast.NodeVisitor):
         with self.in_function.enabled():
             self.generic_visit(node)
 
+        if node.name != "__getattr__" and node.returns and _is_Incomplete(node.returns):
+            self.error(node.returns, Y065.format(what="return type"))
+
         body = node.body
         if len(body) > 1:
             self.error(body[1], Y048)
@@ -2186,6 +2190,8 @@ class PyiVisitor(ast.NodeVisitor):
     def visit_arg(self, node: ast.arg) -> None:
         if _is_NoReturn(node.annotation):
             self.error(node, Y050)
+        if _is_Incomplete(node.annotation):
+            self.error(node, Y065.format(what=f'parameter "{node.arg}"'))
         with self.visiting_arg.enabled():
             self.generic_visit(node)
 
@@ -2408,6 +2414,7 @@ Y061 = 'Y061 None inside "Literal[]" expression. Replace with "{suggestion}"'
 Y062 = 'Y062 Duplicate "Literal[]" member "{}"'
 Y063 = "Y063 Use PEP-570 syntax to indicate positional-only arguments"
 Y064 = 'Y064 Use "{suggestion}" instead of "{original}"'
+Y065 = 'Y065 Leave {what} unannotated rather than using "Incomplete"'
 Y090 = (
     'Y090 "{original}" means '
     '"a tuple of length 1, in which the sole element is of type {typ!r}". '

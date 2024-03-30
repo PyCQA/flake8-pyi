@@ -5,6 +5,7 @@
 New error codes:
 * Y064: Use simpler syntax to define final literal types.
   For example, use `x: Final = 42` instead of `x: Final[Literal[42]]`
+* Y065: Don't use bare `Incomplete` in parameter and return annotations.
 
 Bugfixes:
 * Y090: Fix false positive for `tuple[Unpack[Ts]]`.
