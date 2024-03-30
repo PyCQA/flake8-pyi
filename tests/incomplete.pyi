@@ -18,3 +18,14 @@ class Foo:
     def err2(
         self,
     ) -> Incomplete: ...  # Y065 Don't use bare "Incomplete", leave unannotated
+    def __getattr__(
+        self, name: str
+    ) -> Incomplete: ...  # allowed in __getattr__ return type
+
+class Bar:
+    def __getattr__(
+        self,
+        name: Incomplete,  # Y065 Don't use bare "Incomplete", leave unannotated
+    ) -> Incomplete: ...
+
+def __getattr__(name: str) -> Incomplete: ...  # allowed in __getattr__ return type

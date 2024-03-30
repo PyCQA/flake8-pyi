@@ -2163,7 +2163,7 @@ class PyiVisitor(ast.NodeVisitor):
         with self.in_function.enabled():
             self.generic_visit(node)
 
-        if node.returns and _is_Incomplete(node.returns):
+        if node.name != "__getattr__" and node.returns and _is_Incomplete(node.returns):
             self.error(node.returns, Y065)
 
         body = node.body
