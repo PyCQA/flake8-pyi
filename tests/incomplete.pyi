@@ -1,8 +1,12 @@
 from _typeshed import Incomplete
+from typing_extensions import TypeAlias
 
-att: Incomplete
+IncompleteAlias: TypeAlias = Incomplete  # ok
+
+att: Incomplete  # ok
 
 def ok(x: Incomplete | None) -> list[Incomplete]: ...
+def aliased(x: IncompleteAlias) -> IncompleteAlias: ...  # ok
 def err1(
     x: Incomplete,  # Y065 Don't use bare "Incomplete", leave unannotated
 ) -> None: ...
