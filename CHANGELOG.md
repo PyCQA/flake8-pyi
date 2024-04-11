@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## 24.4.0
 
 Bugfixes:
 * Fix Y026 false positive: allow simple assignment to `None` in class scopes
