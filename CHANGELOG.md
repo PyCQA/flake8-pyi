@@ -1,5 +1,11 @@
 # Change Log
 
+## Unreleased
+
+Bugfixes:
+* Fix Y026 false positive: allow simple assignment to `None` in class scopes
+  if the class is known to be an enum class.
+
 ## 24.3.1
 
 New error codes:

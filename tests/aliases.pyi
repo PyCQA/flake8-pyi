@@ -2,6 +2,7 @@
 import array
 import builtins
 import collections.abc
+import enum
 import typing
 from collections.abc import Mapping
 from typing import (
@@ -86,3 +87,6 @@ _snake_case_alias2: TypeAlias = Literal["whatever"]  # Y042 Type aliases should 
 
 # check that this edge case doesn't crash the plugin
 _: TypeAlias = str | int
+
+class FooEnum(enum.Enum):
+    BAR = None  # shouldn't emit Y026 because it's an assignment in an enum class

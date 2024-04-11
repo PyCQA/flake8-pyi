@@ -1219,7 +1219,7 @@ class PyiVisitor(ast.NodeVisitor):
             isinstance(assignment, ast.Subscript)
             or _is_valid_pep_604_union(assignment)
             or _is_Any(assignment)
-            or _is_None(assignment)
+            or (_is_None(assignment) and not self.visiting_enum_class)
         ):
             new_node = ast.AnnAssign(
                 target=target,
