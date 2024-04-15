@@ -29,3 +29,21 @@ if sys.version_info <= (3, 0): ...  # Y006 Use only < and >= for version compari
 if sys.version_info < (3, 5): ...
 if sys.version_info >= (3, 5): ...
 if (2, 7) <= sys.version_info < (3, 5): ...  # Y002 If test must be a simple comparison against sys.platform or sys.version_info
+
+
+if sys.version_info >= (3, 10):
+    pass
+else:
+    pass
+
+if sys.version_info < (3, 10):  # Y066 When using if/else with sys.version_info, put the code for new Python versions first, e.g. "if sys.version_info >= (3, 10)"
+    pass
+else:
+    pass
+
+if sys.version_info >= (3, 10):
+    pass
+elif sys.version_info < (3, 8):  # Y066 When using if/else with sys.version_info, put the code for new Python versions first, e.g. "if sys.version_info >= (3, 8)"
+    pass
+else:
+    pass
