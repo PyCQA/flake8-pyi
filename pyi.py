@@ -1586,6 +1586,8 @@ class PyiVisitor(ast.NodeVisitor):
             self.visit(node)
 
     def visit_If(self, node: ast.If) -> None:
+        self._check_for_Y066_violations(node)
+
         test = node.test
         # No types can appear in if conditions, so avoid confusing additional errors.
         with self.string_literals_allowed.enabled():
@@ -1620,6 +1622,18 @@ class PyiVisitor(ast.NodeVisitor):
                 self.error(node, Y002)
         else:
             self.error(node, Y002)
+
+    def _check_for_Y066_violations(self, node: ast.If) -> None:
+        if (
+            isinstance(node.test, ast.Compare)
+            and ast.unparse(node.test).startswith("sys.version_info < ")
+            and node.orelse
+            and not (
+                len(node.orelse) == 1 and isinstance(node.orelse[0], ast.If)
+            )  # elif statement
+        ):
+            new_syntax = "if " + ast.unparse(node.test).replace("<", ">=", 1)
+            self.error(node, Y066.format(new_syntax=new_syntax))
 
     def _check_subscript_version_check(self, node: ast.Compare) -> None:
         # unless this is on, comparisons against a single integer aren't allowed
@@ -2415,6 +2429,10 @@ Y062 = 'Y062 Duplicate "Literal[]" member "{}"'
 Y063 = "Y063 Use PEP-570 syntax to indicate positional-only arguments"
 Y064 = 'Y064 Use "{suggestion}" instead of "{original}"'
 Y065 = 'Y065 Leave {what} unannotated rather than using "Incomplete"'
+Y066 = (
+    "Y066 When using if/else with sys.version_info, "
+    'put the code for new Python versions first, e.g. "{new_syntax}"'
+)
 Y090 = (
     'Y090 "{original}" means '
     '"a tuple of length 1, in which the sole element is of type {typ!r}". '
