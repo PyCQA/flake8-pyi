@@ -79,6 +79,7 @@ The following warnings are currently emitted by default:
 | Y063 | Use [PEP 570 syntax](https://peps.python.org/pep-0570/) (e.g. `def foo(x: int, /) -> None: ...`) to denote positional-only arguments, rather than [the older Python 3.7-compatible syntax described in PEP 484](https://peps.python.org/pep-0484/#positional-only-arguments) (`def foo(__x: int) -> None: ...`, etc.). | Style
 | Y064 | Use simpler syntax to define final literal types. For example, use `x: Final = 42` instead of `x: Final[Literal[42]]`. | Style
 | Y065 | Don't use bare `Incomplete` in argument and return annotations. Instead, leave them unannotated. Omitting an annotation entirely from a function will cause some type checkers to view the parameter or return type as "untyped"; this may result in stricter type-checking on code that makes use of the stubbed function. | Style
+| Y066 | When using if/else with `sys.version_info`, put the code for new Python versions first. | Style
 
 ## Warnings disabled by default
 
