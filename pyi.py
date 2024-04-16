@@ -1624,15 +1624,23 @@ class PyiVisitor(ast.NodeVisitor):
             self.error(node, Y002)
 
     def _check_for_Y066_violations(self, node: ast.If) -> None:
+        test = node.test
+        if not isinstance(node.test, ast.Compare):
+            return
+
+        left = test.left
+        op = test.ops[0]
         if (
-            isinstance(node.test, ast.Compare)
-            and ast.unparse(node.test).startswith("sys.version_info < ")
+            isinstance(left, ast.Attribute)
+            and _is_name(left.value, "sys")
+            and left.attr == "version_info"
+            and isinstance(op, ast.Lt)  # sys.version_info < ...
             and node.orelse
             and not (
                 len(node.orelse) == 1 and isinstance(node.orelse[0], ast.If)
             )  # elif statement
         ):
-            new_syntax = "if " + ast.unparse(node.test).replace("<", ">=", 1)
+            new_syntax = "if " + unparse(node.test).replace("<", ">=", 1)
             self.error(node, Y066.format(new_syntax=new_syntax))
 
     def _check_subscript_version_check(self, node: ast.Compare) -> None:
