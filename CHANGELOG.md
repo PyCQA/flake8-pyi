@@ -1,5 +1,11 @@
 # Change Log
 
+## Unreleased
+
+New error codes:
+* Y066: When using if/else with `sys.version_info`,
+  put the code for new Python versions first.
+
 ## 24.4.0
 
 Bugfixes:
