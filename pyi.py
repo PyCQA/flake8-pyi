@@ -1625,7 +1625,7 @@ class PyiVisitor(ast.NodeVisitor):
 
     def _check_for_Y066_violations(self, node: ast.If) -> None:
         test = node.test
-        if not isinstance(node.test, ast.Compare):
+        if not isinstance(test, ast.Compare):
             return
 
         left = test.left
@@ -1640,7 +1640,7 @@ class PyiVisitor(ast.NodeVisitor):
                 len(node.orelse) == 1 and isinstance(node.orelse[0], ast.If)
             )  # elif statement
         ):
-            new_syntax = "if " + unparse(node.test).replace("<", ">=", 1)
+            new_syntax = "if " + unparse(test).replace("<", ">=", 1)
             self.error(node, Y066.format(new_syntax=new_syntax))
 
     def _check_subscript_version_check(self, node: ast.Compare) -> None:
