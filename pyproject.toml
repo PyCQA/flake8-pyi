@@ -11,7 +11,7 @@ authors = [
 maintainers = [
   { name="Jelle Zijlstra", email="jelle.zijlstra@gmail.com" },
   { name="Alex Waygood", email="alex.waygood@gmail.com" },
-  { name="Sebastian Rittau" },
+  { name="Sebastian Rittau", email="sebastian@rittau.biz" },
   { name="Akuli" },
   { name="Shantanu" },
 ]
@@ -30,7 +30,7 @@ keywords = [
     "typing",
 ]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 5 - Production/Stable",
     "Environment :: Console",
     "Framework :: Flake8",
     "Intended Audience :: Developers",
