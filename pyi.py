@@ -1624,6 +1624,19 @@ class PyiVisitor(ast.NodeVisitor):
             self.error(node, Y002)
 
     def _check_for_Y066_violations(self, node: ast.If) -> None:
+        def is_version_info(attr: ast.expr) -> bool:
+            return (
+                isinstance(attr, ast.Attribute)
+                and _is_name(attr.value, "sys")
+                and attr.attr == "version_info"
+            )
+
+        def if_chain_ends_with_else(if_chain: ast.If) -> bool:
+            orelse = if_chain.orelse
+            if len(orelse) == 1 and isinstance(orelse[0], ast.If):
+                return if_chain_ends_with_else(orelse[0])
+            return bool(orelse)
+
         test = node.test
         if not isinstance(test, ast.Compare):
             return
@@ -1631,14 +1644,9 @@ class PyiVisitor(ast.NodeVisitor):
         left = test.left
         op = test.ops[0]
         if (
-            isinstance(left, ast.Attribute)
-            and _is_name(left.value, "sys")
-            and left.attr == "version_info"
+            is_version_info(left)
             and isinstance(op, ast.Lt)  # sys.version_info < ...
-            and node.orelse
-            and not (
-                len(node.orelse) == 1 and isinstance(node.orelse[0], ast.If)
-            )  # elif statement
+            and if_chain_ends_with_else(node)
         ):
             new_syntax = "if " + unparse(test).replace("<", ">=", 1)
             self.error(node, Y066.format(new_syntax=new_syntax))
