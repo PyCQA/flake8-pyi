@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## 24.4.1
 
 New error codes:
 * Y066: When using if/else with `sys.version_info`,
