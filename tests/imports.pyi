@@ -159,6 +159,7 @@ from collections.abc import ByteString  # Y057 Do not use collections.abc.ByteSt
 # GOOD ATTRIBUTE ACCESS
 foo: typing.SupportsIndex
 baz: re.Pattern[str]
+_T = typing_extensions.TypeVar("_T", default=bool | None)  # Y018 TypeVar "_T" is not used
 
 @typing.final
 def bar(arg: collections.abc.Sized) -> typing.Literal[True]: ...
