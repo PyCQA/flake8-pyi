@@ -147,7 +147,6 @@ _BAD_TYPINGEXTENSIONS_Y023_IMPORTS = frozenset(
         "SupportsInt",
         "SupportsRound",
         "TypedDict",
-        "TypeVar",
         "final",
         "overload",
         "NoReturn",

@@ -1,5 +1,12 @@
 # Change Log
 
+## Unreleased
+
+Bugfixes
+* Allow the use of `typing_extensions.TypeVar` in stubs.
+  `typing_extensions.TypeVar` has the *default* parameter,
+  which only exists on Python 3.13+ when using `typing.TypeVar`.
+
 ## 24.4.1
 
 New error codes:
