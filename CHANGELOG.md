@@ -7,6 +7,9 @@ Bugfixes
   `typing_extensions.TypeVar` has the *default* parameter,
   which only exists on Python 3.13+ when using `typing.TypeVar`.
 
+Other changes
+* Declare support for Python 3.13
+
 ## 24.4.1
 
 New error codes:
