@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from functools import cached_property, partial
 from itertools import chain, groupby, zip_longest
 from keyword import iskeyword
-from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple, Union
+from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple, Protocol, Union
 
 from flake8 import checker
 from flake8.options.manager import OptionManager
@@ -60,6 +60,11 @@ class Error(NamedTuple):
 class TypeVarInfo(NamedTuple):
     cls_name: str
     name: str
+
+
+class NodeWithLocation(Protocol):
+    lineno: int
+    col_offset: int
 
 
 def all_equal(iterable: Iterable[object]) -> bool:
@@ -2245,7 +2250,7 @@ class PyiVisitor(ast.NodeVisitor):
         if default is not None and not _is_valid_default_value_with_annotation(default):
             self.error(default, (Y014 if arg.annotation is None else Y011))
 
-    def error(self, node: ast.AST, message: str) -> None:
+    def error(self, node: NodeWithLocation, message: str) -> None:
         self.errors.append(Error(node.lineno, node.col_offset, message, PyiTreeChecker))
 
     def _check_for_unused_things(self) -> None:
