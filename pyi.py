@@ -2245,7 +2245,7 @@ class PyiVisitor(ast.NodeVisitor):
         if default is not None and not _is_valid_default_value_with_annotation(default):
             self.error(default, (Y014 if arg.annotation is None else Y011))
 
-    def error(self, node: ast.AST, message: str) -> None:
+    def error(self, node: ast.expr | ast.stmt, message: str) -> None:
         self.errors.append(Error(node.lineno, node.col_offset, message, PyiTreeChecker))
 
     def _check_for_unused_things(self) -> None:
