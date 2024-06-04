@@ -734,9 +734,7 @@ class EnclosingClassContext:
 
     @cached_property
     def is_enum_class(self) -> bool:
-        return any(
-            base_name.endswith(("Enum", "Flag")) for base_name in self.bases_map
-        )
+        return any(base_name.endswith(("Enum", "Flag")) for base_name in self.bases_map)
 
     @cached_property
     def is_metaclass(self) -> bool:
