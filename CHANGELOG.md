@@ -6,6 +6,7 @@ Bugfixes
 * Allow the use of `typing_extensions.TypeVar` in stubs.
   `typing_extensions.TypeVar` has the *default* parameter,
   which only exists on Python 3.13+ when using `typing.TypeVar`.
+* Reduce false positives from Y052 in relation to enum subclasses.
 
 ## 24.4.1
 
