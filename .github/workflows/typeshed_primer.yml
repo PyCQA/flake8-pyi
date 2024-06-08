@@ -53,7 +53,7 @@ jobs:
       - name: flake8 typeshed using PR branch
         run: |
           cd new_plugin
-          uv pip install -e . --system
+          uv pip install -e . --system --reinstall
           cd ../typeshed
           flake8 --exit-zero --color never --output-file ../new_errors.txt
       - name: Get diff between the two runs
