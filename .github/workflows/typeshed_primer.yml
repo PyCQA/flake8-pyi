@@ -47,16 +47,14 @@ jobs:
       - name: flake8 typeshed using target branch
         run: |
           cd old_plugin
-          uv pip install -e . --system --reinstall
+          uv pip install -e . --system
           cd ../typeshed
-          flake8 --exit-zero
           flake8 --exit-zero --color never --output-file ../old_errors.txt
       - name: flake8 typeshed using PR branch
         run: |
           cd new_plugin
-          uv pip install -e . --system --reinstall
+          uv pip install -e . --system
           cd ../typeshed
-          flake8 --exit-zero
           flake8 --exit-zero --color never --output-file ../new_errors.txt
       - name: Get diff between the two runs
         run: |
