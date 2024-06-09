@@ -37,7 +37,7 @@ jobs:
           repository: python/typeshed
           path: typeshed
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - name: Install uv
@@ -61,7 +61,7 @@ jobs:
           echo ${{ github.event.pull_request.number }} | tee pr_number.txt
           diff old_errors.txt new_errors.txt | tee errors_diff.txt
       - name: Upload diff and PR number
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: typeshed_primer_errors
           path: |
