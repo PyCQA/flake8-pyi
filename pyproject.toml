@@ -60,14 +60,14 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "black==24.3.0",            # Must match .pre-commit-config.yaml
-    "flake8-bugbear==24.2.6",
+    "black==24.4.2",            # Must match .pre-commit-config.yaml
+    "flake8-bugbear==24.4.26",
     "flake8-noqa==1.4.0",
     "isort==5.13.2",            # Must match .pre-commit-config.yaml
-    "mypy==1.9.0",
-    "pre-commit-hooks==4.5.0",  # Must match .pre-commit-config.yaml
-    "pytest==8.1.1",
-    "pytest-xdist==3.5.0",
+    "mypy==1.10.0",
+    "pre-commit-hooks==4.6.0",  # Must match .pre-commit-config.yaml
+    "pytest==8.2.2",
+    "pytest-xdist==3.6.1",
     "types-pyflakes<4",
 ]
 
