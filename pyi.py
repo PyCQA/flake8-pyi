@@ -701,11 +701,6 @@ def _analyse_typing_Literal(node: ast.Subscript) -> TypingLiteralAnalysis:
     )
 
 
-_KNOWN_ENUM_BASES = frozenset(
-    {"Enum", "Flag", "IntEnum", "IntFlag", "StrEnum", "ReprEnum"}
-)
-
-
 _COMMON_METACLASSES = {
     "type": "builtins",
     "ABCMeta": "abc",
@@ -739,10 +734,7 @@ class EnclosingClassContext:
 
     @cached_property
     def is_enum_class(self) -> bool:
-        return any(
-            self.contains_in_bases(enum_cls, from_={"enum"})
-            for enum_cls in _KNOWN_ENUM_BASES
-        )
+        return any(base_name.endswith(("Enum", "Flag")) for base_name in self.bases_map)
 
     @cached_property
     def is_metaclass(self) -> bool:
