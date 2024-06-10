@@ -146,3 +146,8 @@ class Enum6(ReprEnum):
 
 class Enum7(enum.Enum):
     FOO = "foo"
+
+class SpecialEnum(enum.Enum): ...
+
+class SubclassOfSpecialEnum(SpecialEnum):
+    STILL_OKAY = "foo"

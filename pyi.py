@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from functools import cached_property, partial
 from itertools import chain, groupby, zip_longest
 from keyword import iskeyword
-from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple, Union
+from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple, Protocol, Union
 
 from flake8 import checker
 from flake8.options.manager import OptionManager
@@ -60,6 +60,11 @@ class Error(NamedTuple):
 class TypeVarInfo(NamedTuple):
     cls_name: str
     name: str
+
+
+class NodeWithLocation(Protocol):
+    lineno: int
+    col_offset: int
 
 
 def all_equal(iterable: Iterable[object]) -> bool:
@@ -696,11 +701,6 @@ def _analyse_typing_Literal(node: ast.Subscript) -> TypingLiteralAnalysis:
     )
 
 
-_KNOWN_ENUM_BASES = frozenset(
-    {"Enum", "Flag", "IntEnum", "IntFlag", "StrEnum", "ReprEnum"}
-)
-
-
 _COMMON_METACLASSES = {
     "type": "builtins",
     "ABCMeta": "abc",
@@ -734,10 +734,7 @@ class EnclosingClassContext:
 
     @cached_property
     def is_enum_class(self) -> bool:
-        return any(
-            self.contains_in_bases(enum_cls, from_={"enum"})
-            for enum_cls in _KNOWN_ENUM_BASES
-        )
+        return any(base_name.endswith(("Enum", "Flag")) for base_name in self.bases_map)
 
     @cached_property
     def is_metaclass(self) -> bool:
@@ -2245,7 +2242,7 @@ class PyiVisitor(ast.NodeVisitor):
         if default is not None and not _is_valid_default_value_with_annotation(default):
             self.error(default, (Y014 if arg.annotation is None else Y011))
 
-    def error(self, node: ast.AST, message: str) -> None:
+    def error(self, node: NodeWithLocation, message: str) -> None:
         self.errors.append(Error(node.lineno, node.col_offset, message, PyiTreeChecker))
 
     def _check_for_unused_things(self) -> None:
