@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## 24.6.0
 
 Bugfixes
 * Allow the use of `typing_extensions.TypeVar` in stubs.
