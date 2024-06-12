@@ -8,6 +8,9 @@ Bugfixes
   which only exists on Python 3.13+ when using `typing.TypeVar`.
 * Reduce false positives from Y052 in relation to enum subclasses.
 
+Other changes
+* Declare support for Python 3.13
+
 ## 24.4.1
 
 New error codes:
