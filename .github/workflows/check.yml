@@ -35,6 +35,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
+          # Need to use Python 3.8 for the mypy-3.8 job,
+          # or `ast_decompiler` isn't installed by `uv pip install -e '.[dev]'`,
+          # and `ast_decompiler` must be installed for the typecheck to succeed
+          # with `--python-version=3.8
           python-version: "3.8"
           allow-prereleases: true
       - run: curl -LsSf https://astral.sh/uv/install.sh | sh
