@@ -29,17 +29,17 @@ jobs:
     timeout-minutes: 5
     strategy:
       matrix:
-        python-version: ["3.8", "3.12"]
+        python-version: ["3.8", "3.13"]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.12"
           allow-prereleases: true
       - run: curl -LsSf https://astral.sh/uv/install.sh | sh
       - run: uv pip install -e .[dev] --system
-      - run: mypy
+      - run: mypy --python-version=${{ matrix.python-version }}
 
   flake8:
     name: flake8
