@@ -3,7 +3,16 @@
 
 import typing
 from collections.abc import Iterator
-from typing import Any, NamedTuple, NoReturn, Protocol, Self, TypedDict, Annotated, Literal
+from typing import (
+    Annotated,
+    Any,
+    Literal,
+    NamedTuple,
+    NoReturn,
+    Protocol,
+    Self,
+    TypedDict,
+)
 
 type lowercase_alias = str | int  # Y042 Type aliases should use the CamelCase naming convention
 type _LooksLikeATypeVarT = str | int  # Y043 Bad name for a type alias (the "T" suffix implies a TypeVar)
