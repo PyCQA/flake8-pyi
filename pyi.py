@@ -1240,10 +1240,7 @@ class PyiVisitor(ast.NodeVisitor):
                 self.error(node, Y031)
             return
         elif _is_deprecated(function):
-            with (
-                self.string_literals_allowed.enabled(),
-                self.long_strings_allowed.enabled(),
-            ):
+            with self.string_literals_allowed.enabled(), self.long_strings_allowed.enabled():
                 for arg in chain(node.args, node.keywords):
                     self.visit(arg)
             return
@@ -1577,10 +1574,7 @@ class PyiVisitor(ast.NodeVisitor):
             # Allow literals, except in the first argument
             if len(node.elts) > 1:
                 self.visit(node.elts[0])
-                with (
-                    self.string_literals_allowed.enabled(),
-                    self.long_strings_allowed.enabled(),
-                ):
+                with self.string_literals_allowed.enabled(), self.long_strings_allowed.enabled():
                     for elt in node.elts[1:]:
                         self.visit(elt)
             else:
