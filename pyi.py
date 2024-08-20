@@ -1563,7 +1563,8 @@ class PyiVisitor(ast.NodeVisitor):
                 suggestion = f"Literal[{new_literal_slice}] | None"
                 self.error(analysis.none_members[0], Y061.format(suggestion=suggestion))
 
-        self.visit(node.slice)
+        with self.long_strings_allowed.enabled():
+            self.visit(node.slice)
 
     def _visit_slice_tuple(self, node: ast.Tuple, parent: str | None) -> None:
         if parent == "Union":
@@ -1573,7 +1574,7 @@ class PyiVisitor(ast.NodeVisitor):
             # Allow literals, except in the first argument
             if len(node.elts) > 1:
                 self.visit(node.elts[0])
-                with self.string_literals_allowed.enabled():
+                with self.string_literals_allowed.enabled(), self.long_strings_allowed.enabled():
                     for elt in node.elts[1:]:
                         self.visit(elt)
             else:
