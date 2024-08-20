@@ -1,5 +1,11 @@
 # Change Log
 
+## Unreleased
+
+Bugfixes
+* Don't emit Y053 for long strings inside `Literal` slices or
+  metadata strings inside `Annotated` slices.
+
 ## 24.6.0
 
 Bugfixes

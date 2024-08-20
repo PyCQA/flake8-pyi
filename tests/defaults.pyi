@@ -1,6 +1,7 @@
 import math
 import os
 import sys
+from typing import Annotated, Literal, TypeAlias
 
 import _typeshed
 from _typeshed import SupportsRead, SupportsWrite, sentinel
@@ -84,3 +85,10 @@ def f40(x: int, /) -> None: ...
 def f41(x: int, /, y: "int") -> None: ...  # Y020 Quoted annotations should never be used in stubs
 def f42(x: str = "y", /) -> None: ...
 def f43(x: str = os.pathsep, /) -> None: ...  # Y011 Only simple default values allowed for typed arguments
+
+# Long strings inside `Literal` or `Annotated` slices are okay
+def f44(x: Literal["loooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooong"]) -> None: ...
+def f55(x: Annotated[str, "metadataaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"]) -> None: ...
+
+X: TypeAlias = Literal["llllllllllllllllllllllllllonggggggggggggggggggggggggggggggggggggggggg"]
+Y: TypeAlias = Annotated[int, "verrrrrrrrrrrrrrrrrrrry looooooooooooooongggggggggggggggggggggggggggggggggggg"]
