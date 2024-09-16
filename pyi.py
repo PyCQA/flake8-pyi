@@ -56,7 +56,8 @@ class NodeWithLocation(Protocol):
 def all_equal(iterable: Iterable[object]) -> bool:
     """Returns True if all the elements are equal to each other.
 
-    Adapted from the CPython itertools documentation."""
+    Adapted from the CPython itertools documentation.
+    """
     g = groupby(iterable)
     next(g, True)
     return not next(g, False)
@@ -187,7 +188,6 @@ class PyiAwareFlakesChecker(FlakesChecker):
     @annotationsFutureEnabled.setter
     def annotationsFutureEnabled(self, value: bool) -> None:
         """Does nothing, as we always want this property to be `True`."""
-        pass
 
     def ASSIGN(
         self, tree: ast.Assign, omit: str | tuple[str, ...] | None = None
@@ -237,14 +237,14 @@ class PyiAwareFileChecker(checker.FileChecker):
 
 
 def _ast_node_for(string: str) -> ast.AST:
-    """Helper function for doctests"""
+    """Helper function for doctests."""
     expr = ast.parse(string).body[0]
     assert isinstance(expr, ast.Expr)
     return expr.value
 
 
 def _is_name(node: ast.AST | None, name: str) -> bool:
-    """Return True if `node` is an `ast.Name` node with id `name`
+    """Return True if `node` is an `ast.Name` node with id `name`.
 
     >>> node = ast.Name(id="Any")
     >>> _is_name(node, "Any")
@@ -639,15 +639,11 @@ class TypingLiteralAnalysis(NamedTuple):
 def _analyse_typing_Literal(node: ast.Subscript) -> TypingLiteralAnalysis:
     """Return a tuple providing analysis of a `typing.Literal` slice."""
 
-    members: Sequence[ast.expr]
     members_by_dump: defaultdict[str, list[ast.expr]] = defaultdict(list)
     members_without_none: list[ast.expr] = []
     none_members: list[ast.expr] = []
 
-    if isinstance(node.slice, ast.Tuple):
-        members = node.slice.elts
-    else:
-        members = [node.slice]
+    members = node.slice.elts if isinstance(node.slice, ast.Tuple) else [node.slice]
 
     for member in members:
         members_by_dump[ast.dump(member)].append(member)
@@ -866,7 +862,7 @@ def _is_valid_default_value_with_annotation(
         return (fullname in _ALLOWED_ATTRIBUTES_IN_DEFAULTS) or (
             fullname in _ALLOWED_MATH_ATTRIBUTES_IN_DEFAULTS
         )
-    elif isinstance(node, ast.Name):
+    if isinstance(node, ast.Name):
         return node.id in _ALLOWED_SIMPLE_ATTRIBUTES_IN_DEFAULTS
 
     return False
@@ -957,7 +953,7 @@ def _check_import_or_attribute(
 
 @dataclass
 class NestingCounter:
-    """Class to help the PyiVisitor keep track of internal state"""
+    """Class to help the PyiVisitor keep track of internal state."""
 
     nesting: int = 0
 
@@ -971,7 +967,7 @@ class NestingCounter:
 
     @property
     def active(self) -> bool:
-        """Determine whether the level of nesting is currently non-zero"""
+        """Determine whether the level of nesting is currently non-zero."""
         return bool(self.nesting)
 
 
@@ -1145,7 +1141,7 @@ class PyiVisitor(ast.NodeVisitor):
             )
 
     def visit_AugAssign(self, node: ast.AugAssign) -> None:
-        """Allow `__all__ += ['foo', 'bar']` in a stub file"""
+        """Allow `__all__ += ['foo', 'bar']` in a stub file."""
         target, value = node.target, node.value
         self.visit(target)
         if _is_name(target, "__all__") and isinstance(node.op, ast.Add):
