@@ -6,6 +6,11 @@ Bugfixes
 * Don't emit Y053 for long strings inside `Literal` slices or
   metadata strings inside `Annotated` slices.
 
+Other changes:
+* `flake8-pyi` no longer supports being run using Python 3.8.
+  As a result, it not longer depends on the third-party
+  `ast_decompiler` package.
+
 ## 24.6.0
 
 Bugfixes

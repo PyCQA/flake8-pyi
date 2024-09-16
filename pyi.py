@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from functools import cached_property, partial
 from itertools import chain, groupby, zip_longest
 from keyword import iskeyword
-from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple, Protocol, Union
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, NamedTuple, Protocol
 
 from flake8 import checker
 from flake8.options.manager import OptionManager
@@ -22,20 +22,11 @@ from flake8.plugins.finder import LoadedPlugin
 from flake8.plugins.pyflakes import FlakesChecker
 from pyflakes.checker import ModuleScope
 
-if sys.version_info >= (3, 9):
-    from ast import unparse
-else:
-    from ast_decompiler import decompile
-
-    def unparse(node: ast.AST) -> str:
-        return decompile(node).strip("\n")
-
-
 if TYPE_CHECKING:
     # We don't have typing_extensions as a runtime dependency,
     # but all our annotations are stringized due to __future__ annotations,
     # and mypy thinks typing_extensions is part of the stdlib.
-    from typing_extensions import Literal, TypeAlias, TypeGuard
+    from typing_extensions import TypeAlias, TypeGuard
 
 LOG = logging.getLogger("flake8.pyi")
 
@@ -43,11 +34,6 @@ if sys.version_info >= (3, 12):
     _TypeAliasNodeType: TypeAlias = ast.TypeAlias | ast.AnnAssign
 else:
     _TypeAliasNodeType: TypeAlias = ast.AnnAssign
-
-if sys.version_info >= (3, 9):
-    _SliceContents: TypeAlias = ast.expr
-else:
-    _SliceContents: TypeAlias = Union[ast.expr, ast.slice]
 
 
 class Error(NamedTuple):
@@ -70,7 +56,8 @@ class NodeWithLocation(Protocol):
 def all_equal(iterable: Iterable[object]) -> bool:
     """Returns True if all the elements are equal to each other.
 
-    Adapted from the CPython itertools documentation."""
+    Adapted from the CPython itertools documentation.
+    """
     g = groupby(iterable)
     next(g, True)
     return not next(g, False)
@@ -201,7 +188,6 @@ class PyiAwareFlakesChecker(FlakesChecker):
     @annotationsFutureEnabled.setter
     def annotationsFutureEnabled(self, value: bool) -> None:
         """Does nothing, as we always want this property to be `True`."""
-        pass
 
     def ASSIGN(
         self, tree: ast.Assign, omit: str | tuple[str, ...] | None = None
@@ -250,33 +236,15 @@ class PyiAwareFileChecker(checker.FileChecker):
         return super().run_check(plugin, **kwargs)
 
 
-class LegacyNormalizer(ast.NodeTransformer):
-    """Transform AST to be consistent across Python versions."""
-
-    if sys.version_info < (3, 9):
-
-        def visit_Index(self, node: ast.Index) -> ast.expr:
-            """Index nodes no longer exist in Python 3.9.
-
-            For example, consider the AST representing Union[str, int].
-            Before 3.9:
-                Subscript(value=Name(id='Union'), slice=Index(value=Tuple(...)))
-            3.9 and newer:
-                Subscript(value=Name(id='Union'), slice=Tuple(...))
-            """
-            self.generic_visit(node)
-            return node.value
-
-
 def _ast_node_for(string: str) -> ast.AST:
-    """Helper function for doctests"""
+    """Helper function for doctests."""
     expr = ast.parse(string).body[0]
     assert isinstance(expr, ast.Expr)
     return expr.value
 
 
 def _is_name(node: ast.AST | None, name: str) -> bool:
-    """Return True if `node` is an `ast.Name` node with id `name`
+    """Return True if `node` is an `ast.Name` node with id `name`.
 
     >>> node = ast.Name(id="Any")
     >>> _is_name(node, "Any")
@@ -534,7 +502,7 @@ def _has_bad_hardcoded_returns(
 
 def _unparse_func_node(node: ast.FunctionDef | ast.AsyncFunctionDef) -> str:
     """Unparse a function node, and reformat it to fit on one line."""
-    return re.sub(r"\s+", " ", unparse(node))
+    return re.sub(r"\s+", " ", ast.unparse(node))
 
 
 def _is_list_of_str_nodes(seq: list[ast.expr | None]) -> TypeGuard[list[ast.Constant]]:
@@ -590,10 +558,10 @@ class UnionAnalysis(NamedTuple):
     builtins_classes_in_union: set[str]
     multiple_literals_in_union: bool
     non_literals_in_union: bool
-    combined_literal_members: list[_SliceContents]
+    combined_literal_members: list[ast.expr]
     # type subscript == type[Foo]
     multiple_type_subscripts_in_union: bool
-    combined_type_subscripts: list[_SliceContents]
+    combined_type_subscripts: list[ast.expr]
 
 
 def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
@@ -601,10 +569,7 @@ def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
 
     >>> source = 'Union[int, memoryview, memoryview, Literal["foo"], Literal[1], type[float], type[str]]'
     >>> union = _ast_node_for(source)
-    >>> members = (
-    ...     union.slice.elts if sys.version_info >= (3, 9) else union.slice.value.elts
-    ... )
-    >>> analysis = _analyse_union(members)
+    >>> analysis = _analyse_union(union.slice.elts)
     >>> len(analysis.members_by_dump["Name(id='memoryview', ctx=Load())"])
     2
     >>> analysis.dupes_in_union
@@ -617,11 +582,11 @@ def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
     True
     >>> analysis.non_literals_in_union
     True
-    >>> unparse(ast.Tuple(analysis.combined_literal_members))
+    >>> ast.unparse(ast.Tuple(analysis.combined_literal_members))
     "('foo', 1)"
     >>> analysis.multiple_type_subscripts_in_union
     True
-    >>> unparse(ast.Tuple(analysis.combined_type_subscripts))
+    >>> ast.unparse(ast.Tuple(analysis.combined_type_subscripts))
     '(float, str)'
     """
 
@@ -629,8 +594,8 @@ def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
     members_by_dump: defaultdict[str, list[ast.expr]] = defaultdict(list)
     builtins_classes_in_union: set[str] = set()
     literals_in_union = []
-    combined_literal_members: list[_SliceContents] = []
-    type_subscripts_in_union: list[_SliceContents] = []
+    combined_literal_members: list[ast.expr] = []
+    type_subscripts_in_union: list[ast.expr] = []
 
     for member in members:
         members_by_dump[ast.dump(member)].append(member)
@@ -665,30 +630,24 @@ def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
 
 
 class TypingLiteralAnalysis(NamedTuple):
-    members_by_dump: defaultdict[str, list[_SliceContents]]
-    members_without_none: list[_SliceContents]
-    none_members: list[_SliceContents]
+    members_by_dump: defaultdict[str, list[ast.expr]]
+    members_without_none: list[ast.expr]
+    none_members: list[ast.expr]
     contains_only_none: bool
 
 
 def _analyse_typing_Literal(node: ast.Subscript) -> TypingLiteralAnalysis:
     """Return a tuple providing analysis of a `typing.Literal` slice."""
 
-    members: Sequence[_SliceContents]
-    members_by_dump: defaultdict[str, list[_SliceContents]] = defaultdict(list)
-    members_without_none: list[_SliceContents] = []
-    none_members: list[_SliceContents] = []
+    members_by_dump: defaultdict[str, list[ast.expr]] = defaultdict(list)
+    members_without_none: list[ast.expr] = []
+    none_members: list[ast.expr] = []
 
-    if isinstance(node.slice, ast.Tuple):
-        members = node.slice.elts
-    else:
-        members = [node.slice]
+    members = node.slice.elts if isinstance(node.slice, ast.Tuple) else [node.slice]
 
     for member in members:
         members_by_dump[ast.dump(member)].append(member)
-        # https://github.com/PyCQA/flake8-pyi/pull/449#discussion_r1391804472
-        # TODO: Remove the `type: ignore` when we drop support for py38
-        if _is_None(member):  # type: ignore[arg-type,unused-ignore]
+        if _is_None(member):
             none_members.append(member)
         else:
             members_without_none.append(member)
@@ -903,7 +862,7 @@ def _is_valid_default_value_with_annotation(
         return (fullname in _ALLOWED_ATTRIBUTES_IN_DEFAULTS) or (
             fullname in _ALLOWED_MATH_ATTRIBUTES_IN_DEFAULTS
         )
-    elif isinstance(node, ast.Name):
+    if isinstance(node, ast.Name):
         return node.id in _ALLOWED_SIMPLE_ATTRIBUTES_IN_DEFAULTS
 
     return False
@@ -994,7 +953,7 @@ def _check_import_or_attribute(
 
 @dataclass
 class NestingCounter:
-    """Class to help the PyiVisitor keep track of internal state"""
+    """Class to help the PyiVisitor keep track of internal state."""
 
     nesting: int = 0
 
@@ -1008,7 +967,7 @@ class NestingCounter:
 
     @property
     def active(self) -> bool:
-        """Determine whether the level of nesting is currently non-zero"""
+        """Determine whether the level of nesting is currently non-zero."""
         return bool(self.nesting)
 
 
@@ -1072,7 +1031,7 @@ class PyiVisitor(ast.NodeVisitor):
     def visit_Attribute(self, node: ast.Attribute) -> None:
         self.generic_visit(node)
         if error_msg := _check_import_or_attribute(
-            node=node, module_name=unparse(node.value), object_name=node.attr
+            node=node, module_name=ast.unparse(node.value), object_name=node.attr
         ):
             self.error(node, error_msg)
 
@@ -1182,7 +1141,7 @@ class PyiVisitor(ast.NodeVisitor):
             )
 
     def visit_AugAssign(self, node: ast.AugAssign) -> None:
-        """Allow `__all__ += ['foo', 'bar']` in a stub file"""
+        """Allow `__all__ += ['foo', 'bar']` in a stub file."""
         target, value = node.target, node.value
         self.visit(target)
         if _is_name(target, "__all__") and isinstance(node.op, ast.Add):
@@ -1223,7 +1182,7 @@ class PyiVisitor(ast.NodeVisitor):
                 value=assignment,
                 simple=1,
             )
-            self.error(node, Y026.format(suggestion=unparse(new_node)))
+            self.error(node, Y026.format(suggestion=ast.unparse(new_node)))
 
     def visit_Name(self, node: ast.Name) -> None:
         self.generic_visit(node)
@@ -1240,7 +1199,10 @@ class PyiVisitor(ast.NodeVisitor):
                 self.error(node, Y031)
             return
         elif _is_deprecated(function):
-            with self.string_literals_allowed.enabled(), self.long_strings_allowed.enabled():
+            with (
+                self.string_literals_allowed.enabled(),
+                self.long_strings_allowed.enabled(),
+            ):
                 for arg in chain(node.args, node.keywords):
                     self.visit(arg)
             return
@@ -1385,7 +1347,9 @@ class PyiVisitor(ast.NodeVisitor):
             )
             self.error(
                 node,
-                Y064.format(suggestion=unparse(suggestion), original=unparse(node)),
+                Y064.format(
+                    suggestion=ast.unparse(suggestion), original=ast.unparse(node)
+                ),
             )
             return True
         return False
@@ -1398,7 +1362,7 @@ class PyiVisitor(ast.NodeVisitor):
 
         for member_list in analysis.members_by_dump.values():
             if len(member_list) >= 2:
-                self.error(member_list[1], Y016.format(unparse(member_list[1])))
+                self.error(member_list[1], Y016.format(ast.unparse(member_list[1])))
 
         if not analysis.dupes_in_union:
             self._check_for_Y051_violations(analysis)
@@ -1428,7 +1392,7 @@ class PyiVisitor(ast.NodeVisitor):
                 self.error(
                     literal,
                     Y051.format(
-                        literal_subtype=f"Literal[{unparse(literal)}]",
+                        literal_subtype=f"Literal[{ast.unparse(literal)}]",
                         builtin_supertype=typename,
                     ),
                 )
@@ -1456,7 +1420,7 @@ class PyiVisitor(ast.NodeVisitor):
         self, first_union_member: ast.expr, analysis: UnionAnalysis
     ) -> None:
         new_literal_members = analysis.combined_literal_members
-        new_literal_slice = unparse(ast.Tuple(new_literal_members)).strip("()")
+        new_literal_slice = ast.unparse(ast.Tuple(new_literal_members)).strip("()")
 
         if analysis.non_literals_in_union:
             suggestion = f'Combine them into one, e.g. "Literal[{new_literal_slice}]".'
@@ -1474,13 +1438,13 @@ class PyiVisitor(ast.NodeVisitor):
         # Union using bit or, e.g. type[str] | type[int]
         if is_pep_604_union:
             new_union = " | ".join(
-                unparse(expr) for expr in analysis.combined_type_subscripts
+                ast.unparse(expr) for expr in analysis.combined_type_subscripts
             )
         # Union is the explicit Union type, e.g. Union[type[str], type[int]]
         else:
-            type_slice = unparse(ast.Tuple(analysis.combined_type_subscripts)).strip(
-                "()"
-            )
+            type_slice = ast.unparse(
+                ast.Tuple(analysis.combined_type_subscripts)
+            ).strip("()")
             new_union = f"Union[{type_slice}]"
 
         suggestion = f'Combine them into one, e.g. "type[{new_union}]".'
@@ -1509,15 +1473,11 @@ class PyiVisitor(ast.NodeVisitor):
         self._check_union_members(members, is_pep_604_union=True)
 
     def _Y090_error(self, node: ast.Subscript) -> None:
-        current_code = unparse(node)
-        typ = unparse(node.slice)
+        current_code = ast.unparse(node)
+        typ = ast.unparse(node.slice)
         copied_node = deepcopy(node)
-        new_slice = ast.Tuple(elts=[copied_node.slice, ast.Constant(...)])
-        if sys.version_info >= (3, 9):
-            copied_node.slice = new_slice
-        else:
-            copied_node.slice = ast.Index(new_slice)
-        suggestion = unparse(copied_node)
+        copied_node.slice = ast.Tuple(elts=[copied_node.slice, ast.Constant(...)])
+        suggestion = ast.unparse(copied_node)
         self.error(node, Y090.format(original=current_code, typ=typ, new=suggestion))
 
     def visit_Subscript(self, node: ast.Subscript) -> None:
@@ -1545,21 +1505,19 @@ class PyiVisitor(ast.NodeVisitor):
 
         Y062_encountered = False
         for member_list in analysis.members_by_dump.values():
-            # https://github.com/PyCQA/flake8-pyi/pull/449#discussion_r1391804472
-            # TODO: Remove the `type: ignore` when we drop support for py38
-            if len(member_list) > 1 and not _is_None(member_list[0]):  # type: ignore[arg-type,unused-ignore]
+            if len(member_list) > 1 and not _is_None(member_list[0]):
                 Y062_encountered = True
-                self.error(member_list[1], Y062.format(unparse(member_list[1])))
+                self.error(member_list[1], Y062.format(ast.unparse(member_list[1])))
 
         if not Y062_encountered and not self.Y061_suppressed.active:
             if analysis.contains_only_none:
                 self.error(node.slice, Y061.format(suggestion="None"))
             elif analysis.none_members:
                 if len(analysis.members_without_none) == 1:
-                    new_literal_slice = unparse(analysis.members_without_none[0])
+                    new_literal_slice = ast.unparse(analysis.members_without_none[0])
                 else:
                     new_slice_node = ast.Tuple(elts=analysis.members_without_none)
-                    new_literal_slice = unparse(new_slice_node).strip("()")
+                    new_literal_slice = ast.unparse(new_slice_node).strip("()")
                 suggestion = f"Literal[{new_literal_slice}] | None"
                 self.error(analysis.none_members[0], Y061.format(suggestion=suggestion))
 
@@ -1574,7 +1532,10 @@ class PyiVisitor(ast.NodeVisitor):
             # Allow literals, except in the first argument
             if len(node.elts) > 1:
                 self.visit(node.elts[0])
-                with self.string_literals_allowed.enabled(), self.long_strings_allowed.enabled():
+                with (
+                    self.string_literals_allowed.enabled(),
+                    self.long_strings_allowed.enabled(),
+                ):
                     for elt in node.elts[1:]:
                         self.visit(elt)
             else:
@@ -1645,7 +1606,7 @@ class PyiVisitor(ast.NodeVisitor):
             and isinstance(op, ast.Lt)  # sys.version_info < ...
             and if_chain_ends_with_else(node)
         ):
-            new_syntax = "if " + unparse(test).replace("<", ">=", 1)
+            new_syntax = "if " + ast.unparse(test).replace("<", ">=", 1)
             self.error(node, Y066.format(new_syntax=new_syntax))
 
     def _check_subscript_version_check(self, node: ast.Compare) -> None:
@@ -1765,7 +1726,7 @@ class PyiVisitor(ast.NodeVisitor):
             if len(subscript_bases) > 1 and all_equal(
                 ast.dump(subscript_base.slice) for subscript_base in subscript_bases
             ):
-                msg = Y060.format(redundant_base=unparse(Generic_basenode))
+                msg = Y060.format(redundant_base=ast.unparse(Generic_basenode))
                 self.error(Generic_basenode, msg)
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
@@ -1828,7 +1789,7 @@ class PyiVisitor(ast.NodeVisitor):
                     error_for_bad_exit_method(
                         f"Star-args in an {method_name} method "
                         f'should be annotated with "object", '
-                        f'not "{unparse(varargs_annotation)}"'
+                        f'not "{ast.unparse(varargs_annotation)}"'
                     )
             else:
                 error_for_bad_exit_method(
@@ -1863,7 +1824,7 @@ class PyiVisitor(ast.NodeVisitor):
             error_msg_details = (
                 f"The {arg_name} arg in an {method_name} method "
                 f'should be annotated with "{correct_annotation}" or "object", '
-                f'not "{unparse(annotation_node)}"'
+                f'not "{ast.unparse(annotation_node)}"'
             )
 
             error_for_bad_exit_method(details=error_msg_details)
@@ -1965,7 +1926,7 @@ class PyiVisitor(ast.NodeVisitor):
                     and (_is_Any(elts[1]) or _is_None(elts[1]))
                     and (_is_Any(elts[2]) or _is_None(elts[2]))
                 ):
-                    example_returns = f"Iterator[{unparse(returns.slice.elts[0])}]"
+                    example_returns = f"Iterator[{ast.unparse(returns.slice.elts[0])}]"
                     self._Y058_error(node, non_kw_only_args, example_returns)
 
     def _check_aiter_returns(
@@ -1992,7 +1953,9 @@ class PyiVisitor(ast.NodeVisitor):
             ):
                 elts = returns.slice.elts
                 if len(elts) == 2 and (_is_Any(elts[1]) or _is_None(elts[1])):
-                    example_returns = f"AsyncIterator[{unparse(returns.slice.elts[0])}]"
+                    example_returns = (
+                        f"AsyncIterator[{ast.unparse(returns.slice.elts[0])}]"
+                    )
                     self._Y058_error(node, non_kw_only_args, example_returns)
 
     def _visit_synchronous_method(
@@ -2313,8 +2276,7 @@ class PyiTreeChecker:
     def run(self) -> Iterable[Error]:
         if self.filename.endswith(".pyi"):
             yield from _check_for_type_comments(self.lines)
-            tree = LegacyNormalizer().visit(self.tree)
-            yield from PyiVisitor(filename=self.filename).run(tree)
+            yield from PyiVisitor(filename=self.filename).run(self.tree)
 
     @staticmethod
     def add_options(parser: OptionManager) -> None:
