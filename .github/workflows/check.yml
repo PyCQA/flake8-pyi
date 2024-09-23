@@ -49,7 +49,7 @@ jobs:
         with:
           version: "latest"
       - run: |
-          uv run --python=3.12 --extra=-dev flake8 $(git ls-files | grep 'py$') --color=always
+          uv run --python=3.12 --extra=dev flake8 $(git ls-files | grep 'py$') --color=always
 
   tests:
     name: pytest suite
