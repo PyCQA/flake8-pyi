@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## 24.9.0
 
 Bugfixes
 * Don't emit Y053 for long strings inside `Literal` slices or
