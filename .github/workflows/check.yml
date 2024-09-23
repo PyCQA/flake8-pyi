@@ -33,13 +33,11 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v1
         with:
-          python-version: "3.12"
-          allow-prereleases: true
-      - run: curl -LsSf https://astral.sh/uv/install.sh | sh
-      - run: uv pip install -e .[dev] --system
-      - run: mypy --python-version=${{ matrix.python-version }}
+          version: "latest"
+      - run: |
+          uv run --python=3.12 --extra=dev mypy --python-version=${{ matrix.python-version }}
 
   flake8:
     name: flake8
@@ -47,13 +45,11 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v1
         with:
-          python-version: "3.12"
-      - run: curl -LsSf https://astral.sh/uv/install.sh | sh
-      - run: uv pip install -e .[dev] --system
+          version: "latest"
       - run: |
-          flake8 $(git ls-files | grep 'py$') --color always
+          uv run --python=3.12 --extra=dev flake8 $(git ls-files | grep 'py$') --color=always
 
   tests:
     name: pytest suite
@@ -66,11 +62,8 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v1
         with:
-          python-version: ${{ matrix.python-version }}
-          allow-prereleases: true
-          cache: pip
-          cache-dependency-path: pyproject.toml
-      - run: pip install -e .[dev]
-      - run: python3 -m pytest -vv
+          version: "latest"
+      - run: |
+          uv run --python=${{ matrix.python-version }} --extra=dev pytest -vv
