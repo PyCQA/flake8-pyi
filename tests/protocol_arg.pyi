@@ -1,3 +1,4 @@
+# flags: --extend-select=Y091
 from typing import Protocol
 
 class P(Protocol):
