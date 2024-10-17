@@ -1,5 +1,10 @@
 # Change Log
 
+## Unreleased
+
+New error codes:
+* Introduce Y091: Protocol method parameters should not be positional-or-keyword.
+
 ## 24.9.0
 
 Bugfixes
@@ -83,7 +88,6 @@ New error codes:
 * Y060, which flags redundant inheritance from `Generic[]`.
 * Y061: Do not use `None` inside a `Literal[]` slice.
   For example, use `Literal["foo"] | None` instead of `Literal["foo", None]`.
-* Introduce Y067: Protocol method parameters should not be positional-or-keyword.
 
 Other changes:
 * The undocumented `pyi.__version__` and `pyi.PyiTreeChecker.version`

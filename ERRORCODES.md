@@ -80,7 +80,6 @@ The following warnings are currently emitted by default:
 | <a id="Y064" href="#Y064">Y064</a> | Use simpler syntax to define final literal types. For example, use `x: Final = 42` instead of `x: Final[Literal[42]]`. | Style
 | <a id="Y065" href="#Y065">Y065</a> | Don't use bare `Incomplete` in argument and return annotations. Instead, leave them unannotated. Omitting an annotation entirely from a function will cause some type checkers to view the parameter or return type as "untyped"; this may result in stricter type-checking on code that makes use of the stubbed function. | Style
 | <a id="Y066" href="#Y066">Y066</a> | When using if/else with `sys.version_info`, put the code for new Python versions first. | Style
-| <a id="Y067" href="#Y067">Y067</a> | Protocol methods should not have positional-or-keyword parameters. Usually, a positional-only parameter is better.
 
 ## Warnings disabled by default
 
@@ -96,3 +95,4 @@ recommend only using `--extend-select`, never `--select`.
 | Code | Description | Code category
 |------|-------------|---------------
 | <a id="Y090" href="#Y090">Y090</a> | `tuple[int]` means "a tuple of length 1, in which the sole element is of type `int`". Consider using `tuple[int, ...]` instead, which means "a tuple of arbitrary (possibly 0) length, in which all elements are of type `int`". | Correctness
+| <a id="Y091" href="#Y091">Y091</a> | Protocol methods should not have positional-or-keyword parameters. Usually, a positional-only parameter is better.

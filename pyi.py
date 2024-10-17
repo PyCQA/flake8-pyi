@@ -2129,7 +2129,7 @@ class PyiVisitor(ast.NodeVisitor):
         for pos_or_kw in node.args.args[1:]:  # exclude "self"
             if pos_or_kw.arg.startswith("__"):
                 continue
-            self.error(pos_or_kw, Y067.format(arg=pos_or_kw.arg, method=node.name))
+            self.error(pos_or_kw, Y091.format(arg=pos_or_kw.arg, method=node.name))
 
     @staticmethod
     def _is_positional_pre_570_argname(name: str) -> bool:
@@ -2420,14 +2420,14 @@ Y066 = (
     "Y066 When using if/else with sys.version_info, "
     'put the code for new Python versions first, e.g. "{new_syntax}"'
 )
-Y067 = (
-    'Y067 Argument "{arg}" to protocol method "{method}" should probably not be positional-or-keyword. '
-    "Make it positional-only, since usually you don't want to mandate a specific argument name"
-)
 Y090 = (
     'Y090 "{original}" means '
     '"a tuple of length 1, in which the sole element is of type {typ!r}". '
     'Perhaps you meant "{new}"?'
 )
+Y091 = (
+    'Y091 Argument "{arg}" to protocol method "{method}" should probably not be positional-or-keyword. '
+    "Make it positional-only, since usually you don't want to mandate a specific argument name"
+)
 
-DISABLED_BY_DEFAULT = ["Y090"]
+DISABLED_BY_DEFAULT = ["Y090", "Y091"]
