@@ -2088,7 +2088,11 @@ class PyiVisitor(ast.NodeVisitor):
         ):
             self._Y019_error(method, cls_typevar)
 
-    def check_self_typevars(self, node: ast.FunctionDef | ast.AsyncFunctionDef, decorator_names: Container[str]) -> None:
+    def check_self_typevars(
+        self,
+        node: ast.FunctionDef | ast.AsyncFunctionDef,
+        decorator_names: Container[str],
+    ) -> None:
         pos_or_keyword_args = node.args.posonlyargs + node.args.args
 
         if not pos_or_keyword_args:
@@ -2118,7 +2122,9 @@ class PyiVisitor(ast.NodeVisitor):
             )
 
     def check_protocol_param_kinds(
-        self, node: ast.FunctionDef | ast.AsyncFunctionDef, decorator_names: Container[str]
+        self,
+        node: ast.FunctionDef | ast.AsyncFunctionDef,
+        decorator_names: Container[str],
     ) -> None:
         if "staticmethod" in decorator_names:
             relevant_params = node.args.args
