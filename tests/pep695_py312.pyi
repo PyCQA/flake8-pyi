@@ -3,7 +3,16 @@
 
 import typing
 from collections.abc import Iterator
-from typing import Any, NamedTuple, NoReturn, Protocol, Self, TypedDict
+from typing import (
+    Annotated,
+    Any,
+    Literal,
+    NamedTuple,
+    NoReturn,
+    Protocol,
+    Self,
+    TypedDict,
+)
 
 type lowercase_alias = str | int  # Y042 Type aliases should use the CamelCase naming convention
 type _LooksLikeATypeVarT = str | int  # Y043 Bad name for a type alias (the "T" suffix implies a TypeVar)
@@ -66,3 +75,6 @@ class _UnusedPEP695Protocol[T](Protocol):  # Y046 Protocol "_UnusedPEP695Protoco
 
 class _UnusedPEP695TypedDict[T](TypedDict):  # Y049 TypedDict "_UnusedPEP695TypedDict" is not used
     x: T
+
+type X = Literal["Y053 will not be emitted here despite it being a very long string literal, because it is inside a `Literal` slice"]
+type Y = Annotated[int, "look at me, very long string literal, but it's okay because it's an `Annotated` metadata string"]

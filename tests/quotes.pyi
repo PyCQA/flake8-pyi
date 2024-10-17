@@ -25,7 +25,7 @@ _V = TypeVar()
 
 def make_sure_those_typevars_arent_flagged_as_unused(a: _T, b: _T2, c: _S, d: _U, e: _U2, f: _V) -> tuple[_T, _T2, _S, _U, _U2, _V]: ...
 
-def h(w: Literal["a", "b"], x: typing.Literal["c"], y: typing_extensions.Literal["d"], z: _T) -> _T: ...
+def h(w: Literal["a", "b"], x: typing.Literal["c"], y: typing_extensions.Literal["d"], z: _T) -> _T: ...  # Y023 Use "typing.Literal" instead of "typing_extensions.Literal"
 
 def i(x: Annotated[int, "lots", "of", "strings"], b: typing.Annotated[str, "more", "strings"]) -> None:
     """Documented and guaranteed useful."""  # Y021 Docstrings should not be included in stubs

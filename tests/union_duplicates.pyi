@@ -3,13 +3,13 @@ import builtins
 import typing
 from collections.abc import Mapping
 from typing import (  # Y022 Use "type[MyClass]" instead of "typing.Type[MyClass]" (PEP 585 syntax)
+    Literal,
     Type,
     Union,
 )
 
 import typing_extensions
 from typing_extensions import (  # Y022 Use "type[MyClass]" instead of "typing_extensions.Type[MyClass]" (PEP 585 syntax)
-    Literal,
     Type as Type_,
     TypeAlias,
 )
@@ -49,7 +49,7 @@ def f13_union(x: Union[Type_[int], Type_[str]]) -> None: ...
 def f14_union(x: Union[typing_extensions.Type[int], typing_extensions.Type[str]]) -> None: ...  # Y022 Use "type[MyClass]" instead of "typing_extensions.Type[MyClass]" (PEP 585 syntax) # Y022 Use "type[MyClass]" instead of "typing_extensions.Type[MyClass]" (PEP 585 syntax)
 
 just_literals_subscript_union: Union[Literal[1], typing.Literal[2]]  # Y030 Multiple Literal members in a union. Use a single Literal, e.g. "Literal[1, 2]".
-mixed_subscript_union: Union[bytes, Literal['foo'], typing_extensions.Literal['bar']]  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal['foo', 'bar']".
+mixed_subscript_union: Union[bytes, Literal['foo'], typing_extensions.Literal['bar']]  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal['foo', 'bar']". # Y023 Use "typing.Literal" instead of "typing_extensions.Literal"
 just_literals_pipe_union: TypeAlias = Literal[True] | Literal['idk']  # Y042 Type aliases should use the CamelCase naming convention  # Y030 Multiple Literal members in a union. Use a single Literal, e.g. "Literal[True, 'idk']".
 _mixed_pipe_union: TypeAlias = Union[Literal[966], bytes, Literal['baz']]  # Y042 Type aliases should use the CamelCase naming convention  # Y047 Type alias "_mixed_pipe_union" is not used  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal[966, 'baz']".
 ManyLiteralMembersButNeedsCombining: TypeAlias = int | Literal['a', 'b'] | Literal['baz']  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal['a', 'b', 'baz']".

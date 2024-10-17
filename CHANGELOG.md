@@ -1,15 +1,87 @@
 # Change Log
 
-## Unreleased
+## 24.9.0
+
+Bugfixes
+* Don't emit Y053 for long strings inside `Literal` slices or
+  metadata strings inside `Annotated` slices.
+
+Other changes:
+* `flake8-pyi` no longer supports being run using Python 3.8.
+  As a result, it not longer depends on the third-party
+  `ast_decompiler` package.
+
+## 24.6.0
+
+Bugfixes
+* Allow the use of `typing_extensions.TypeVar` in stubs.
+  `typing_extensions.TypeVar` has the *default* parameter,
+  which only exists on Python 3.13+ when using `typing.TypeVar`.
+* Reduce false positives from Y052 in relation to enum subclasses.
+
+Other changes
+* Declare support for Python 3.13
+
+## 24.4.1
 
 New error codes:
-* Introduce Y058: Use `Iterator` rather than `Generator` as the return value
+* Y066: When using if/else with `sys.version_info`,
+  put the code for new Python versions first.
+
+## 24.4.0
+
+Bugfixes:
+* Fix Y026 false positive: allow simple assignment to `None` in class scopes
+  if the class is known to be an enum class.
+
+## 24.3.1
+
+New error codes:
+* Y064: Use simpler syntax to define final literal types.
+  For example, use `x: Final = 42` instead of `x: Final[Literal[42]]`
+* Y065: Don't use bare `Incomplete` in parameter and return annotations.
+
+Bugfixes:
+* Y090: Fix false positive for `tuple[Unpack[Ts]]`.
+
+## 24.3.0
+
+New error codes:
+* Y063: Use [PEP 570 syntax](https://peps.python.org/pep-0570/) to mark
+  positional-only arguments, rather than
+  [the older Python 3.7-compatible syntax](https://peps.python.org/pep-0484/#positional-only-arguments)
+  described in PEP 484.
+
+## 24.1.0
+
+New error codes:
+* Y062: Disallow duplicate elements inside `Literal[]` slices.
+
+Other features:
+* Support flake8>=7.0.0
+* Y061 is no longer emitted in situations where Y062 would also be emitted.
+* Improve error message for Y060.
+* Y023 now bans more imports from `typing_extensions` now that typeshed has
+  dropped support for Python 3.7.
+
+Bugfixes:
+* Y016: Fix false positive if a method had positional-only parameters (using
+  [PEP 570 syntax](https://peps.python.org/pep-0570/) and the first
+  positional-or-keyword parameter following the positional-only parameters used
+  a custom TypeVar (see #455).
+* Y046: Fix false negative where an unused protocol would not be detected if
+  the protocol was generic.
+
+## 23.11.0
+
+New error codes:
+* Y058: Use `Iterator` rather than `Generator` as the return value
   for simple `__iter__` methods, and `AsyncIterator` rather than
   `AsyncGenerator` as the return value for simple `__aiter__` methods.
-* Introduce Y059: `Generic[]` should always be the last base class, if it is
+* Y059: `Generic[]` should always be the last base class, if it is
   present in the bases of a class.
-* Introduce Y060, which flags redundant inheritance from `Generic[]`.
-* Introduce Y061: Do not use `None` inside a `Literal[]` slice.
+* Y060, which flags redundant inheritance from `Generic[]`.
+* Y061: Do not use `None` inside a `Literal[]` slice.
   For example, use `Literal["foo"] | None` instead of `Literal["foo", None]`.
 * Introduce Y062: Protocol method parameters should not be positional-or-keyword.
 
@@ -30,6 +102,7 @@ Other changes:
   reduce the number of false positives from this check.
 * Attempting to import `typing_extensions.Text` now causes Y039 to be emitted
   rather than Y023.
+* Y053 will no longer be emitted for the argument to `@typing_extensions.deprecated`.
 
 ## 23.10.0
 

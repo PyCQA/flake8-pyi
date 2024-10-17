@@ -15,7 +15,7 @@ class V(NamedTuple):
 # BAD TYPEDDICTS
 W = TypedDict("W", {'foo': str, 'bar': int})  # Y031 Use class-based syntax for TypedDicts where possible
 B = typing.TypedDict("B", {'foo': str, 'bar': int})  # Y031 Use class-based syntax for TypedDicts where possible
-WithTotal = typing_extensions.TypedDict("WithTotal", {'foo': str, 'bar': int}, total=False)  # Y031 Use class-based syntax for TypedDicts where possible
+WithTotal = typing_extensions.TypedDict("WithTotal", {'foo': str, 'bar': int}, total=False)  # Y023 Use "typing.TypedDict" instead of "typing_extensions.TypedDict"  # Y031 Use class-based syntax for TypedDicts where possible
 BB = mypy_extensions.TypedDict("BB", {'foo': str, 'bar': int})  # Y031 Use class-based syntax for TypedDicts where possible
 
 # we don't want these two to raise errors (type-checkers already do that for us),
@@ -25,7 +25,7 @@ WeirdThirdArg = TypedDict("WeirdThirdArg", {'foo': int, "wot": str}, "who knows?
 
 # GOOD TYPEDDICTS
 C = typing.TypedDict("B", {'field has a space': list[int]})
-D = typing_extensions.TypedDict("C", {'while': bytes, 'for': int})
+D = typing_extensions.TypedDict("C", {'while': bytes, 'for': int})  # Y023 Use "typing.TypedDict" instead of "typing_extensions.TypedDict"
 E = TypedDict("D", {'[][]': dict[str, int]})
 F = TypedDict("E", {'1': list[str], '2': str})
 

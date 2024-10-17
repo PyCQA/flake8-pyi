@@ -19,13 +19,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Download errors
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: await require('.github/scripts/typeshed_primer_download_errors.js')({github, context})
       - run: unzip errors.zip
       - name: Post comment
         id: post-comment
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: return await require('.github/scripts/typeshed_primer_post_comment.js')({github, context})

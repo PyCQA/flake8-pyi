@@ -8,14 +8,14 @@ import logging
 import re
 import sys
 from collections import Counter, defaultdict
-from collections.abc import Container, Iterable, Iterator, Sequence
+from collections.abc import Container, Iterable, Iterator, Sequence, Set as AbstractSet
 from contextlib import contextmanager
 from copy import deepcopy
 from dataclasses import dataclass
-from functools import partial
-from itertools import chain, zip_longest
+from functools import cached_property, partial
+from itertools import chain, groupby, zip_longest
 from keyword import iskeyword
-from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple, Union
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, NamedTuple, Protocol
 
 from flake8 import checker
 from flake8.options.manager import OptionManager
@@ -23,20 +23,11 @@ from flake8.plugins.finder import LoadedPlugin
 from flake8.plugins.pyflakes import FlakesChecker
 from pyflakes.checker import ModuleScope
 
-if sys.version_info >= (3, 9):
-    from ast import unparse
-else:
-    from ast_decompiler import decompile
-
-    def unparse(node: ast.AST) -> str:
-        return decompile(node).strip("\n")
-
-
 if TYPE_CHECKING:
     # We don't have typing_extensions as a runtime dependency,
     # but all our annotations are stringized due to __future__ annotations,
     # and mypy thinks typing_extensions is part of the stdlib.
-    from typing_extensions import Literal, TypeAlias, TypeGuard
+    from typing_extensions import TypeAlias, TypeGuard
 
 LOG = logging.getLogger("flake8.pyi")
 
@@ -45,22 +36,32 @@ if sys.version_info >= (3, 12):
 else:
     _TypeAliasNodeType: TypeAlias = ast.AnnAssign
 
-if sys.version_info >= (3, 9):
-    _SliceContents: TypeAlias = ast.expr
-else:
-    _SliceContents: TypeAlias = Union[ast.expr, ast.slice]
-
 
 class Error(NamedTuple):
     lineno: int
     col: int
     message: str
-    type: type
+    type: type[PyiTreeChecker]
 
 
 class TypeVarInfo(NamedTuple):
     cls_name: str
     name: str
+
+
+class NodeWithLocation(Protocol):
+    lineno: int
+    col_offset: int
+
+
+def all_equal(iterable: Iterable[object]) -> bool:
+    """Returns True if all the elements are equal to each other.
+
+    Adapted from the CPython itertools documentation.
+    """
+    g = groupby(iterable)
+    next(g, True)
+    return not next(g, False)
 
 
 _MAPPING_SLICE = "KeyType, ValueType"
@@ -117,26 +118,38 @@ _BAD_Y022_IMPORTS: dict[str, tuple[str, str | None]] = {
 }
 
 # Y023: Import things from typing instead of typing_extensions
-# if they're available from the typing module on 3.7+
+# if they're available from the typing module on 3.8+
 _BAD_TYPINGEXTENSIONS_Y023_IMPORTS = frozenset(
     {
+        "Any",
         "AnyStr",
         "BinaryIO",
+        "Final",
         "ForwardRef",
         "Generic",
         "IO",
+        "Literal",
         "Protocol",
         "TextIO",
         "runtime_checkable",
         "NewType",
+        "SupportsAbs",
+        "SupportsComplex",
+        "SupportsFloat",
+        "SupportsIndex",
+        "SupportsInt",
+        "SupportsRound",
+        "TypedDict",
+        "final",
         "overload",
         "NoReturn",
         # ClassVar deliberately omitted,
         # as it's the only one in this group that should be parameterised.
         # It is special-cased elsewhere.
         #
-        # Text is also deliberately omitted,
-        # as you shouldn't be importing it from anywhere! (Y039)
+        # Text/Optional/Union are also deliberately omitted,
+        # as well as the various stdlib aliases in typing(_extensions),
+        # as you shouldn't be importing them from anywhere! (Y039)
     }
 )
 
@@ -176,7 +189,6 @@ class PyiAwareFlakesChecker(FlakesChecker):
     @annotationsFutureEnabled.setter
     def annotationsFutureEnabled(self, value: bool) -> None:
         """Does nothing, as we always want this property to be `True`."""
-        pass
 
     def ASSIGN(
         self, tree: ast.Assign, omit: str | tuple[str, ...] | None = None
@@ -225,33 +237,15 @@ class PyiAwareFileChecker(checker.FileChecker):
         return super().run_check(plugin, **kwargs)
 
 
-class LegacyNormalizer(ast.NodeTransformer):
-    """Transform AST to be consistent across Python versions."""
-
-    if sys.version_info < (3, 9):
-
-        def visit_Index(self, node: ast.Index) -> ast.expr:
-            """Index nodes no longer exist in Python 3.9.
-
-            For example, consider the AST representing Union[str, int].
-            Before 3.9:
-                Subscript(value=Name(id='Union'), slice=Index(value=Tuple(...)))
-            3.9 and newer:
-                Subscript(value=Name(id='Union'), slice=Tuple(...))
-            """
-            self.generic_visit(node)
-            return node.value
-
-
 def _ast_node_for(string: str) -> ast.AST:
-    """Helper function for doctests"""
+    """Helper function for doctests."""
     expr = ast.parse(string).body[0]
     assert isinstance(expr, ast.Expr)
     return expr.value
 
 
 def _is_name(node: ast.AST | None, name: str) -> bool:
-    """Return True if `node` is an `ast.Name` node with id `name`
+    """Return True if `node` is an `ast.Name` node with id `name`.
 
     >>> node = ast.Name(id="Any")
     >>> _is_name(node, "Any")
@@ -300,6 +294,9 @@ def _is_object(node: ast.AST | None, name: str, *, from_: Container[str]) -> boo
 _is_BaseException = partial(_is_object, name="BaseException", from_={"builtins"})
 _is_TypeAlias = partial(_is_object, name="TypeAlias", from_=_TYPING_MODULES)
 _is_NamedTuple = partial(_is_object, name="NamedTuple", from_=_TYPING_MODULES)
+_is_deprecated = partial(
+    _is_object, name="deprecated", from_={"typing_extensions", "warnings"}
+)
 _is_TypedDict = partial(
     _is_object, name="TypedDict", from_=_TYPING_MODULES | {"mypy_extensions"}
 )
@@ -313,6 +310,7 @@ _is_TracebackType = partial(_is_object, name="TracebackType", from_={"types"})
 _is_builtins_object = partial(_is_object, name="object", from_={"builtins"})
 _is_builtins_type = partial(_is_object, name="type", from_={"builtins"})
 _is_Unused = partial(_is_object, name="Unused", from_={"_typeshed"})
+_is_Incomplete = partial(_is_object, name="Incomplete", from_={"_typeshed"})
 _is_Iterable = partial(_is_object, name="Iterable", from_=_TYPING_OR_COLLECTIONS_ABC)
 _is_AsyncIterable = partial(
     _is_object, name="AsyncIterable", from_=_TYPING_OR_COLLECTIONS_ABC
@@ -325,6 +323,7 @@ _is_AsyncGenerator = partial(
     _is_object, name="AsyncGenerator", from_=_TYPING_OR_COLLECTIONS_ABC
 )
 _is_Generic = partial(_is_object, name="Generic", from_=_TYPING_MODULES)
+_is_Unpack = partial(_is_object, name="Unpack", from_=_TYPING_MODULES)
 
 
 def _is_object_or_Unused(node: ast.expr | None) -> bool:
@@ -427,38 +426,6 @@ def _analyse_exit_method_arg(node: ast.BinOp) -> ExitArgAnalysis:
     return ExitArgAnalysis(is_union_with_None=False, non_None_part=None)
 
 
-def _is_decorated_with_final(
-    node: ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef,
-) -> bool:
-    return any(_is_final(decorator) for decorator in node.decorator_list)
-
-
-def _get_collections_abc_obj_id(node: ast.expr | None) -> str | None:
-    """
-    If the node represents a subscripted object from collections.abc or typing,
-    return the name of the object.
-    Else, return None.
-
-    >>> _get_collections_abc_obj_id(_ast_node_for('AsyncIterator[str]'))
-    'AsyncIterator'
-    >>> _get_collections_abc_obj_id(_ast_node_for('typing.AsyncIterator[str]'))
-    'AsyncIterator'
-    >>> node = _ast_node_for('typing_extensions.AsyncIterator[str]')
-    >>> _get_collections_abc_obj_id(node)
-    'AsyncIterator'
-    >>> _get_collections_abc_obj_id(_ast_node_for('collections.abc.AsyncIterator[str]'))
-    'AsyncIterator'
-    >>> node = _ast_node_for('collections.OrderedDict[str, int]')
-    >>> _get_collections_abc_obj_id(node) is None
-    True
-    """
-    if not isinstance(node, ast.Subscript):
-        return None
-    return _get_name_of_class_if_from_modules(
-        node.value, modules=_TYPING_OR_COLLECTIONS_ABC
-    )
-
-
 _INPLACE_BINOP_METHODS = frozenset(
     {
         "__iadd__",
@@ -479,12 +446,12 @@ _INPLACE_BINOP_METHODS = frozenset(
 
 
 def _has_bad_hardcoded_returns(
-    method: ast.FunctionDef | ast.AsyncFunctionDef, *, classdef: ast.ClassDef
+    method: ast.FunctionDef | ast.AsyncFunctionDef, *, class_ctx: EnclosingClassContext
 ) -> bool:
     """Return `True` if `function` should be rewritten with `typing_extensions.Self`."""
     # PEP 673 forbids the use of `typing(_extensions).Self` in metaclasses.
     # Do our best to avoid false positives here:
-    if _is_metaclass(classdef):
+    if class_ctx.is_metaclass:
         return False
 
     # Much too complex for our purposes to worry
@@ -503,34 +470,40 @@ def _has_bad_hardcoded_returns(
     if isinstance(method, ast.AsyncFunctionDef):
         return (
             method_name == "__aenter__"
-            and _is_name(returns, classdef.name)
-            and not _is_decorated_with_final(classdef)
+            and _is_name(returns, class_ctx.cls_name)
+            and not class_ctx.is_decorated_with_final
         )
 
     if method_name in _INPLACE_BINOP_METHODS:
         return returns is not None and not _is_Self(returns)
 
-    if _is_name(returns, classdef.name):
-        return method_name in {"__enter__", "__new__"} and not _is_decorated_with_final(
-            classdef
-        )
-
-    return_obj_name = _get_collections_abc_obj_id(returns)
-    bases = {_get_collections_abc_obj_id(base_node) for base_node in classdef.bases}
-
-    if method_name == "__iter__":
-        return return_obj_name in {"Iterable", "Iterator"} and "Iterator" in bases
-    elif method_name == "__aiter__":
+    if _is_name(returns, class_ctx.cls_name):
         return (
-            return_obj_name in {"AsyncIterable", "AsyncIterator"}
-            and "AsyncIterator" in bases
+            method_name in {"__enter__", "__new__"}
+            and not class_ctx.is_decorated_with_final
         )
+
+    if isinstance(returns, ast.Subscript):
+        return_obj_name = _get_name_of_class_if_from_modules(
+            returns.value, modules=_TYPING_OR_COLLECTIONS_ABC
+        )
+        if method_name == "__iter__":
+            bad_returns = {"Iterable", "Iterator"}
+            return return_obj_name in bad_returns and class_ctx.contains_in_bases(
+                "Iterator", from_=_TYPING_OR_COLLECTIONS_ABC
+            )
+        elif method_name == "__aiter__":
+            bad_returns = {"AsyncIterable", "AsyncIterator"}
+            return return_obj_name in bad_returns and class_ctx.contains_in_bases(
+                "AsyncIterator", from_=_TYPING_OR_COLLECTIONS_ABC
+            )
+
     return False
 
 
 def _unparse_func_node(node: ast.FunctionDef | ast.AsyncFunctionDef) -> str:
     """Unparse a function node, and reformat it to fit on one line."""
-    return re.sub(r"\s+", " ", unparse(node))
+    return re.sub(r"\s+", " ", ast.unparse(node))
 
 
 def _is_list_of_str_nodes(seq: list[ast.expr | None]) -> TypeGuard[list[ast.Constant]]:
@@ -586,10 +559,10 @@ class UnionAnalysis(NamedTuple):
     builtins_classes_in_union: set[str]
     multiple_literals_in_union: bool
     non_literals_in_union: bool
-    combined_literal_members: list[_SliceContents]
+    combined_literal_members: list[ast.expr]
     # type subscript == type[Foo]
     multiple_type_subscripts_in_union: bool
-    combined_type_subscripts: list[_SliceContents]
+    combined_type_subscripts: list[ast.expr]
 
 
 def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
@@ -597,10 +570,7 @@ def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
 
     >>> source = 'Union[int, memoryview, memoryview, Literal["foo"], Literal[1], type[float], type[str]]'
     >>> union = _ast_node_for(source)
-    >>> members = (
-    ...     union.slice.elts if sys.version_info >= (3, 9) else union.slice.value.elts
-    ... )
-    >>> analysis = _analyse_union(members)
+    >>> analysis = _analyse_union(union.slice.elts)
     >>> len(analysis.members_by_dump["Name(id='memoryview', ctx=Load())"])
     2
     >>> analysis.dupes_in_union
@@ -613,11 +583,11 @@ def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
     True
     >>> analysis.non_literals_in_union
     True
-    >>> unparse(ast.Tuple(analysis.combined_literal_members))
+    >>> ast.unparse(ast.Tuple(analysis.combined_literal_members))
     "('foo', 1)"
     >>> analysis.multiple_type_subscripts_in_union
     True
-    >>> unparse(ast.Tuple(analysis.combined_type_subscripts))
+    >>> ast.unparse(ast.Tuple(analysis.combined_type_subscripts))
     '(float, str)'
     """
 
@@ -625,8 +595,8 @@ def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
     members_by_dump: defaultdict[str, list[ast.expr]] = defaultdict(list)
     builtins_classes_in_union: set[str] = set()
     literals_in_union = []
-    combined_literal_members: list[_SliceContents] = []
-    type_subscripts_in_union: list[_SliceContents] = []
+    combined_literal_members: list[ast.expr] = []
+    type_subscripts_in_union: list[ast.expr] = []
 
     for member in members:
         members_by_dump[ast.dump(member)].append(member)
@@ -658,6 +628,125 @@ def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
         multiple_type_subscripts_in_union=len(type_subscripts_in_union) >= 2,
         combined_type_subscripts=type_subscripts_in_union,
     )
+
+
+class TypingLiteralAnalysis(NamedTuple):
+    members_by_dump: defaultdict[str, list[ast.expr]]
+    members_without_none: list[ast.expr]
+    none_members: list[ast.expr]
+    contains_only_none: bool
+
+
+def _analyse_typing_Literal(node: ast.Subscript) -> TypingLiteralAnalysis:
+    """Return a tuple providing analysis of a `typing.Literal` slice."""
+
+    members_by_dump: defaultdict[str, list[ast.expr]] = defaultdict(list)
+    members_without_none: list[ast.expr] = []
+    none_members: list[ast.expr] = []
+
+    members = node.slice.elts if isinstance(node.slice, ast.Tuple) else [node.slice]
+
+    for member in members:
+        members_by_dump[ast.dump(member)].append(member)
+        if _is_None(member):
+            none_members.append(member)
+        else:
+            members_without_none.append(member)
+
+    return TypingLiteralAnalysis(
+        members_by_dump=members_by_dump,
+        members_without_none=members_without_none,
+        none_members=none_members,
+        contains_only_none=bool(none_members and not members_without_none),
+    )
+
+
+_COMMON_METACLASSES = {
+    "type": "builtins",
+    "ABCMeta": "abc",
+    "EnumMeta": "enum",
+    "EnumType": "enum",
+}
+
+
+@dataclass(frozen=True)
+class EnclosingClassContext:
+    node: ast.ClassDef
+    cls_name: str
+    bases_map: defaultdict[str, set[str | None]]
+
+    def contains_in_bases(self, obj: str, *, from_: AbstractSet[str]) -> bool:
+        if obj not in self.bases_map:
+            return False
+        if None in self.bases_map[obj]:
+            return True
+        return bool(self.bases_map[obj] & from_)
+
+    @cached_property
+    def is_protocol_class(self) -> bool:
+        return self.contains_in_bases("Protocol", from_=_TYPING_MODULES)
+
+    @cached_property
+    def is_typeddict_class(self) -> bool:
+        return self.contains_in_bases(
+            "TypedDict", from_=(_TYPING_MODULES | {"mypy_extensions"})
+        )
+
+    @cached_property
+    def is_enum_class(self) -> bool:
+        return any(base_name.endswith(("Enum", "Flag")) for base_name in self.bases_map)
+
+    @cached_property
+    def is_metaclass(self) -> bool:
+        return any(
+            self.contains_in_bases(metacls, from_={module})
+            for metacls, module in _COMMON_METACLASSES.items()
+        )
+
+    @cached_property
+    def is_decorated_with_final(self) -> bool:
+        return any(_is_final(decorator) for decorator in self.node.decorator_list)
+
+
+class ClassBase(NamedTuple):
+    module: str | None
+    obj: str
+
+
+def _analyze_classdef(node: ast.ClassDef) -> EnclosingClassContext:
+    bases_map: defaultdict[str, set[str | None]] = defaultdict(set)
+
+    def _unravel(node: ast.expr) -> str | None:
+        if isinstance(node, ast.Name):
+            return node.id
+        if isinstance(node, ast.Attribute):
+            value = _unravel(node.value)
+            if value is None:
+                return None
+            return f"{value}.{node.attr}"
+        return None
+
+    def _analyze_base_node(
+        base_node: ast.expr, top_level: bool = True
+    ) -> ClassBase | None:
+        if isinstance(base_node, ast.Name):
+            return ClassBase(None, base_node.id)
+        if isinstance(base_node, ast.Attribute):
+            value = _unravel(base_node.value)
+            if value is None:
+                return None
+            return ClassBase(value, base_node.attr)
+        if isinstance(base_node, ast.Subscript) and top_level:
+            return _analyze_base_node(base_node.value, top_level=False)
+        return None
+
+    for base_node in node.bases:
+        base = _analyze_base_node(base_node)
+        if base is None:
+            continue
+        bases_map[base.obj].add(base.module)
+
+    return EnclosingClassContext(node=node, cls_name=node.name, bases_map=bases_map)
 
 
 _ALLOWED_MATH_ATTRIBUTES_IN_DEFAULTS = frozenset(
@@ -774,7 +863,7 @@ def _is_valid_default_value_with_annotation(
         return (fullname in _ALLOWED_ATTRIBUTES_IN_DEFAULTS) or (
             fullname in _ALLOWED_MATH_ATTRIBUTES_IN_DEFAULTS
         )
-    elif isinstance(node, ast.Name):
+    if isinstance(node, ast.Name):
         return node.id in _ALLOWED_SIMPLE_ATTRIBUTES_IN_DEFAULTS
 
     return False
@@ -804,49 +893,6 @@ def _is_valid_default_value_without_annotation(node: ast.expr) -> bool:
         or (isinstance(node, ast.Constant) and node.value in {None, ...})
         or _is_valid_pep_604_union(node)
     )
-
-
-_KNOWN_ENUM_BASES = frozenset(
-    {"Enum", "Flag", "IntEnum", "IntFlag", "StrEnum", "ReprEnum"}
-)
-
-
-def _is_enum_base(node: ast.expr) -> bool:
-    if isinstance(node, ast.Name):
-        return node.id in _KNOWN_ENUM_BASES
-    return (
-        isinstance(node, ast.Attribute)
-        and isinstance(node.value, ast.Name)
-        and node.value.id == "enum"
-        and node.attr in _KNOWN_ENUM_BASES
-    )
-
-
-def _is_enum_class(node: ast.ClassDef) -> bool:
-    return any(_is_enum_base(base) for base in node.bases)
-
-
-_COMMON_METACLASSES = {
-    "type": "builtins",
-    "ABCMeta": "abc",
-    "EnumMeta": "enum",
-    "EnumType": "enum",
-}
-
-
-def _is_metaclass_base(node: ast.expr) -> bool:
-    if isinstance(node, ast.Name):
-        return node.id in _COMMON_METACLASSES
-    return (
-        isinstance(node, ast.Attribute)
-        and node.attr in _COMMON_METACLASSES
-        and _is_name(node.value, _COMMON_METACLASSES[node.attr])
-    )
-
-
-def _is_metaclass(node: ast.ClassDef) -> bool:
-    """Best-effort attempt to determine if a class is a metaclass or not."""
-    return any(_is_metaclass_base(base) for base in node.bases)
 
 
 def _check_import_or_attribute(
@@ -908,7 +954,7 @@ def _check_import_or_attribute(
 
 @dataclass
 class NestingCounter:
-    """Class to help the PyiVisitor keep track of internal state"""
+    """Class to help the PyiVisitor keep track of internal state."""
 
     nesting: int = 0
 
@@ -922,7 +968,7 @@ class NestingCounter:
 
     @property
     def active(self) -> bool:
-        """Determine whether the level of nesting is currently non-zero"""
+        """Determine whether the level of nesting is currently non-zero."""
         return bool(self.nesting)
 
 
@@ -950,12 +996,13 @@ class PyiVisitor(ast.NodeVisitor):
     all_name_occurrences: Counter[str]
 
     string_literals_allowed: NestingCounter
+    long_strings_allowed: NestingCounter
     in_function: NestingCounter
-    in_class: NestingCounter
     visiting_arg: NestingCounter
+    Y061_suppressed: NestingCounter
 
     # This is only relevant for visiting classes
-    current_class_node: ast.ClassDef | None = None
+    enclosing_class_ctx: EnclosingClassContext | None = None
 
     def __init__(self, filename: str) -> None:
         self.filename = filename
@@ -967,18 +1014,27 @@ class PyiVisitor(ast.NodeVisitor):
         self.typealias_decls = defaultdict(list)
         self.all_name_occurrences = Counter()
         self.string_literals_allowed = NestingCounter()
+        self.long_strings_allowed = NestingCounter()
         self.in_function = NestingCounter()
         self.in_class = NestingCounter()
         self.in_protocol = NestingCounter()
         self.visiting_arg = NestingCounter()
+        self.Y061_suppressed = NestingCounter()
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(filename={self.filename!r})"
 
+    @property
+    def visiting_enum_class(self) -> bool:
+        return (
+            self.enclosing_class_ctx is not None
+            and self.enclosing_class_ctx.is_enum_class
+        )
+
     def visit_Attribute(self, node: ast.Attribute) -> None:
         self.generic_visit(node)
         if error_msg := _check_import_or_attribute(
-            node=node, module_name=unparse(node.value), object_name=node.attr
+            node=node, module_name=ast.unparse(node.value), object_name=node.attr
         ):
             self.error(node, error_msg)
 
@@ -1035,11 +1091,7 @@ class PyiVisitor(ast.NodeVisitor):
             return
         if _is_valid_default_value_with_annotation(assignment):
             # Annoying special-casing to exclude enums from Y052
-            if self.in_class.active:
-                assert self.current_class_node is not None
-                if not _is_enum_class(self.current_class_node):
-                    self.error(node, Y052.format(variable=target_name))
-            else:
+            if not self.visiting_enum_class:
                 self.error(node, Y052.format(variable=target_name))
         else:
             self.error(node, Y015)
@@ -1060,7 +1112,7 @@ class PyiVisitor(ast.NodeVisitor):
             self.error(node, Y017)
             target = target_name = None
         is_special_assignment = _is_assignment_which_must_have_a_value(
-            target_name, in_class=self.in_class.active
+            target_name, in_class=self.enclosing_class_ctx is not None
         )
         assignment = node.value
         if isinstance(assignment, ast.Call):
@@ -1092,7 +1144,7 @@ class PyiVisitor(ast.NodeVisitor):
             )
 
     def visit_AugAssign(self, node: ast.AugAssign) -> None:
-        """Allow `__all__ += ['foo', 'bar']` in a stub file"""
+        """Allow `__all__ += ['foo', 'bar']` in a stub file."""
         target, value = node.target, node.value
         self.visit(target)
         if _is_name(target, "__all__") and isinstance(node.op, ast.Add):
@@ -1125,7 +1177,7 @@ class PyiVisitor(ast.NodeVisitor):
             isinstance(assignment, ast.Subscript)
             or _is_valid_pep_604_union(assignment)
             or _is_Any(assignment)
-            or _is_None(assignment)
+            or (_is_None(assignment) and not self.visiting_enum_class)
         ):
             new_node = ast.AnnAssign(
                 target=target,
@@ -1133,7 +1185,7 @@ class PyiVisitor(ast.NodeVisitor):
                 value=assignment,
                 simple=1,
             )
-            self.error(node, Y026.format(suggestion=unparse(new_node)))
+            self.error(node, Y026.format(suggestion=ast.unparse(new_node)))
 
     def visit_Name(self, node: ast.Name) -> None:
         self.generic_visit(node)
@@ -1148,6 +1200,14 @@ class PyiVisitor(ast.NodeVisitor):
         elif _is_TypedDict(function):
             if _is_bad_TypedDict(node):
                 self.error(node, Y031)
+            return
+        elif _is_deprecated(function):
+            with (
+                self.string_literals_allowed.enabled(),
+                self.long_strings_allowed.enabled(),
+            ):
+                for arg in chain(node.args, node.keywords):
+                    self.visit(arg)
             return
         elif (
             isinstance(function, ast.Attribute)
@@ -1169,7 +1229,10 @@ class PyiVisitor(ast.NodeVisitor):
     def visit_Constant(self, node: ast.Constant) -> None:
         if isinstance(node.value, str) and not self.string_literals_allowed.active:
             self.error(node, Y020)
-        elif isinstance(node.value, (str, bytes)):
+        elif (
+            isinstance(node.value, (str, bytes))
+            and not self.long_strings_allowed.active
+        ):
             if len(node.value) > 50:
                 self.error(node, Y053)
         elif isinstance(node.value, (int, float, complex)):
@@ -1212,7 +1275,7 @@ class PyiVisitor(ast.NodeVisitor):
         is_special_assignment = isinstance(
             node_target, ast.Name
         ) and _is_assignment_which_must_have_a_value(
-            node_target.id, in_class=self.in_class.active
+            node_target.id, in_class=self.enclosing_class_ctx is not None
         )
 
         is_typealias = _is_TypeAlias(node_annotation) and isinstance(
@@ -1220,7 +1283,14 @@ class PyiVisitor(ast.NodeVisitor):
         )
 
         self.visit(node_target)
-        self.visit(node_annotation)
+
+        Y064_encountered = self._check_for_Y064_violations(node)
+        if Y064_encountered:
+            with self.Y061_suppressed.enabled():
+                self.visit(node_annotation)
+        else:
+            self.visit(node_annotation)
+
         if node_value is not None:
             if is_typealias:
                 self.visit(node_value)
@@ -1256,6 +1326,37 @@ class PyiVisitor(ast.NodeVisitor):
             self.generic_visit(node)
             self._check_typealias(node=node, alias_name=node.name.id)
 
+    def _check_for_Y064_violations(self, node: ast.AnnAssign) -> bool:
+        annotation = node.annotation
+
+        if node.value or not isinstance(annotation, ast.Subscript):
+            return False
+
+        value = annotation.value
+        slice_ = annotation.slice
+
+        if (
+            _is_Final(value)
+            and isinstance(slice_, ast.Subscript)
+            and _is_Literal(slice_.value)
+            and isinstance(slice_.slice, ast.Constant)
+        ):
+            final = ast.Name(id="Final", ctx=ast.Load())
+            suggestion = ast.AnnAssign(
+                target=node.target,
+                annotation=final,
+                value=slice_.slice,
+                simple=node.simple,
+            )
+            self.error(
+                node,
+                Y064.format(
+                    suggestion=ast.unparse(suggestion), original=ast.unparse(node)
+                ),
+            )
+            return True
+        return False
+
     def _check_union_members(
         self, members: Sequence[ast.expr], is_pep_604_union: bool
     ) -> None:
@@ -1264,7 +1365,7 @@ class PyiVisitor(ast.NodeVisitor):
 
         for member_list in analysis.members_by_dump.values():
             if len(member_list) >= 2:
-                self.error(member_list[1], Y016.format(unparse(member_list[1])))
+                self.error(member_list[1], Y016.format(ast.unparse(member_list[1])))
 
         if not analysis.dupes_in_union:
             self._check_for_Y051_violations(analysis)
@@ -1279,7 +1380,7 @@ class PyiVisitor(ast.NodeVisitor):
 
     def _check_for_Y051_violations(self, analysis: UnionAnalysis) -> None:
         """Search for redundant unions such as `str | Literal["foo"]`, etc."""
-        seen_builtins: set[type] = set()
+        seen_builtins: set[type[object]] = set()
         for literal in analysis.combined_literal_members:
             if not isinstance(literal, ast.Constant):
                 continue
@@ -1294,7 +1395,7 @@ class PyiVisitor(ast.NodeVisitor):
                 self.error(
                     literal,
                     Y051.format(
-                        literal_subtype=f"Literal[{unparse(literal)}]",
+                        literal_subtype=f"Literal[{ast.unparse(literal)}]",
                         builtin_supertype=typename,
                     ),
                 )
@@ -1322,7 +1423,7 @@ class PyiVisitor(ast.NodeVisitor):
         self, first_union_member: ast.expr, analysis: UnionAnalysis
     ) -> None:
         new_literal_members = analysis.combined_literal_members
-        new_literal_slice = unparse(ast.Tuple(new_literal_members)).strip("()")
+        new_literal_slice = ast.unparse(ast.Tuple(new_literal_members)).strip("()")
 
         if analysis.non_literals_in_union:
             suggestion = f'Combine them into one, e.g. "Literal[{new_literal_slice}]".'
@@ -1340,13 +1441,13 @@ class PyiVisitor(ast.NodeVisitor):
         # Union using bit or, e.g. type[str] | type[int]
         if is_pep_604_union:
             new_union = " | ".join(
-                unparse(expr) for expr in analysis.combined_type_subscripts
+                ast.unparse(expr) for expr in analysis.combined_type_subscripts
             )
         # Union is the explicit Union type, e.g. Union[type[str], type[int]]
         else:
-            type_slice = unparse(ast.Tuple(analysis.combined_type_subscripts)).strip(
-                "()"
-            )
+            type_slice = ast.unparse(
+                ast.Tuple(analysis.combined_type_subscripts)
+            ).strip("()")
             new_union = f"Union[{type_slice}]"
 
         suggestion = f'Combine them into one, e.g. "type[{new_union}]".'
@@ -1375,15 +1476,11 @@ class PyiVisitor(ast.NodeVisitor):
         self._check_union_members(members, is_pep_604_union=True)
 
     def _Y090_error(self, node: ast.Subscript) -> None:
-        current_code = unparse(node)
-        typ = unparse(node.slice)
+        current_code = ast.unparse(node)
+        typ = ast.unparse(node.slice)
         copied_node = deepcopy(node)
-        new_slice = ast.Tuple(elts=[copied_node.slice, ast.Constant(...)])
-        if sys.version_info >= (3, 9):
-            copied_node.slice = new_slice
-        else:
-            copied_node.slice = ast.Index(new_slice)
-        suggestion = unparse(copied_node)
+        copied_node.slice = ast.Tuple(elts=[copied_node.slice, ast.Constant(...)])
+        suggestion = ast.unparse(copied_node)
         self.error(node, Y090.format(original=current_code, typ=typ, new=suggestion))
 
     def visit_Subscript(self, node: ast.Subscript) -> None:
@@ -1401,27 +1498,34 @@ class PyiVisitor(ast.NodeVisitor):
             self._visit_slice_tuple(node.slice, subscripted_object_name)
         else:
             self.visit(node.slice)
-            if subscripted_object_name in {"tuple", "Tuple"}:
+            if subscripted_object_name in {"tuple", "Tuple"} and not (
+                isinstance(node.slice, ast.Subscript) and _is_Unpack(node.slice.value)
+            ):
                 self._Y090_error(node)
 
     def _visit_typing_Literal(self, node: ast.Subscript) -> None:
-        if isinstance(node.slice, ast.Constant) and _is_None(node.slice):
-            # Special case for `Literal[None]`
-            self.error(node.slice, Y061.format(suggestion="None"))
-        elif isinstance(node.slice, ast.Tuple):
-            elts = node.slice.elts
-            for i, elt in enumerate(elts):
-                if _is_None(elt):
-                    elts_without_none = elts[:i] + elts[i + 1 :]
-                    if len(elts_without_none) == 1:
-                        new_literal_slice = unparse(elts_without_none[0])
-                    else:
-                        new_slice_node = ast.Tuple(elts=elts_without_none)
-                        new_literal_slice = unparse(new_slice_node).strip("()")
-                    suggestion = f"Literal[{new_literal_slice}] | None"
-                    self.error(elt, Y061.format(suggestion=suggestion))
-                    break  # Only report the first `None`
-        self.visit(node.slice)
+        analysis = _analyse_typing_Literal(node)
+
+        Y062_encountered = False
+        for member_list in analysis.members_by_dump.values():
+            if len(member_list) > 1 and not _is_None(member_list[0]):
+                Y062_encountered = True
+                self.error(member_list[1], Y062.format(ast.unparse(member_list[1])))
+
+        if not Y062_encountered and not self.Y061_suppressed.active:
+            if analysis.contains_only_none:
+                self.error(node.slice, Y061.format(suggestion="None"))
+            elif analysis.none_members:
+                if len(analysis.members_without_none) == 1:
+                    new_literal_slice = ast.unparse(analysis.members_without_none[0])
+                else:
+                    new_slice_node = ast.Tuple(elts=analysis.members_without_none)
+                    new_literal_slice = ast.unparse(new_slice_node).strip("()")
+                suggestion = f"Literal[{new_literal_slice}] | None"
+                self.error(analysis.none_members[0], Y061.format(suggestion=suggestion))
+
+        with self.long_strings_allowed.enabled():
+            self.visit(node.slice)
 
     def _visit_slice_tuple(self, node: ast.Tuple, parent: str | None) -> None:
         if parent == "Union":
@@ -1431,7 +1535,10 @@ class PyiVisitor(ast.NodeVisitor):
             # Allow literals, except in the first argument
             if len(node.elts) > 1:
                 self.visit(node.elts[0])
-                with self.string_literals_allowed.enabled():
+                with (
+                    self.string_literals_allowed.enabled(),
+                    self.long_strings_allowed.enabled(),
+                ):
                     for elt in node.elts[1:]:
                         self.visit(elt)
             else:
@@ -1440,6 +1547,8 @@ class PyiVisitor(ast.NodeVisitor):
             self.visit(node)
 
     def visit_If(self, node: ast.If) -> None:
+        self._check_for_Y066_violations(node)
+
         test = node.test
         # No types can appear in if conditions, so avoid confusing additional errors.
         with self.string_literals_allowed.enabled():
@@ -1474,6 +1583,34 @@ class PyiVisitor(ast.NodeVisitor):
                 self.error(node, Y002)
         else:
             self.error(node, Y002)
+
+    def _check_for_Y066_violations(self, node: ast.If) -> None:
+        def is_version_info(attr: ast.expr) -> bool:
+            return (
+                isinstance(attr, ast.Attribute)
+                and _is_name(attr.value, "sys")
+                and attr.attr == "version_info"
+            )
+
+        def if_chain_ends_with_else(if_chain: ast.If) -> bool:
+            orelse = if_chain.orelse
+            if len(orelse) == 1 and isinstance(orelse[0], ast.If):
+                return if_chain_ends_with_else(orelse[0])
+            return bool(orelse)
+
+        test = node.test
+        if not isinstance(test, ast.Compare):
+            return
+
+        left = test.left
+        op = test.ops[0]
+        if (
+            is_version_info(left)
+            and isinstance(op, ast.Lt)  # sys.version_info < ...
+            and if_chain_ends_with_else(node)
+        ):
+            new_syntax = "if " + ast.unparse(test).replace("<", ">=", 1)
+            self.error(node, Y066.format(new_syntax=new_syntax))
 
     def _check_subscript_version_check(self, node: ast.Compare) -> None:
         # unless this is on, comparisons against a single integer aren't allowed
@@ -1572,52 +1709,43 @@ class PyiVisitor(ast.NodeVisitor):
         Y040_encountered = False
         Y059_encountered = False
         Generic_basenode: ast.Subscript | None = None
+        subscript_bases: list[ast.Subscript] = []
         num_bases = len(bases)
 
         for i, base_node in enumerate(bases, start=1):
             if not Y040_encountered and _is_builtins_object(base_node):
                 self.error(base_node, Y040)
                 Y040_encountered = True
-            if isinstance(base_node, ast.Subscript) and _is_Generic(base_node.value):
-                Generic_basenode = base_node
-                if i < num_bases and not Y059_encountered:
-                    Y059_encountered = True
-                    self.error(base_node, Y059)
+            if isinstance(base_node, ast.Subscript):
+                subscript_bases.append(base_node)
+                if _is_Generic(base_node.value):
+                    Generic_basenode = base_node
+                    if i < num_bases and not Y059_encountered:
+                        Y059_encountered = True
+                        self.error(base_node, Y059)
 
-        if (
-            Generic_basenode is not None
-            and num_bases == 2
-            and isinstance(bases[0], ast.Subscript)
-            and isinstance(bases[1], ast.Subscript)
-            and ast.dump(bases[0].slice) == ast.dump(bases[1].slice)
-        ):
-            self.error(Generic_basenode, Y060)
+        if Generic_basenode is not None:
+            assert subscript_bases
+            if len(subscript_bases) > 1 and all_equal(
+                ast.dump(subscript_base.slice) for subscript_base in subscript_bases
+            ):
+                msg = Y060.format(redundant_base=ast.unparse(Generic_basenode))
+                self.error(Generic_basenode, msg)
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
-        class_is_protocol = class_is_typeddict = False
-        for base in node.bases:
-            if _is_Protocol(base):
-                class_is_protocol = True
-            if _is_TypedDict(base):
-                class_is_typeddict = True
+        old_context = self.enclosing_class_ctx
+        self.enclosing_class_ctx = _analyze_classdef(node)
 
-        if node.name.startswith("_") and not self.in_class.active:
-            if class_is_protocol:
+        if node.name.startswith("_"):
+            if self.enclosing_class_ctx.is_protocol_class:
                 self.protocol_defs[node.name].append(node)
-            if class_is_typeddict:
+            elif self.enclosing_class_ctx.is_typeddict_class:
                 self.class_based_typeddicts[node.name].append(node)
 
-        old_class_node = self.current_class_node
-        self.current_class_node = node
-        with contextlib.ExitStack() as stack:
-            stack.enter_context(self.in_class.enabled())
-            if class_is_protocol:
-                stack.enter_context(self.in_protocol.enabled())
-            self.generic_visit(node)
-        self.current_class_node = old_class_node
-
+        self.generic_visit(node)
         self._check_class_bases(node.bases)
         self.check_class_pass_and_ellipsis(node)
+        self.enclosing_class_ctx = old_context
 
     def check_class_pass_and_ellipsis(self, node: ast.ClassDef) -> None:
         # empty class body should contain "..." not "pass"
@@ -1666,7 +1794,7 @@ class PyiVisitor(ast.NodeVisitor):
                     error_for_bad_exit_method(
                         f"Star-args in an {method_name} method "
                         f'should be annotated with "object", '
-                        f'not "{unparse(varargs_annotation)}"'
+                        f'not "{ast.unparse(varargs_annotation)}"'
                     )
             else:
                 error_for_bad_exit_method(
@@ -1701,7 +1829,7 @@ class PyiVisitor(ast.NodeVisitor):
             error_msg_details = (
                 f"The {arg_name} arg in an {method_name} method "
                 f'should be annotated with "{correct_annotation}" or "object", '
-                f'not "{unparse(annotation_node)}"'
+                f'not "{ast.unparse(annotation_node)}"'
             )
 
             error_for_bad_exit_method(details=error_msg_details)
@@ -1803,7 +1931,7 @@ class PyiVisitor(ast.NodeVisitor):
                     and (_is_Any(elts[1]) or _is_None(elts[1]))
                     and (_is_Any(elts[2]) or _is_None(elts[2]))
                 ):
-                    example_returns = f"Iterator[{unparse(returns.slice.elts[0])}]"
+                    example_returns = f"Iterator[{ast.unparse(returns.slice.elts[0])}]"
                     self._Y058_error(node, non_kw_only_args, example_returns)
 
     def _check_aiter_returns(
@@ -1830,17 +1958,19 @@ class PyiVisitor(ast.NodeVisitor):
             ):
                 elts = returns.slice.elts
                 if len(elts) == 2 and (_is_Any(elts[1]) or _is_None(elts[1])):
-                    example_returns = f"AsyncIterator[{unparse(returns.slice.elts[0])}]"
+                    example_returns = (
+                        f"AsyncIterator[{ast.unparse(returns.slice.elts[0])}]"
+                    )
                     self._Y058_error(node, non_kw_only_args, example_returns)
 
-    def _visit_synchronous_method(self, node: ast.FunctionDef) -> None:
+    def _visit_synchronous_method(
+        self, node: ast.FunctionDef, class_ctx: EnclosingClassContext
+    ) -> None:
         method_name = node.name
         all_args = node.args
-        classdef = self.current_class_node
-        assert classdef is not None
 
-        if _has_bad_hardcoded_returns(node, classdef=classdef):
-            return self._Y034_error(node=node, cls_name=classdef.name)
+        if _has_bad_hardcoded_returns(node, class_ctx=class_ctx):
+            return self._Y034_error(node=node, cls_name=class_ctx.cls_name)
 
         returns = node.returns
 
@@ -1874,17 +2004,15 @@ class PyiVisitor(ast.NodeVisitor):
                 self.error(node, Y032.format(method_name=method_name))
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
-        if self.in_class.active:
-            self._visit_synchronous_method(node)
+        if self.enclosing_class_ctx is not None:
+            self._visit_synchronous_method(node, self.enclosing_class_ctx)
         self._visit_function(node)
 
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
-        if self.in_class.active:
-            classdef = self.current_class_node
-            assert classdef is not None
+        if self.enclosing_class_ctx is not None:
             method_name = node.name
-            if _has_bad_hardcoded_returns(node, classdef=classdef):
-                self._Y034_error(node=node, cls_name=classdef.name)
+            if _has_bad_hardcoded_returns(node, class_ctx=self.enclosing_class_ctx):
+                self._Y034_error(node=node, cls_name=self.enclosing_class_ctx.cls_name)
             elif method_name == "__aexit__":
                 self._check_exit_method(node=node, method_name=method_name)
         self._visit_function(node)
@@ -1964,7 +2092,7 @@ class PyiVisitor(ast.NodeVisitor):
             self._Y019_error(method, cls_typevar)
 
     def check_self_typevars(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
-        pos_or_keyword_args = node.args.args
+        pos_or_keyword_args = node.args.posonlyargs + node.args.args
 
         if not pos_or_keyword_args:
             return
@@ -2002,11 +2130,42 @@ class PyiVisitor(ast.NodeVisitor):
         for pos_or_kw in node.args.args[1:]:  # exclude "self"
             if pos_or_kw.arg.startswith("__"):
                 continue
-            self.error(pos_or_kw, Y062.format(arg=pos_or_kw.arg, method=node.name))
+            self.error(pos_or_kw, Y067.format(arg=pos_or_kw.arg, method=node.name))
+
+    @staticmethod
+    def _is_positional_pre_570_argname(name: str) -> bool:
+        # https://peps.python.org/pep-0484/#positional-only-arguments
+        return name.startswith("__") and len(name) >= 3 and not name.endswith("__")
+
+    def _check_pep570_syntax_used_where_applicable(
+        self, node: ast.FunctionDef | ast.AsyncFunctionDef
+    ) -> None:
+        if node.args.posonlyargs:
+            return
+        pos_or_kw_args = node.args.args
+        try:
+            first_param = pos_or_kw_args[0]
+        except IndexError:
+            return
+        if self.enclosing_class_ctx is None or any(
+            isinstance(decorator, ast.Name) and decorator.id == "staticmethod"
+            for decorator in node.decorator_list
+        ):
+            uses_old_syntax = self._is_positional_pre_570_argname(first_param.arg)
+        else:
+            uses_old_syntax = self._is_positional_pre_570_argname(first_param.arg) or (
+                len(pos_or_kw_args) >= 2
+                and self._is_positional_pre_570_argname(pos_or_kw_args[1].arg)
+            )
+        if uses_old_syntax:
+            self.error(node, Y063)
 
     def _visit_function(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         with self.in_function.enabled():
             self.generic_visit(node)
+
+        if node.name != "__getattr__" and node.returns and _is_Incomplete(node.returns):
+            self.error(node.returns, Y065.format(what="return type"))
 
         body = node.body
         if len(body) > 1:
@@ -2025,7 +2184,8 @@ class PyiVisitor(ast.NodeVisitor):
             ):
                 self.error(statement, Y010)
 
-        if self.in_class.active:
+        self._check_pep570_syntax_used_where_applicable(node)
+        if self.enclosing_class_ctx is not None:
             self.check_self_typevars(node)
             if self.in_protocol.active:
                 self.check_arg_kinds(node)
@@ -2033,6 +2193,8 @@ class PyiVisitor(ast.NodeVisitor):
     def visit_arg(self, node: ast.arg) -> None:
         if _is_NoReturn(node.annotation):
             self.error(node, Y050)
+        if _is_Incomplete(node.annotation):
+            self.error(node, Y065.format(what=f'parameter "{node.arg}"'))
         with self.visiting_arg.enabled():
             self.generic_visit(node)
 
@@ -2057,7 +2219,7 @@ class PyiVisitor(ast.NodeVisitor):
         if default is not None and not _is_valid_default_value_with_annotation(default):
             self.error(default, (Y014 if arg.annotation is None else Y011))
 
-    def error(self, node: ast.AST, message: str) -> None:
+    def error(self, node: NodeWithLocation, message: str) -> None:
         self.errors.append(Error(node.lineno, node.col_offset, message, PyiTreeChecker))
 
     def _check_for_unused_things(self) -> None:
@@ -2127,8 +2289,7 @@ class PyiTreeChecker:
     def run(self) -> Iterable[Error]:
         if self.filename.endswith(".pyi"):
             yield from _check_for_type_comments(self.lines)
-            tree = LegacyNormalizer().visit(self.tree)
-            yield from PyiVisitor(filename=self.filename).run(tree)
+            yield from PyiVisitor(filename=self.filename).run(self.tree)
 
     @staticmethod
     def add_options(parser: OptionManager) -> None:
@@ -2248,12 +2409,20 @@ Y058 = (
 )
 Y059 = 'Y059 "Generic[]" should always be the last base class'
 Y060 = (
-    'Y060 Redundant inheritance from "Generic[]"; '
+    'Y060 Redundant inheritance from "{redundant_base}"; '
     "class would be inferred as generic anyway"
 )
 Y061 = 'Y061 None inside "Literal[]" expression. Replace with "{suggestion}"'
-Y062 = (
-    'Y062 Argument "{arg}" to protocol method "{method}" should probably not be positional-or-keyword. '
+Y062 = 'Y062 Duplicate "Literal[]" member "{}"'
+Y063 = "Y063 Use PEP-570 syntax to indicate positional-only arguments"
+Y064 = 'Y064 Use "{suggestion}" instead of "{original}"'
+Y065 = 'Y065 Leave {what} unannotated rather than using "Incomplete"'
+Y066 = (
+    "Y066 When using if/else with sys.version_info, "
+    'put the code for new Python versions first, e.g. "{new_syntax}"'
+)
+Y067 = (
+    'Y067 Argument "{arg}" to protocol method "{method}" should probably not be positional-or-keyword. '
     "Make it positional-only, since usually you don't want to mandate a specific argument name"
 )
 Y090 = (
