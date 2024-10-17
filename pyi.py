@@ -1742,7 +1742,9 @@ class PyiVisitor(ast.NodeVisitor):
         self.generic_visit(node)
         self._check_class_bases(node.bases)
         self.enclosing_class_ctx = old_context
+        self.check_class_pass_and_ellipsis(node)
 
+    def check_class_pass_and_ellipsis(self, node: ast.ClassDef) -> None:
         # empty class body should contain "..." not "pass"
         if len(node.body) == 1:
             statement = node.body[0]
@@ -2086,7 +2088,11 @@ class PyiVisitor(ast.NodeVisitor):
         ):
             self._Y019_error(method, cls_typevar)
 
-    def check_self_typevars(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
+    def check_self_typevars(
+        self,
+        node: ast.FunctionDef | ast.AsyncFunctionDef,
+        decorator_names: Container[str],
+    ) -> None:
         pos_or_keyword_args = node.args.posonlyargs + node.args.args
 
         if not pos_or_keyword_args:
@@ -2099,12 +2105,6 @@ class PyiVisitor(ast.NodeVisitor):
 
         if not isinstance(first_arg_annotation, (ast.Name, ast.Subscript)):
             return
-
-        decorator_names = {
-            decorator.id
-            for decorator in node.decorator_list
-            if isinstance(decorator, ast.Name)
-        }
 
         if "classmethod" in decorator_names or node.name == "__new__":
             self._check_class_method_for_bad_typevars(
@@ -2120,6 +2120,20 @@ class PyiVisitor(ast.NodeVisitor):
                 first_arg_annotation=first_arg_annotation,
                 return_annotation=return_annotation,
             )
+
+    def check_protocol_param_kinds(
+        self,
+        node: ast.FunctionDef | ast.AsyncFunctionDef,
+        decorator_names: Container[str],
+    ) -> None:
+        if "staticmethod" in decorator_names:
+            relevant_params = node.args.args
+        else:
+            relevant_params = node.args.args[1:]  # exclude "self"
+        for pos_or_kw in relevant_params:
+            if pos_or_kw.arg.startswith("__"):
+                continue
+            self.error(pos_or_kw, Y091.format(arg=pos_or_kw.arg, method=node.name))
 
     @staticmethod
     def _is_positional_pre_570_argname(name: str) -> bool:
@@ -2175,7 +2189,14 @@ class PyiVisitor(ast.NodeVisitor):
 
         self._check_pep570_syntax_used_where_applicable(node)
         if self.enclosing_class_ctx is not None:
-            self.check_self_typevars(node)
+            decorator_names = {
+                decorator.id
+                for decorator in node.decorator_list
+                if isinstance(decorator, ast.Name)
+            }
+            self.check_self_typevars(node, decorator_names)
+            if self.enclosing_class_ctx.is_protocol_class:
+                self.check_protocol_param_kinds(node, decorator_names)
 
     def visit_arg(self, node: ast.arg) -> None:
         if _is_NoReturn(node.annotation):
@@ -2413,5 +2434,9 @@ Y090 = (
     '"a tuple of length 1, in which the sole element is of type {typ!r}". '
     'Perhaps you meant "{new}"?'
 )
+Y091 = (
+    'Y091 Argument "{arg}" to protocol method "{method}" should probably not be positional-or-keyword. '
+    "Make it positional-only, since usually you don't want to mandate a specific argument name"
+)
 
-DISABLED_BY_DEFAULT = ["Y090"]
+DISABLED_BY_DEFAULT = ["Y090", "Y091"]

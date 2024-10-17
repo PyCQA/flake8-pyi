@@ -1,5 +1,10 @@
 # Change Log
 
+## Unreleased
+
+New error codes:
+* Introduce Y091: Protocol method parameters should not be positional-or-keyword.
+
 ## 24.9.0
 
 Bugfixes
