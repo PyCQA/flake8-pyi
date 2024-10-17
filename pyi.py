@@ -2088,7 +2088,7 @@ class PyiVisitor(ast.NodeVisitor):
         ):
             self._Y019_error(method, cls_typevar)
 
-    def check_self_typevars(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
+    def check_self_typevars(self, node: ast.FunctionDef | ast.AsyncFunctionDef, decorator_names: Container[str]) -> None:
         pos_or_keyword_args = node.args.posonlyargs + node.args.args
 
         if not pos_or_keyword_args:
@@ -2101,12 +2101,6 @@ class PyiVisitor(ast.NodeVisitor):
 
         if not isinstance(first_arg_annotation, (ast.Name, ast.Subscript)):
             return
-
-        decorator_names = {
-            decorator.id
-            for decorator in node.decorator_list
-            if isinstance(decorator, ast.Name)
-        }
 
         if "classmethod" in decorator_names or node.name == "__new__":
             self._check_class_method_for_bad_typevars(
@@ -2124,9 +2118,13 @@ class PyiVisitor(ast.NodeVisitor):
             )
 
     def check_protocol_param_kinds(
-        self, node: ast.FunctionDef | ast.AsyncFunctionDef
+        self, node: ast.FunctionDef | ast.AsyncFunctionDef, decorator_names: Container[str]
     ) -> None:
-        for pos_or_kw in node.args.args[1:]:  # exclude "self"
+        if "staticmethod" in decorator_names:
+            relevant_params = node.args.args
+        else:
+            relevant_params = node.args.args[1:]  # exclude "self"
+        for pos_or_kw in relevant_params:
             if pos_or_kw.arg.startswith("__"):
                 continue
             self.error(pos_or_kw, Y091.format(arg=pos_or_kw.arg, method=node.name))
@@ -2185,9 +2183,14 @@ class PyiVisitor(ast.NodeVisitor):
 
         self._check_pep570_syntax_used_where_applicable(node)
         if self.enclosing_class_ctx is not None:
-            self.check_self_typevars(node)
+            decorator_names = {
+                decorator.id
+                for decorator in node.decorator_list
+                if isinstance(decorator, ast.Name)
+            }
+            self.check_self_typevars(node, decorator_names)
             if self.enclosing_class_ctx.is_protocol_class:
-                self.check_protocol_param_kinds(node)
+                self.check_protocol_param_kinds(node, decorator_names)
 
     def visit_arg(self, node: ast.arg) -> None:
         if _is_NoReturn(node.annotation):
