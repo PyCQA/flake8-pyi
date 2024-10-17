@@ -2123,7 +2123,9 @@ class PyiVisitor(ast.NodeVisitor):
                 return_annotation=return_annotation,
             )
 
-    def check_protocol_param_kinds(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
+    def check_protocol_param_kinds(
+        self, node: ast.FunctionDef | ast.AsyncFunctionDef
+    ) -> None:
         for pos_or_kw in node.args.args[1:]:  # exclude "self"
             if pos_or_kw.arg.startswith("__"):
                 continue
