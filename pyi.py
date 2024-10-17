@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import argparse
 import ast
-import contextlib
 import logging
 import re
 import sys
@@ -1016,8 +1015,6 @@ class PyiVisitor(ast.NodeVisitor):
         self.string_literals_allowed = NestingCounter()
         self.long_strings_allowed = NestingCounter()
         self.in_function = NestingCounter()
-        self.in_class = NestingCounter()
-        self.in_protocol = NestingCounter()
         self.visiting_arg = NestingCounter()
         self.Y061_suppressed = NestingCounter()
 
@@ -1744,8 +1741,8 @@ class PyiVisitor(ast.NodeVisitor):
 
         self.generic_visit(node)
         self._check_class_bases(node.bases)
-        self.check_class_pass_and_ellipsis(node)
         self.enclosing_class_ctx = old_context
+        self.check_class_pass_and_ellipsis(node)
 
     def check_class_pass_and_ellipsis(self, node: ast.ClassDef) -> None:
         # empty class body should contain "..." not "pass"
@@ -2126,7 +2123,7 @@ class PyiVisitor(ast.NodeVisitor):
                 return_annotation=return_annotation,
             )
 
-    def check_arg_kinds(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
+    def check_protocol_param_kinds(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         for pos_or_kw in node.args.args[1:]:  # exclude "self"
             if pos_or_kw.arg.startswith("__"):
                 continue
@@ -2187,8 +2184,8 @@ class PyiVisitor(ast.NodeVisitor):
         self._check_pep570_syntax_used_where_applicable(node)
         if self.enclosing_class_ctx is not None:
             self.check_self_typevars(node)
-            if self.in_protocol.active:
-                self.check_arg_kinds(node)
+            if self.enclosing_class_ctx.is_protocol_class:
+                self.check_protocol_param_kinds(node)
 
     def visit_arg(self, node: ast.arg) -> None:
         if _is_NoReturn(node.annotation):
