@@ -5,6 +5,9 @@
 New error codes:
 * Introduce Y091: Protocol method parameters should not be positional-or-keyword.
 
+Other changes:
+* Y011/Y015 will not flag enum defaults.
+
 ## 24.9.0
 
 Bugfixes

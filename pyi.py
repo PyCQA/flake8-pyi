@@ -776,7 +776,11 @@ _ALLOWED_SIMPLE_ATTRIBUTES_IN_DEFAULTS = frozenset({"sentinel"})
 
 
 def _is_valid_default_value_with_annotation(
-    node: ast.expr, *, allow_containers: bool = True
+    ann: ast.expr | None,
+    node: ast.expr,
+    *,
+    allow_containers: bool = True,
+    allow_enum: bool = True,
 ) -> bool:
     """Is `node` valid as a default value for a function or method parameter in a stub?
 
@@ -790,7 +794,9 @@ def _is_valid_default_value_with_annotation(
             allow_containers
             and len(node.elts) <= 10
             and all(
-                _is_valid_default_value_with_annotation(elt, allow_containers=False)
+                _is_valid_default_value_with_annotation(
+                    ann, elt, allow_containers=False, allow_enum=False
+                )
                 for elt in node.elts
             )
         )
@@ -804,7 +810,7 @@ def _is_valid_default_value_with_annotation(
                 (
                     subnode is not None
                     and _is_valid_default_value_with_annotation(
-                        subnode, allow_containers=False
+                        ann, subnode, allow_containers=False, allow_enum=False
                     )
                 )
                 for subnode in chain(node.keys, node.values)
@@ -856,6 +862,10 @@ def _is_valid_default_value_with_annotation(
             return True
         return False
 
+    # Enums and enum-likes
+    if allow_enum and _is_enum_default(ann, node):
+        return True
+
     # Special cases
     if isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name):
         fullname = f"{node.value.id}.{node.attr}"
@@ -866,6 +876,37 @@ def _is_valid_default_value_with_annotation(
         return node.id in _ALLOWED_SIMPLE_ATTRIBUTES_IN_DEFAULTS
 
     return False
+
+
+def _is_enum_default(ann_node: ast.expr | None, def_node: ast.expr) -> bool:
+    # Enum defaults are always namespaced, e.g. MyEnum.FOO
+    default_name = _expand_attribute_name(def_node)
+    if default_name is None or len(default_name) < 2:
+        return False
+
+    if isinstance(ann_node, (ast.Name, ast.Attribute)):
+        enum_name = _expand_attribute_name(ann_node)
+        if enum_name is None:
+            return False
+        return default_name[:-1] == enum_name
+    elif ann_node is not None and _is_valid_pep_604_union(ann_node):
+        return _is_enum_default(ann_node.left, def_node) or _is_enum_default(
+            ann_node.right, def_node
+        )
+    else:
+        return False
+
+
+def _expand_attribute_name(node: ast.expr) -> list[str] | None:
+    if isinstance(node, ast.Name):
+        return [node.id]
+    elif isinstance(node, ast.Attribute):
+        expanded = _expand_attribute_name(node.value)
+        if expanded is None:
+            return None
+        return expanded + [node.attr]
+    else:
+        return None
 
 
 def _is_valid_pep_604_union_member(node: ast.expr) -> bool:
@@ -1086,7 +1127,7 @@ class PyiVisitor(ast.NodeVisitor):
     ) -> None:
         if _is_valid_default_value_without_annotation(assignment):
             return
-        if _is_valid_default_value_with_annotation(assignment):
+        if _is_valid_default_value_with_annotation(None, assignment, allow_enum=False):
             # Annoying special-casing to exclude enums from Y052
             if not self.visiting_enum_class:
                 self.error(node, Y052.format(variable=target_name))
@@ -1314,7 +1355,9 @@ class PyiVisitor(ast.NodeVisitor):
         ):
             return
 
-        if node_value and not _is_valid_default_value_with_annotation(node_value):
+        if node_value and not _is_valid_default_value_with_annotation(
+            node_annotation, node_value
+        ):
             self.error(node, Y015)
 
     if sys.version_info >= (3, 12):
@@ -2224,7 +2267,9 @@ class PyiVisitor(ast.NodeVisitor):
         if default is not None:
             with self.string_literals_allowed.enabled():
                 self.visit(default)
-        if default is not None and not _is_valid_default_value_with_annotation(default):
+        if default is not None and not _is_valid_default_value_with_annotation(
+            arg.annotation, default
+        ):
             self.error(default, (Y014 if arg.annotation is None else Y011))
 
     def error(self, node: NodeWithLocation, message: str) -> None:
