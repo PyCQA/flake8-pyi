@@ -775,7 +775,7 @@ _ALLOWED_ATTRIBUTES_IN_DEFAULTS = frozenset(
 _ALLOWED_SIMPLE_ATTRIBUTES_IN_DEFAULTS = frozenset({"sentinel"})
 
 
-def _is_valid_default_value_with_annotation(
+def _is_valid_default_value_with_annotation(  # noqa: C901
     ann: ast.expr | None,
     node: ast.expr,
     *,
