@@ -6,7 +6,8 @@ New error codes:
 * Introduce Y091: Protocol method parameters should not be positional-or-keyword.
 
 Other changes:
-* Y011/Y015 will not flag enum defaults.
+* Y011/Y015 will now allow all defaults that include an attribute access,
+  for example `math.inf` or enum members.
 
 ## 24.9.0
 

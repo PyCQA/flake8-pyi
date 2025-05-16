@@ -752,26 +752,6 @@ _ALLOWED_MATH_ATTRIBUTES_IN_DEFAULTS = frozenset(
     {"math.inf", "math.nan", "math.e", "math.pi", "math.tau"}
 )
 
-_ALLOWED_ATTRIBUTES_IN_DEFAULTS = frozenset(
-    {
-        "sys.base_prefix",
-        "sys.byteorder",
-        "sys.exec_prefix",
-        "sys.executable",
-        "sys.hexversion",
-        "sys.maxsize",
-        "sys.platform",
-        "sys.prefix",
-        "sys.stdin",
-        "sys.stdout",
-        "sys.stderr",
-        "sys.version",
-        "sys.version_info",
-        "sys.winver",
-        "_typeshed.sentinel",
-    }
-)
-
 _ALLOWED_SIMPLE_ATTRIBUTES_IN_DEFAULTS = frozenset({"sentinel"})
 
 
@@ -862,51 +842,18 @@ def _is_valid_default_value_with_annotation(  # noqa: C901
             return True
         return False
 
-    # Enums and enum-likes
-    if allow_enum and _is_enum_default(ann, node):
+    # Attribute access like math.inf or enums
+    if isinstance(node, ast.Attribute):
         return True
 
     # Special cases
-    if isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name):
-        fullname = f"{node.value.id}.{node.attr}"
-        return (fullname in _ALLOWED_ATTRIBUTES_IN_DEFAULTS) or (
-            fullname in _ALLOWED_MATH_ATTRIBUTES_IN_DEFAULTS
-        )
     if isinstance(node, ast.Name):
         return node.id in _ALLOWED_SIMPLE_ATTRIBUTES_IN_DEFAULTS
 
     return False
 
 
-def _is_enum_default(ann_node: ast.expr | None, def_node: ast.expr) -> bool:
-    # Enum defaults are always namespaced, e.g. MyEnum.FOO
-    default_name = _expand_attribute_name(def_node)
-    if default_name is None or len(default_name) < 2:
-        return False
 
-    if isinstance(ann_node, (ast.Name, ast.Attribute)):
-        enum_name = _expand_attribute_name(ann_node)
-        if enum_name is None:
-            return False
-        return default_name[:-1] == enum_name
-    elif ann_node is not None and _is_valid_pep_604_union(ann_node):
-        return _is_enum_default(ann_node.left, def_node) or _is_enum_default(
-            ann_node.right, def_node
-        )
-    else:
-        return False
-
-
-def _expand_attribute_name(node: ast.expr) -> list[str] | None:
-    if isinstance(node, ast.Name):
-        return [node.id]
-    elif isinstance(node, ast.Attribute):
-        expanded = _expand_attribute_name(node.value)
-        if expanded is None:
-            return None
-        return expanded + [node.attr]
-    else:
-        return None
 
 
 def _is_valid_pep_604_union_member(node: ast.expr) -> bool:
