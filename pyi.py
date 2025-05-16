@@ -853,9 +853,6 @@ def _is_valid_default_value_with_annotation(  # noqa: C901
     return False
 
 
-
-
-
 def _is_valid_pep_604_union_member(node: ast.expr) -> bool:
     return _is_None(node) or isinstance(node, (ast.Name, ast.Attribute, ast.Subscript))
 
