@@ -5,13 +5,15 @@ build-backend = "hatchling.build"
 [project]
 name = "flake8-pyi"
 dynamic = ["version"]
-authors = [{ name = "Łukasz Langa", email = "=lukasz@langa.pl" }]
+authors = [
+  { name="Łukasz Langa", email="=lukasz@langa.pl" },
+]
 maintainers = [
-    { name = "Jelle Zijlstra", email = "jelle.zijlstra@gmail.com" },
-    { name = "Alex Waygood", email = "alex.waygood@gmail.com" },
-    { name = "Sebastian Rittau", email = "sebastian@rittau.biz" },
-    { name = "Akuli" },
-    { name = "Shantanu" },
+  { name="Jelle Zijlstra", email="jelle.zijlstra@gmail.com" },
+  { name="Alex Waygood", email="alex.waygood@gmail.com" },
+  { name="Sebastian Rittau", email="sebastian@rittau.biz" },
+  { name="Akuli" },
+  { name="Shantanu" },
 ]
 description = "A plugin for flake8 to enable linting .pyi stub files."
 license = "MIT"
@@ -43,7 +45,10 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Software Development :: Quality Assurance",
 ]
-dependencies = ["flake8 >= 6.0.0, < 8.0.0", "pyflakes >= 2.1.1"]
+dependencies = [
+    "flake8 >= 6.0.0, < 8.0.0",
+    "pyflakes >= 2.1.1",
+]
 
 [project.urls]
 "Homepage" = "https://github.com/PyCQA/flake8-pyi"
@@ -53,19 +58,19 @@ dependencies = ["flake8 >= 6.0.0, < 8.0.0", "pyflakes >= 2.1.1"]
 
 [project.optional-dependencies]
 dev = [
-    "black==25.1.0",           # Must match .pre-commit-config.yaml
+    "black==25.1.0",            # Must match .pre-commit-config.yaml
     "flake8-bugbear==24.8.19",
     "flake8-noqa==1.4.0",
-    "isort==6.0.1",            # Must match .pre-commit-config.yaml
+    "isort==6.0.1",             # Must match .pre-commit-config.yaml
     "mypy==1.11.2",
-    "pre-commit-hooks==5.0.0", # Must match .pre-commit-config.yaml
+    "pre-commit-hooks==5.0.0",  # Must match .pre-commit-config.yaml
     "pytest==8.3.3",
     "pytest-xdist==3.6.1",
     "types-pyflakes<4",
 ]
 
 [project.entry-points]
-"flake8.extension" = { Y0 = "pyi:PyiTreeChecker" }
+"flake8.extension" = {Y0 = "pyi:PyiTreeChecker"}
 
 [tool.hatch.build.targets.wheel]
 include = ["pyi.py"]
