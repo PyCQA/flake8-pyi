@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     # We don't have typing_extensions as a runtime dependency,
     # but all our annotations are stringized due to __future__ annotations,
     # and mypy thinks typing_extensions is part of the stdlib.
-    from typing_extensions import TypeAlias, TypeGuard
+    from typing_extensions import TypeAlias, TypeGuard, TypeIs
 
 LOG = logging.getLogger("flake8.pyi")
 
@@ -325,8 +325,16 @@ _is_Generic = partial(_is_object, name="Generic", from_=_TYPING_MODULES)
 _is_Unpack = partial(_is_object, name="Unpack", from_=_TYPING_MODULES)
 
 
+def _is_union(node: ast.expr | None) -> TypeIs[ast.BinOp]:
+    return isinstance(node, ast.BinOp) and isinstance(node.op, ast.BitOr)
+
+
 def _is_object_or_Unused(node: ast.expr | None) -> bool:
     return _is_builtins_object(node) or _is_Unused(node)
+
+
+def _is_IncompleteOrNone(node: ast.expr | None) -> bool:
+    return _is_union(node) and _is_Incomplete(node.left) and _is_None(node.right)
 
 
 def _get_name_of_class_if_from_modules(
@@ -383,7 +391,7 @@ def _is_type_or_Type(node: ast.expr) -> bool:
     return cls_name in {"type", "Type"}
 
 
-def _is_None(node: ast.expr) -> bool:
+def _is_None(node: ast.expr | None) -> bool:
     return isinstance(node, ast.Constant) and node.value is None
 
 
@@ -2202,6 +2210,8 @@ class PyiVisitor(ast.NodeVisitor):
                 self.visit(default)
         if default is not None and not _is_valid_default_value_with_annotation(default):
             self.error(default, (Y014 if arg.annotation is None else Y011))
+        if _is_IncompleteOrNone(arg.annotation) and _is_None(default):
+            self.error(arg, Y067)
 
     def error(self, node: NodeWithLocation, message: str) -> None:
         self.errors.append(Error(node.lineno, node.col_offset, message, PyiTreeChecker))
@@ -2405,6 +2415,7 @@ Y066 = (
     "Y066 When using if/else with sys.version_info, "
     'put the code for new Python versions first, e.g. "{new_syntax}"'
 )
+Y067 = 'Y067 Use "=None" instead of "Incomplete | None = None"'
 Y090 = (
     'Y090 "{original}" means '
     '"a tuple of length 1, in which the sole element is of type {typ!r}". '
