@@ -748,8 +748,8 @@ def _analyze_classdef(node: ast.ClassDef) -> EnclosingClassContext:
     return EnclosingClassContext(node=node, cls_name=node.name, bases_map=bases_map)
 
 
-_ALLOWED_MATH_ATTRIBUTES_IN_DEFAULTS = frozenset(
-    {"math.inf", "math.nan", "math.e", "math.pi", "math.tau"}
+_NEGATABLE_MATH_ATTRIBUTES_IN_DEFAULTS = frozenset(
+    {"math.inf", "math.e", "math.pi", "math.tau"}
 )
 
 _ALLOWED_SIMPLE_ATTRIBUTES_IN_DEFAULTS = frozenset({"sentinel"})
@@ -809,10 +809,7 @@ def _is_valid_default_value_with_annotation(
             node.operand.value, ast.Name
         ):
             fullname = f"{node.operand.value.id}.{node.operand.attr}"
-            return (
-                fullname in _ALLOWED_MATH_ATTRIBUTES_IN_DEFAULTS
-                and fullname != "math.nan"
-            )
+            return fullname in _NEGATABLE_MATH_ATTRIBUTES_IN_DEFAULTS
         return False
 
     # Complex numbers with a real part and an imaginary part...
