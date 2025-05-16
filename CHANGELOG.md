@@ -3,6 +3,7 @@
 ## Unreleased
 
 New error codes:
+* Introduce Y067: Don't use `Incomplete | None = None`.
 * Introduce Y091: Protocol method parameters should not be positional-or-keyword.
 
 ## 24.9.0
