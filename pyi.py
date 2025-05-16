@@ -755,8 +755,8 @@ _ALLOWED_MATH_ATTRIBUTES_IN_DEFAULTS = frozenset(
 _ALLOWED_SIMPLE_ATTRIBUTES_IN_DEFAULTS = frozenset({"sentinel"})
 
 
-def _is_valid_default_value_with_annotation(  # noqa: C901
-    ann: ast.expr | None, node: ast.expr, *, allow_containers: bool = True
+def _is_valid_default_value_with_annotation(
+    node: ast.expr, *, allow_containers: bool = True
 ) -> bool:
     """Is `node` valid as a default value for a function or method parameter in a stub?
 
@@ -770,9 +770,7 @@ def _is_valid_default_value_with_annotation(  # noqa: C901
             allow_containers
             and len(node.elts) <= 10
             and all(
-                _is_valid_default_value_with_annotation(
-                    ann, elt, allow_containers=False
-                )
+                _is_valid_default_value_with_annotation(elt, allow_containers=False)
                 for elt in node.elts
             )
         )
@@ -786,7 +784,7 @@ def _is_valid_default_value_with_annotation(  # noqa: C901
                 (
                     subnode is not None
                     and _is_valid_default_value_with_annotation(
-                        ann, subnode, allow_containers=False
+                        subnode, allow_containers=False
                     )
                 )
                 for subnode in chain(node.keys, node.values)
@@ -1067,7 +1065,7 @@ class PyiVisitor(ast.NodeVisitor):
     ) -> None:
         if _is_valid_default_value_without_annotation(assignment):
             return
-        if _is_valid_default_value_with_annotation(None, assignment):
+        if _is_valid_default_value_with_annotation(assignment):
             # Annoying special-casing to exclude enums from Y052
             if not self.visiting_enum_class:
                 self.error(node, Y052.format(variable=target_name))
@@ -1295,9 +1293,7 @@ class PyiVisitor(ast.NodeVisitor):
         ):
             return
 
-        if node_value and not _is_valid_default_value_with_annotation(
-            node_annotation, node_value
-        ):
+        if node_value and not _is_valid_default_value_with_annotation(node_value):
             self.error(node, Y015)
 
     if sys.version_info >= (3, 12):
@@ -2207,9 +2203,7 @@ class PyiVisitor(ast.NodeVisitor):
         if default is not None:
             with self.string_literals_allowed.enabled():
                 self.visit(default)
-        if default is not None and not _is_valid_default_value_with_annotation(
-            arg.annotation, default
-        ):
+        if default is not None and not _is_valid_default_value_with_annotation(default):
             self.error(default, (Y014 if arg.annotation is None else Y011))
 
     def error(self, node: NodeWithLocation, message: str) -> None:
