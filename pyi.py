@@ -752,7 +752,7 @@ _NEGATABLE_MATH_ATTRIBUTES_IN_DEFAULTS = frozenset(
     {"math.inf", "math.e", "math.pi", "math.tau"}
 )
 
-_ALLOWED_SIMPLE_ATTRIBUTES_IN_DEFAULTS = frozenset({"sentinel"})
+_ALLOWED_SIMPLE_NAMES_IN_DEFAULTS = frozenset({"sentinel"})
 
 
 def _is_valid_default_value_with_annotation(
@@ -839,7 +839,7 @@ def _is_valid_default_value_with_annotation(
 
     # Special cases
     if isinstance(node, ast.Name):
-        return node.id in _ALLOWED_SIMPLE_ATTRIBUTES_IN_DEFAULTS
+        return node.id in _ALLOWED_SIMPLE_NAMES_IN_DEFAULTS
 
     return False
 
