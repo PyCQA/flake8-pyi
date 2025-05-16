@@ -760,7 +760,6 @@ def _is_valid_default_value_with_annotation(  # noqa: C901
     node: ast.expr,
     *,
     allow_containers: bool = True,
-    allow_enum: bool = True,
 ) -> bool:
     """Is `node` valid as a default value for a function or method parameter in a stub?
 
@@ -775,7 +774,7 @@ def _is_valid_default_value_with_annotation(  # noqa: C901
             and len(node.elts) <= 10
             and all(
                 _is_valid_default_value_with_annotation(
-                    ann, elt, allow_containers=False, allow_enum=False
+                    ann, elt, allow_containers=False
                 )
                 for elt in node.elts
             )
@@ -790,7 +789,7 @@ def _is_valid_default_value_with_annotation(  # noqa: C901
                 (
                     subnode is not None
                     and _is_valid_default_value_with_annotation(
-                        ann, subnode, allow_containers=False, allow_enum=False
+                        ann, subnode, allow_containers=False
                     )
                 )
                 for subnode in chain(node.keys, node.values)
@@ -1071,7 +1070,7 @@ class PyiVisitor(ast.NodeVisitor):
     ) -> None:
         if _is_valid_default_value_without_annotation(assignment):
             return
-        if _is_valid_default_value_with_annotation(None, assignment, allow_enum=False):
+        if _is_valid_default_value_with_annotation(None, assignment):
             # Annoying special-casing to exclude enums from Y052
             if not self.visiting_enum_class:
                 self.error(node, Y052.format(variable=target_name))
