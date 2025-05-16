@@ -756,10 +756,7 @@ _ALLOWED_SIMPLE_ATTRIBUTES_IN_DEFAULTS = frozenset({"sentinel"})
 
 
 def _is_valid_default_value_with_annotation(  # noqa: C901
-    ann: ast.expr | None,
-    node: ast.expr,
-    *,
-    allow_containers: bool = True,
+    ann: ast.expr | None, node: ast.expr, *, allow_containers: bool = True
 ) -> bool:
     """Is `node` valid as a default value for a function or method parameter in a stub?
 
