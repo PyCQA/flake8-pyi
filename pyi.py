@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     # We don't have typing_extensions as a runtime dependency,
     # but all our annotations are stringized due to __future__ annotations,
     # and mypy thinks typing_extensions is part of the stdlib.
-    from typing_extensions import TypeAlias, TypeGuard
+    from typing_extensions import TypeAlias, TypeGuard, TypeIs
 
 LOG = logging.getLogger("flake8.pyi")
 
@@ -325,14 +325,16 @@ _is_Generic = partial(_is_object, name="Generic", from_=_TYPING_MODULES)
 _is_Unpack = partial(_is_object, name="Unpack", from_=_TYPING_MODULES)
 
 
+def _is_union(node: ast.expr | None) -> TypeIs[ast.BinOp]:
+    return isinstance(node, ast.BinOp) and isinstance(node.op, ast.BitOr)
+
+
 def _is_object_or_Unused(node: ast.expr | None) -> bool:
     return _is_builtins_object(node) or _is_Unused(node)
 
 
 def _is_IncompleteOrNone(node: ast.expr | None) -> bool:
-    if not isinstance(node, ast.BinOp) or not isinstance(node.op, ast.BitOr):
-        return False
-    return _is_Incomplete(node.left) and _is_None(node.right)
+    return _is_union(node) and _is_Incomplete(node.left) and _is_None(node.right)
 
 
 def _get_name_of_class_if_from_modules(
