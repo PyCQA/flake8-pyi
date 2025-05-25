@@ -9,6 +9,7 @@ New error codes:
 Other changes:
 * Y011/Y015 will now allow all defaults that include an attribute access,
   for example `math.inf` or enum members.
+* Declare support for Python 3.14
 
 ## 24.9.0
 
