@@ -13,6 +13,7 @@ Other changes:
   [dependency groups](https://packaging.python.org/en/latest/specifications/dependency-groups/)
   rather than
   [optional dependencies](https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#dependencies-and-requirements).
+* The plugin now exists as a `flake8_pyi` package rather than a single `pyi.py` file.
 * Declare support for Python 3.14
 
 ## 24.9.0

@@ -7,8 +7,9 @@ end will be warmly received.
 
 ## Guide to the codebase
 
-The plugin consists of a single file: `pyi.py`. Tests are run using `pytest`, and can be
-found in the `tests` folder.
+The plugin consists of a single package: `flake8_pyi`. Most of the logic lives in the
+`flake8_pyi/visitor.py` file. Tests are run using `pytest`, and can be found in the `tests`
+folder.
 
 PRs that make user-visible changes should generally add a short description of the change
 to the `CHANGELOG.md` file in the repository root.
@@ -29,8 +30,8 @@ however, we advise setting up a virtual environment first:
 
 To format your code with `isort` and `black`, run:
 
-    $ isort pyi.py
-    $ black pyi.py
+    $ isort flake8_pyi
+    $ black flake8_pyi
 
 If you want, you can also run locally the commands that GitHub Actions runs.
 Look in `.github/workflows/` to find the commands.
