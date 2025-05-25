@@ -69,5 +69,5 @@ target/
 # IDEs
 .vscode/
 
-# Probably more complexity than it's worth for this repo?
+# Currently more complexity than it's worth for this repo.
 uv.lock
