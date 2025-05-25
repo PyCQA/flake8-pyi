@@ -34,8 +34,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
-        with:
-          version: "latest"
       - run: |
           uv run --python=3.13 --group=dev mypy --python-version=${{ matrix.python-version }}
 
@@ -46,8 +44,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
-        with:
-          version: "latest"
       - run: |
           uv run --python=3.13 --group=dev flake8 $(git ls-files | grep 'py$') --color=always
 
@@ -63,7 +59,5 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
-        with:
-          version: "latest"
       - run: |
           uv run --python=${{ matrix.python-version }} --group=dev pytest -vv
