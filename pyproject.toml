@@ -50,13 +50,7 @@ dependencies = [
     "pyflakes >= 2.1.1",
 ]
 
-[project.urls]
-"Homepage" = "https://github.com/PyCQA/flake8-pyi"
-"Source" = "https://github.com/PyCQA/flake8-pyi"
-"Bug Tracker" = "https://github.com/PyCQA/flake8-pyi/issues"
-"Changelog" = "https://github.com/PyCQA/flake8-pyi/blob/main/CHANGELOG.md"
-
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "black==25.1.0",            # Must match .pre-commit-config.yaml
     "flake8-bugbear==24.12.12",
@@ -68,6 +62,12 @@ dev = [
     "pytest-xdist==3.6.1",
     "types-pyflakes<4",
 ]
+
+[project.urls]
+"Homepage" = "https://github.com/PyCQA/flake8-pyi"
+"Source" = "https://github.com/PyCQA/flake8-pyi"
+"Bug Tracker" = "https://github.com/PyCQA/flake8-pyi/issues"
+"Changelog" = "https://github.com/PyCQA/flake8-pyi/blob/main/CHANGELOG.md"
 
 [project.entry-points]
 "flake8.extension" = {Y0 = "pyi:PyiTreeChecker"}
