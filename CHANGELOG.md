@@ -9,6 +9,10 @@ New error codes:
 Other changes:
 * Y011/Y015 will now allow all defaults that include an attribute access,
   for example `math.inf` or enum members.
+* Development-only dependencies are now declared using
+  [dependency groups](https://packaging.python.org/en/latest/specifications/dependency-groups/)
+  rather than
+  [optional dependencies](https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#dependencies-and-requirements).
 
 ## 24.9.0
 
