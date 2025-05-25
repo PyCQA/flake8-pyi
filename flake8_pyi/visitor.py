@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import argparse
 import ast
-import logging
 import re
 import sys
 from collections import Counter, defaultdict
@@ -14,13 +12,10 @@ from dataclasses import dataclass
 from functools import cached_property, partial
 from itertools import chain, groupby, zip_longest
 from keyword import iskeyword
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, NamedTuple, Protocol
+from typing import TYPE_CHECKING, Literal, NamedTuple, Protocol
 
-from flake8 import checker
-from flake8.options.manager import OptionManager
-from flake8.plugins.finder import LoadedPlugin
-from flake8.plugins.pyflakes import FlakesChecker
-from pyflakes.checker import ModuleScope
+from . import checker, errors
+from .errors import Error
 
 if TYPE_CHECKING:
     # We don't have typing_extensions as a runtime dependency,
@@ -28,19 +23,10 @@ if TYPE_CHECKING:
     # and mypy thinks typing_extensions is part of the stdlib.
     from typing_extensions import TypeAlias, TypeGuard, TypeIs
 
-LOG = logging.getLogger("flake8.pyi")
-
 if sys.version_info >= (3, 12):
     _TypeAliasNodeType: TypeAlias = ast.TypeAlias | ast.AnnAssign
 else:
     _TypeAliasNodeType: TypeAlias = ast.AnnAssign
-
-
-class Error(NamedTuple):
-    lineno: int
-    col: int
-    message: str
-    type: type[PyiTreeChecker]
 
 
 class TypeVarInfo(NamedTuple):
@@ -151,89 +137,6 @@ _BAD_TYPINGEXTENSIONS_Y023_IMPORTS = frozenset(
         # as you shouldn't be importing them from anywhere! (Y039)
     }
 )
-
-
-class PyflakesPreProcessor(ast.NodeTransformer):
-    """Transform AST prior to passing it to pyflakes.
-
-    This reduces false positives on recursive class definitions.
-    """
-
-    def visit_ClassDef(self, node: ast.ClassDef) -> ast.ClassDef:
-        self.generic_visit(node)
-        node.bases = [
-            # Remove the subscript to prevent F821 errors from being emitted
-            # for (valid) recursive definitions: Foo[Bar] --> Foo
-            base.value if isinstance(base, ast.Subscript) else base
-            for base in node.bases
-        ]
-        return node
-
-
-class PyiAwareFlakesChecker(FlakesChecker):
-    def __init__(self, tree: ast.AST, *args: Any, **kwargs: Any) -> None:
-        super().__init__(PyflakesPreProcessor().visit(tree), *args, **kwargs)
-
-    @property
-    def annotationsFutureEnabled(self) -> Literal[True]:
-        """Always allow forward references in `.pyi` files.
-
-        Pyflakes can already handle forward refs for annotations,
-        but only via `from __future__ import annotations`.
-        In a stub file, `from __future__ import annotations` is unnecessary,
-        so we pretend to pyflakes that it's always present when linting a `.pyi` file.
-        """
-        return True
-
-    @annotationsFutureEnabled.setter
-    def annotationsFutureEnabled(self, value: bool) -> None:
-        """Does nothing, as we always want this property to be `True`."""
-
-    def ASSIGN(
-        self, tree: ast.Assign, omit: str | tuple[str, ...] | None = None
-    ) -> None:
-        """Defer evaluation of assignments in the module scope.
-
-        This is a custom implementation of ASSIGN, originally derived from
-        handleChildren() in pyflakes 1.3.0.
-
-        This reduces false positives for:
-          - TypeVars bound or constrained to forward references
-          - Assignments to forward references that are not explicitly
-            demarcated as type aliases.
-        """
-        if not isinstance(self.scope, ModuleScope):
-            super().ASSIGN(tree)
-            return
-
-        for target in tree.targets:
-            self.handleNode(target, tree)
-
-        self.deferFunction(lambda: self.handleNode(tree.value, tree))
-
-    def handleNodeDelete(self, node: ast.AST) -> None:
-        """Null implementation.
-
-        Lets users use `del` in stubs to denote private names.
-        """
-        return
-
-
-class PyiAwareFileChecker(checker.FileChecker):
-    def run_check(self, plugin: LoadedPlugin, **kwargs: Any) -> Any:
-        if plugin.obj is FlakesChecker:
-            if self.filename == "-":
-                filename = self.options.stdin_display_name
-            else:
-                filename = self.filename
-
-            if filename.endswith(".pyi"):
-                LOG.info(
-                    f"Replacing FlakesChecker with PyiAwareFlakesChecker while "
-                    f"checking {filename!r}"
-                )
-                plugin = plugin._replace(obj=PyiAwareFlakesChecker)
-        return super().run_check(plugin, **kwargs)
 
 
 def _ast_node_for(string: str) -> ast.AST:
@@ -889,45 +792,45 @@ def _check_import_or_attribute(
 
     # Y057 errors
     if fullname in {"typing.ByteString", "collections.abc.ByteString"}:
-        return Y057.format(module=module_name)
+        return errors.Y057.format(module=module_name)
 
     # Y024 errors
     if fullname == "collections.namedtuple":
-        return Y024
+        return errors.Y024
 
     if module_name in _TYPING_MODULES:
         # Y022 errors
         if object_name in _BAD_Y022_IMPORTS:
             good_cls_name, slice_contents = _BAD_Y022_IMPORTS[object_name]
             params = "" if slice_contents is None else f"[{slice_contents}]"
-            return Y022.format(
+            return errors.Y022.format(
                 good_syntax=f'"{good_cls_name}{params}"',
                 bad_syntax=f'"{fullname}{params}"',
             )
 
         # Y037 errors
         if object_name == "Optional":
-            return Y037.format(
+            return errors.Y037.format(
                 old_syntax=fullname, example='"int | None" instead of "Optional[int]"'
             )
         if object_name == "Union":
-            return Y037.format(
+            return errors.Y037.format(
                 old_syntax=fullname, example='"int | str" instead of "Union[int, str]"'
             )
 
         # Y039 errors
         if object_name == "Text":
-            return Y039.format(module=module_name)
+            return errors.Y039.format(module=module_name)
 
     # Y023 errors
     if module_name == "typing_extensions":
         if object_name in _BAD_TYPINGEXTENSIONS_Y023_IMPORTS:
-            return Y023.format(
+            return errors.Y023.format(
                 good_syntax=f'"typing.{object_name}"',
                 bad_syntax=f'"typing_extensions.{object_name}"',
             )
         if object_name == "ClassVar":
-            return Y023.format(
+            return errors.Y023.format(
                 good_syntax='"typing.ClassVar[T]"',
                 bad_syntax='"typing_extensions.ClassVar[T]"',
             )
@@ -1030,7 +933,7 @@ class PyiVisitor(ast.NodeVisitor):
 
         if module_name == "__future__":
             if "annotations" in imported_names:
-                self.error(node, Y044)
+                self.error(node, errors.Y044)
             return
 
         if (
@@ -1038,14 +941,14 @@ class PyiVisitor(ast.NodeVisitor):
             and "Set" in imported_names
             and imported_names["Set"].asname != "AbstractSet"
         ):
-            self.error(node, Y025)
+            self.error(node, errors.Y025)
 
         for object_name in imported_names:
             if error_msg := _check_import_or_attribute(node, module_name, object_name):
                 self.error(node, error_msg)
 
         if module_name in _TYPING_MODULES and "AbstractSet" in imported_names:
-            self.error(node, Y038.format(module=module_name))
+            self.error(node, errors.Y038.format(module=module_name))
 
     def _check_for_typevarlike_assignments(
         self, node: ast.Assign, function: ast.expr, object_name: str
@@ -1063,7 +966,7 @@ class PyiVisitor(ast.NodeVisitor):
                 target_info = TypeVarInfo(cls_name=cls_name, name=object_name)
                 self.typevarlike_defs[target_info].append(node)
             else:
-                self.error(node, Y001.format(cls_name))
+                self.error(node, errors.Y001.format(cls_name))
 
     def _check_default_value_without_type_annotation(
         self, node: ast.Assign, assignment: ast.expr, target_name: str
@@ -1073,9 +976,9 @@ class PyiVisitor(ast.NodeVisitor):
         if _is_valid_default_value_with_annotation(assignment):
             # Annoying special-casing to exclude enums from Y052
             if not self.visiting_enum_class:
-                self.error(node, Y052.format(variable=target_name))
+                self.error(node, errors.Y052.format(variable=target_name))
         else:
-            self.error(node, Y015)
+            self.error(node, errors.Y015)
 
     def visit_Assign(self, node: ast.Assign) -> None:
         if self.in_function.active:
@@ -1087,10 +990,10 @@ class PyiVisitor(ast.NodeVisitor):
             if isinstance(target, ast.Name):
                 target_name = target.id
             else:
-                self.error(node, Y017)
+                self.error(node, errors.Y017)
                 target_name = None
         else:
-            self.error(node, Y017)
+            self.error(node, errors.Y017)
             target = target_name = None
         is_special_assignment = _is_assignment_which_must_have_a_value(
             target_name, in_class=self.enclosing_class_ctx is not None
@@ -1166,7 +1069,7 @@ class PyiVisitor(ast.NodeVisitor):
                 value=assignment,
                 simple=1,
             )
-            self.error(node, Y026.format(suggestion=ast.unparse(new_node)))
+            self.error(node, errors.Y026.format(suggestion=ast.unparse(new_node)))
 
     def visit_Name(self, node: ast.Name) -> None:
         self.generic_visit(node)
@@ -1177,10 +1080,10 @@ class PyiVisitor(ast.NodeVisitor):
         self.visit(function)
 
         if _is_NamedTuple(function):
-            return self.error(node, Y028)
+            return self.error(node, errors.Y028)
         elif _is_TypedDict(function):
             if _is_bad_TypedDict(node):
-                self.error(node, Y031)
+                self.error(node, errors.Y031)
             return
         elif _is_deprecated(function):
             with (
@@ -1195,7 +1098,7 @@ class PyiVisitor(ast.NodeVisitor):
             and isinstance(function.value, ast.Name)
             and function.value.id == "__all__"
         ):
-            return self.error(node, Y056.format(method=f".{function.attr}()"))
+            return self.error(node, errors.Y056.format(method=f".{function.attr}()"))
 
         # String literals can appear as the first positional argument for
         # TypeVar/ParamSpec/TypeVarTuple/NamedTuple/TypedDict/NewType definitions, etc.
@@ -1209,13 +1112,13 @@ class PyiVisitor(ast.NodeVisitor):
 
     def visit_Constant(self, node: ast.Constant) -> None:
         if isinstance(node.value, str) and not self.string_literals_allowed.active:
-            self.error(node, Y020)
+            self.error(node, errors.Y020)
         elif (
             isinstance(node.value, (str, bytes))
             and not self.long_strings_allowed.active
         ):
             if len(node.value) > 50:
-                self.error(node, Y053)
+                self.error(node, errors.Y053)
         elif isinstance(node.value, (int, float, complex)):
             if len(str(node.value)) > 10:
                 # The maximum character limit is arbitrary, but here's what it's based on:
@@ -1223,11 +1126,11 @@ class PyiVisitor(ast.NodeVisitor):
                 # So is the decimal representation
                 # of the maximum positive signed 32-bit integer.
                 # 0xFFFFFFFF --> 4294967295
-                self.error(node, Y054)
+                self.error(node, errors.Y054)
 
     def visit_Expr(self, node: ast.Expr) -> None:
         if isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
-            self.error(node, Y021)
+            self.error(node, errors.Y021)
         else:
             self.generic_visit(node)
 
@@ -1244,9 +1147,9 @@ class PyiVisitor(ast.NodeVisitor):
         if alias_name.startswith("_"):
             self.typealias_decls[alias_name].append(node)
         if self._Y042_REGEX.match(alias_name):
-            self.error(node, Y042)
+            self.error(node, errors.Y042)
         if self._Y043_REGEX.match(alias_name):
-            self.error(node, Y043)
+            self.error(node, errors.Y043)
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         node_annotation = node.annotation
@@ -1282,7 +1185,7 @@ class PyiVisitor(ast.NodeVisitor):
         if is_special_assignment:
             if node_value is None:
                 assert isinstance(node_target, ast.Name)
-                self.error(node, Y035.format(var=node_target.id))
+                self.error(node, errors.Y035.format(var=node_target.id))
             return
 
         if is_typealias:
@@ -1299,7 +1202,7 @@ class PyiVisitor(ast.NodeVisitor):
             return
 
         if node_value and not _is_valid_default_value_with_annotation(node_value):
-            self.error(node, Y015)
+            self.error(node, errors.Y015)
 
     if sys.version_info >= (3, 12):
 
@@ -1331,7 +1234,7 @@ class PyiVisitor(ast.NodeVisitor):
             )
             self.error(
                 node,
-                Y064.format(
+                errors.Y064.format(
                     suggestion=ast.unparse(suggestion), original=ast.unparse(node)
                 ),
             )
@@ -1346,7 +1249,9 @@ class PyiVisitor(ast.NodeVisitor):
 
         for member_list in analysis.members_by_dump.values():
             if len(member_list) >= 2:
-                self.error(member_list[1], Y016.format(ast.unparse(member_list[1])))
+                self.error(
+                    member_list[1], errors.Y016.format(ast.unparse(member_list[1]))
+                )
 
         if not analysis.dupes_in_union:
             self._check_for_Y051_violations(analysis)
@@ -1375,7 +1280,7 @@ class PyiVisitor(ast.NodeVisitor):
                 seen_builtins.add(typ)
                 self.error(
                     literal,
-                    Y051.format(
+                    errors.Y051.format(
                         literal_subtype=f"Literal[{ast.unparse(literal)}]",
                         builtin_supertype=typename,
                     ),
@@ -1385,8 +1290,8 @@ class PyiVisitor(ast.NodeVisitor):
         self, first_union_member: ast.expr, analysis: UnionAnalysis
     ) -> None:
         builtins_in_union = analysis.builtins_classes_in_union
-        errors: list[tuple[str, str]] = []
-        add_error = errors.append
+        new_errors: list[tuple[str, str]] = []
+        add_error = new_errors.append
         if "complex" in builtins_in_union:
             if "float" in builtins_in_union:
                 add_error(("float", "complex"))
@@ -1394,10 +1299,12 @@ class PyiVisitor(ast.NodeVisitor):
                 add_error(("int", "complex"))
         elif "float" in builtins_in_union and "int" in builtins_in_union:
             add_error(("int", "float"))
-        for subtype, supertype in errors:
+        for subtype, supertype in new_errors:
             self.error(
                 first_union_member,
-                Y041.format(implicit_subtype=subtype, implicit_supertype=supertype),
+                errors.Y041.format(
+                    implicit_subtype=subtype, implicit_supertype=supertype
+                ),
             )
 
     def _error_for_multiple_literals_in_union(
@@ -1411,7 +1318,7 @@ class PyiVisitor(ast.NodeVisitor):
         else:
             suggestion = f'Use a single Literal, e.g. "Literal[{new_literal_slice}]".'
 
-        self.error(first_union_member, Y030.format(suggestion=suggestion))
+        self.error(first_union_member, errors.Y030.format(suggestion=suggestion))
 
     def _error_for_multiple_type_subscripts_in_union(
         self,
@@ -1432,7 +1339,7 @@ class PyiVisitor(ast.NodeVisitor):
             new_union = f"Union[{type_slice}]"
 
         suggestion = f'Combine them into one, e.g. "type[{new_union}]".'
-        self.error(first_union_member, Y055.format(suggestion=suggestion))
+        self.error(first_union_member, errors.Y055.format(suggestion=suggestion))
 
     def visit_BinOp(self, node: ast.BinOp) -> None:
         if not isinstance(node.op, ast.BitOr):
@@ -1462,7 +1369,9 @@ class PyiVisitor(ast.NodeVisitor):
         copied_node = deepcopy(node)
         copied_node.slice = ast.Tuple(elts=[copied_node.slice, ast.Constant(...)])
         suggestion = ast.unparse(copied_node)
-        self.error(node, Y090.format(original=current_code, typ=typ, new=suggestion))
+        self.error(
+            node, errors.Y090.format(original=current_code, typ=typ, new=suggestion)
+        )
 
     def visit_Subscript(self, node: ast.Subscript) -> None:
         subscripted_object = node.value
@@ -1491,11 +1400,13 @@ class PyiVisitor(ast.NodeVisitor):
         for member_list in analysis.members_by_dump.values():
             if len(member_list) > 1 and not _is_None(member_list[0]):
                 Y062_encountered = True
-                self.error(member_list[1], Y062.format(ast.unparse(member_list[1])))
+                self.error(
+                    member_list[1], errors.Y062.format(ast.unparse(member_list[1]))
+                )
 
         if not Y062_encountered and not self.Y061_suppressed.active:
             if analysis.contains_only_none:
-                self.error(node.slice, Y061.format(suggestion="None"))
+                self.error(node.slice, errors.Y061.format(suggestion="None"))
             elif analysis.none_members:
                 if len(analysis.members_without_none) == 1:
                     new_literal_slice = ast.unparse(analysis.members_without_none[0])
@@ -1503,7 +1414,9 @@ class PyiVisitor(ast.NodeVisitor):
                     new_slice_node = ast.Tuple(elts=analysis.members_without_none)
                     new_literal_slice = ast.unparse(new_slice_node).strip("()")
                 suggestion = f"Literal[{new_literal_slice}] | None"
-                self.error(analysis.none_members[0], Y061.format(suggestion=suggestion))
+                self.error(
+                    analysis.none_members[0], errors.Y061.format(suggestion=suggestion)
+                )
 
         with self.long_strings_allowed.enabled():
             self.visit(node.slice)
@@ -1544,11 +1457,11 @@ class PyiVisitor(ast.NodeVisitor):
 
     def _check_if_expression(self, node: ast.expr) -> None:
         if not isinstance(node, ast.Compare):
-            self.error(node, Y002)
+            self.error(node, errors.Y002)
             return
         if len(node.comparators) != 1:
             # mypy doesn't support chained comparisons
-            self.error(node, Y002)
+            self.error(node, errors.Y002)
             return
         if isinstance(node.left, ast.Subscript):
             self._check_subscript_version_check(node)
@@ -1559,11 +1472,11 @@ class PyiVisitor(ast.NodeVisitor):
                 elif node.left.attr == "version_info":
                     self._check_version_check(node)
                 else:
-                    self.error(node, Y002)
+                    self.error(node, errors.Y002)
             else:
-                self.error(node, Y002)
+                self.error(node, errors.Y002)
         else:
-            self.error(node, Y002)
+            self.error(node, errors.Y002)
 
     def _check_for_Y066_violations(self, node: ast.If) -> None:
         def is_version_info(attr: ast.expr) -> bool:
@@ -1591,7 +1504,7 @@ class PyiVisitor(ast.NodeVisitor):
             and if_chain_ends_with_else(node)
         ):
             new_syntax = "if " + ast.unparse(test).replace("<", ">=", 1)
-            self.error(node, Y066.format(new_syntax=new_syntax))
+            self.error(node, errors.Y066.format(new_syntax=new_syntax))
 
     def _check_subscript_version_check(self, node: ast.Compare) -> None:
         # unless this is on, comparisons against a single integer aren't allowed
@@ -1606,11 +1519,11 @@ class PyiVisitor(ast.NodeVisitor):
                 if type(slc.value) is int and slc.value == 0:
                     must_be_single = True
                 else:
-                    self.error(node, Y003)
+                    self.error(node, errors.Y003)
                     return
             elif isinstance(slc, ast.Slice):
                 if slc.lower is not None or slc.step is not None:
-                    self.error(node, Y003)
+                    self.error(node, errors.Y003)
                     return
                 elif (
                     # allow only [:1] and [:2]
@@ -1620,11 +1533,11 @@ class PyiVisitor(ast.NodeVisitor):
                 ):
                     can_have_strict_equals = slc.upper.value
                 else:
-                    self.error(node, Y003)
+                    self.error(node, errors.Y003)
                     return
             else:
                 # extended slicing
-                self.error(node, Y003)
+                self.error(node, errors.Y003)
                 return
         self._check_version_check(
             node,
@@ -1645,18 +1558,18 @@ class PyiVisitor(ast.NodeVisitor):
                 not isinstance(comparator, ast.Constant)
                 or type(comparator.value) is not int
             ):
-                self.error(node, Y003)
+                self.error(node, errors.Y003)
         elif not isinstance(comparator, ast.Tuple):
-            self.error(node, Y003)
+            self.error(node, errors.Y003)
         else:
             if not all(
                 isinstance(elt, ast.Constant) and type(elt.value) is int
                 for elt in comparator.elts
             ):
-                self.error(node, Y003)
+                self.error(node, errors.Y003)
             elif len(comparator.elts) > 2:
                 # mypy only supports major and minor version checks
-                self.error(node, Y004)
+                self.error(node, errors.Y004)
 
             cmpop = node.ops[0]
             if isinstance(cmpop, (ast.Lt, ast.GtE)):
@@ -1664,17 +1577,17 @@ class PyiVisitor(ast.NodeVisitor):
             elif isinstance(cmpop, (ast.Eq, ast.NotEq)):
                 if can_have_strict_equals is not None:
                     if len(comparator.elts) != can_have_strict_equals:
-                        self.error(node, Y005.format(n=can_have_strict_equals))
+                        self.error(node, errors.Y005.format(n=can_have_strict_equals))
                 else:
-                    self.error(node, Y006)
+                    self.error(node, errors.Y006)
             else:
-                self.error(node, Y006)
+                self.error(node, errors.Y006)
 
     def _check_platform_check(self, node: ast.Compare) -> None:
         cmpop = node.ops[0]
         # "in" might also make sense but we don't currently have one
         if not isinstance(cmpop, (ast.Eq, ast.NotEq)):
-            self.error(node, Y007)
+            self.error(node, errors.Y007)
             return
 
         comparator = node.comparators[0]
@@ -1682,9 +1595,9 @@ class PyiVisitor(ast.NodeVisitor):
             # other values are possible but we don't need them right now
             # this protects against typos
             if comparator.value not in {"linux", "win32", "cygwin", "darwin"}:
-                self.error(node, Y008.format(platform=comparator.value))
+                self.error(node, errors.Y008.format(platform=comparator.value))
         else:
-            self.error(node, Y007)
+            self.error(node, errors.Y007)
 
     def _check_class_bases(self, bases: list[ast.expr]) -> None:
         Y040_encountered = False
@@ -1695,7 +1608,7 @@ class PyiVisitor(ast.NodeVisitor):
 
         for i, base_node in enumerate(bases, start=1):
             if not Y040_encountered and _is_builtins_object(base_node):
-                self.error(base_node, Y040)
+                self.error(base_node, errors.Y040)
                 Y040_encountered = True
             if isinstance(base_node, ast.Subscript):
                 subscript_bases.append(base_node)
@@ -1703,14 +1616,14 @@ class PyiVisitor(ast.NodeVisitor):
                     Generic_basenode = base_node
                     if i < num_bases and not Y059_encountered:
                         Y059_encountered = True
-                        self.error(base_node, Y059)
+                        self.error(base_node, errors.Y059)
 
         if Generic_basenode is not None:
             assert subscript_bases
             if len(subscript_bases) > 1 and all_equal(
                 ast.dump(subscript_base.slice) for subscript_base in subscript_bases
             ):
-                msg = Y060.format(redundant_base=ast.unparse(Generic_basenode))
+                msg = errors.Y060.format(redundant_base=ast.unparse(Generic_basenode))
                 self.error(Generic_basenode, msg)
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
@@ -1739,20 +1652,20 @@ class PyiVisitor(ast.NodeVisitor):
             ):
                 return
             elif isinstance(statement, ast.Pass):
-                self.error(statement, Y009)
+                self.error(statement, errors.Y009)
                 return
 
         for statement in node.body:
             # "pass" should not used in class body
             if isinstance(statement, ast.Pass):
-                self.error(statement, Y012)
+                self.error(statement, errors.Y012)
             # "..." should not be used in non-empty class body
             elif (
                 isinstance(statement, ast.Expr)
                 and isinstance(statement.value, ast.Constant)
                 and statement.value.value is ...
             ):
-                self.error(statement, Y013)
+                self.error(statement, errors.Y013)
 
     def _check_exit_method(  # noqa: C901
         self, node: ast.FunctionDef | ast.AsyncFunctionDef, method_name: str
@@ -1763,7 +1676,9 @@ class PyiVisitor(ast.NodeVisitor):
         varargs = all_args.vararg
 
         def error_for_bad_exit_method(details: str) -> None:
-            self.error(node, Y036.format(method_name=method_name, details=details))
+            self.error(
+                node, errors.Y036.format(method_name=method_name, details=details)
+            )
 
         if num_args < 4:
             if varargs:
@@ -1870,7 +1785,7 @@ class PyiVisitor(ast.NodeVisitor):
             referrer = '"__new__" methods'
         else:
             referrer = f'"{method_name}" methods in classes like "{cls_name}"'
-        error_message = Y034.format(
+        error_message = errors.Y034.format(
             methods=referrer,
             method_name=f"{cls_name}.{method_name}",
             suggested_syntax=_unparse_func_node(copied_node),
@@ -1883,7 +1798,9 @@ class PyiVisitor(ast.NodeVisitor):
         assert node.name in {"__iter__", "__aiter__"}
         good_cls = "Iterator" if node.name == "__iter__" else "AsyncIterator"
         example = f"def {node.name}({args[0].arg}) -> {example_returns}: ..."
-        msg = Y058.format(iter_method=node.name, good_cls=good_cls, example=example)
+        msg = errors.Y058.format(
+            iter_method=node.name, good_cls=good_cls, example=example
+        )
         self.error(node, msg)
 
     def _check_iter_returns(
@@ -1892,7 +1809,7 @@ class PyiVisitor(ast.NodeVisitor):
         if _is_Iterable(returns) or (
             isinstance(returns, ast.Subscript) and _is_Iterable(returns.value)
         ):
-            msg = Y045.format(
+            msg = errors.Y045.format(
                 iter_method="__iter__", good_cls="Iterator", bad_cls="Iterable"
             )
             self.error(node, msg)
@@ -1921,7 +1838,7 @@ class PyiVisitor(ast.NodeVisitor):
         if _is_AsyncIterable(returns) or (
             isinstance(returns, ast.Subscript) and _is_AsyncIterable(returns.value)
         ):
-            msg = Y045.format(
+            msg = errors.Y045.format(
                 iter_method="__aiter__",
                 good_cls="AsyncIterator",
                 bad_cls="AsyncIterable",
@@ -1978,11 +1895,11 @@ class PyiVisitor(ast.NodeVisitor):
                 and _is_object(returns, "str", from_={"builtins"})
                 and not any(_is_abstractmethod(deco) for deco in node.decorator_list)
             ):
-                self.error(node, Y029)
+                self.error(node, errors.Y029)
 
         elif method_name in {"__eq__", "__ne__"}:
             if len(non_kw_only_args) == 2 and _is_Any(non_kw_only_args[1].annotation):
-                self.error(node, Y032.format(method_name=method_name))
+                self.error(node, errors.Y032.format(method_name=method_name))
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         if self.enclosing_class_ctx is not None:
@@ -2013,7 +1930,9 @@ class PyiVisitor(ast.NodeVisitor):
         non_kw_only_args[0].annotation = None
         new_syntax = _unparse_func_node(cleaned_method)
         new_syntax = re.sub(rf"\b{typevar_name}\b", "Self", new_syntax)
-        self.error(node, Y019.format(typevar_name=typevar_name, new_syntax=new_syntax))
+        self.error(
+            node, errors.Y019.format(typevar_name=typevar_name, new_syntax=new_syntax)
+        )
 
     @staticmethod
     def _is_likely_private_typevar(
@@ -2117,7 +2036,9 @@ class PyiVisitor(ast.NodeVisitor):
         for pos_or_kw in relevant_params:
             if pos_or_kw.arg.startswith("__"):
                 continue
-            self.error(pos_or_kw, Y091.format(arg=pos_or_kw.arg, method=node.name))
+            self.error(
+                pos_or_kw, errors.Y091.format(arg=pos_or_kw.arg, method=node.name)
+            )
 
     @staticmethod
     def _is_positional_pre_570_argname(name: str) -> bool:
@@ -2145,23 +2066,23 @@ class PyiVisitor(ast.NodeVisitor):
                 and self._is_positional_pre_570_argname(pos_or_kw_args[1].arg)
             )
         if uses_old_syntax:
-            self.error(node, Y063)
+            self.error(node, errors.Y063)
 
     def _visit_function(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         with self.in_function.enabled():
             self.generic_visit(node)
 
         if node.name != "__getattr__" and node.returns and _is_Incomplete(node.returns):
-            self.error(node.returns, Y065.format(what="return type"))
+            self.error(node.returns, errors.Y065.format(what="return type"))
 
         body = node.body
         if len(body) > 1:
-            self.error(body[1], Y048)
+            self.error(body[1], errors.Y048)
         elif body:
             statement = body[0]
             # normally, should just be "..."
             if isinstance(statement, ast.Pass):
-                self.error(statement, Y009)
+                self.error(statement, errors.Y009)
             # ... is fine. Docstrings are not but we produce
             # tailored error message for them elsewhere.
             elif not (
@@ -2169,7 +2090,7 @@ class PyiVisitor(ast.NodeVisitor):
                 and isinstance(statement.value, ast.Constant)
                 and isinstance(statement.value.value, (str, type(...)))
             ):
-                self.error(statement, Y010)
+                self.error(statement, errors.Y010)
 
         self._check_pep570_syntax_used_where_applicable(node)
         if self.enclosing_class_ctx is not None:
@@ -2184,9 +2105,9 @@ class PyiVisitor(ast.NodeVisitor):
 
     def visit_arg(self, node: ast.arg) -> None:
         if _is_NoReturn(node.annotation):
-            self.error(node, Y050)
+            self.error(node, errors.Y050)
         if _is_Incomplete(node.annotation):
-            self.error(node, Y065.format(what=f'parameter "{node.arg}"'))
+            self.error(node, errors.Y065.format(what=f'parameter "{node.arg}"'))
         with self.visiting_arg.enabled():
             self.generic_visit(node)
 
@@ -2209,12 +2130,16 @@ class PyiVisitor(ast.NodeVisitor):
             with self.string_literals_allowed.enabled():
                 self.visit(default)
         if default is not None and not _is_valid_default_value_with_annotation(default):
-            self.error(default, (Y014 if arg.annotation is None else Y011))
+            self.error(
+                default, (errors.Y014 if arg.annotation is None else errors.Y011)
+            )
         if _is_IncompleteOrNone(arg.annotation) and _is_None(default):
-            self.error(arg, Y067)
+            self.error(arg, errors.Y067)
 
     def error(self, node: NodeWithLocation, message: str) -> None:
-        self.errors.append(Error(node.lineno, node.col_offset, message, PyiTreeChecker))
+        self.errors.append(
+            Error(node.lineno, node.col_offset, message, checker.PyiTreeChecker)
+        )
 
     def _check_for_unused_things(self) -> None:
         """
@@ -2231,199 +2156,30 @@ class PyiVisitor(ast.NodeVisitor):
         """
         for (cls_name, typevar_name), tv_nodelist in self.typevarlike_defs.items():
             if self.all_name_occurrences[typevar_name] == len(tv_nodelist):
-                msg = Y018.format(typevarlike_cls=cls_name, typevar_name=typevar_name)
+                msg = errors.Y018.format(
+                    typevarlike_cls=cls_name, typevar_name=typevar_name
+                )
                 self.error(tv_nodelist[0], msg)
         for proto_name, proto_nodelist in self.protocol_defs.items():
             if self.all_name_occurrences[proto_name] == 0:
-                self.error(proto_nodelist[0], Y046.format(protocol_name=proto_name))
+                self.error(
+                    proto_nodelist[0], errors.Y046.format(protocol_name=proto_name)
+                )
         for td_name, cls_td_nodelist in self.class_based_typeddicts.items():
             if self.all_name_occurrences[td_name] == 0:
-                self.error(cls_td_nodelist[0], Y049.format(typeddict_name=td_name))
+                self.error(
+                    cls_td_nodelist[0], errors.Y049.format(typeddict_name=td_name)
+                )
         for td_name, ass_td_nodelist in self.assignment_based_typeddicts.items():
             if self.all_name_occurrences[td_name] == len(ass_td_nodelist):
-                self.error(ass_td_nodelist[0], Y049.format(typeddict_name=td_name))
+                self.error(
+                    ass_td_nodelist[0], errors.Y049.format(typeddict_name=td_name)
+                )
         for alias_name, alias_nodelist in self.typealias_decls.items():
             if self.all_name_occurrences[alias_name] == len(alias_nodelist):
-                self.error(alias_nodelist[0], Y047.format(alias_name=alias_name))
+                self.error(alias_nodelist[0], errors.Y047.format(alias_name=alias_name))
 
     def run(self, tree: ast.AST) -> Iterator[Error]:
         self.visit(tree)
         self._check_for_unused_things()
         yield from self.errors
-
-
-_TYPE_COMMENT_REGEX = re.compile(r"#\s*type:\s*(?!\s?ignore)([^#]+)(\s*#.*?)?$")
-
-
-def _check_for_type_comments(lines: list[str]) -> Iterator[Error]:
-    for lineno, line in enumerate(lines, start=1):
-        cleaned_line = line.strip()
-
-        if cleaned_line.startswith("#"):
-            continue
-
-        if match := _TYPE_COMMENT_REGEX.search(cleaned_line):
-            type_comment = match.group(1).strip()
-
-            try:
-                ast.parse(type_comment)
-            except SyntaxError:
-                continue
-
-            yield Error(lineno, 0, Y033, PyiTreeChecker)
-
-
-@dataclass
-class PyiTreeChecker:
-    name: ClassVar[str] = "flake8-pyi"
-    tree: ast.Module
-    lines: list[str]
-    filename: str = "(none)"
-
-    def run(self) -> Iterable[Error]:
-        if self.filename.endswith(".pyi"):
-            yield from _check_for_type_comments(self.lines)
-            yield from PyiVisitor(filename=self.filename).run(self.tree)
-
-    @staticmethod
-    def add_options(parser: OptionManager) -> None:
-        """This is brittle, there's multiple levels of caching of defaults."""
-        parser.parser.set_defaults(filename="*.py,*.pyi")
-        parser.extend_default_ignore(DISABLED_BY_DEFAULT)
-        parser.add_option(
-            "--no-pyi-aware-file-checker",
-            default=False,
-            action="store_true",
-            parse_from_config=True,
-            help="don't patch flake8 with .pyi-aware file checker",
-        )
-
-    @staticmethod
-    def parse_options(options: argparse.Namespace) -> None:
-        if not options.no_pyi_aware_file_checker:
-            checker.FileChecker = PyiAwareFileChecker
-
-
-# Please keep error code lists in ERRORCODES and CHANGELOG up to date
-Y001 = "Y001 Name of private {} must start with _"
-Y002 = (
-    "Y002 If test must be a simple comparison against sys.platform or sys.version_info"
-)
-Y003 = "Y003 Unrecognized sys.version_info check"
-Y004 = "Y004 Version comparison must use only major and minor version"
-Y005 = "Y005 Version comparison must be against a length-{n} tuple"
-Y006 = "Y006 Use only < and >= for version comparisons"
-Y007 = "Y007 Unrecognized sys.platform check"
-Y008 = 'Y008 Unrecognized platform "{platform}"'
-Y009 = 'Y009 Empty body should contain "...", not "pass"'
-Y010 = 'Y010 Function body must contain only "..."'
-Y011 = "Y011 Only simple default values allowed for typed arguments"
-Y012 = 'Y012 Class body must not contain "pass"'
-Y013 = 'Y013 Non-empty class body must not contain "..."'
-Y014 = "Y014 Only simple default values allowed for arguments"
-Y015 = "Y015 Only simple default values are allowed for assignments"
-Y016 = 'Y016 Duplicate union member "{}"'
-Y017 = "Y017 Only simple assignments allowed"
-Y018 = 'Y018 {typevarlike_cls} "{typevar_name}" is not used'
-Y019 = (
-    'Y019 Use "typing_extensions.Self" instead of "{typevar_name}", e.g. "{new_syntax}"'
-)
-Y020 = "Y020 Quoted annotations should never be used in stubs"
-Y021 = "Y021 Docstrings should not be included in stubs"
-Y022 = "Y022 Use {good_syntax} instead of {bad_syntax} (PEP 585 syntax)"
-Y023 = "Y023 Use {good_syntax} instead of {bad_syntax}"
-Y024 = 'Y024 Use "typing.NamedTuple" instead of "collections.namedtuple"'
-Y025 = (
-    'Y025 Use "from collections.abc import Set as AbstractSet" '
-    'to avoid confusion with "builtins.set"'
-)
-Y026 = 'Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "{suggestion}"'
-Y028 = "Y028 Use class-based syntax for NamedTuples"
-Y029 = "Y029 Defining __repr__ or __str__ in a stub is almost always redundant"
-Y030 = "Y030 Multiple Literal members in a union. {suggestion}"
-Y031 = "Y031 Use class-based syntax for TypedDicts where possible"
-Y032 = (
-    'Y032 Prefer "object" to "Any" for the second parameter in "{method_name}" methods'
-)
-Y033 = (
-    "Y033 Do not use type comments in stubs "
-    '(e.g. use "x: int" instead of "x = ... # type: int")'
-)
-Y034 = (
-    'Y034 {methods} usually return "self" at runtime. '
-    'Consider using "typing_extensions.Self" in "{method_name}", '
-    'e.g. "{suggested_syntax}"'
-)
-Y035 = (
-    'Y035 "{var}" in a stub file must have a value, '
-    'as it has the same semantics as "{var}" at runtime.'
-)
-Y036 = "Y036 Badly defined {method_name} method: {details}"
-Y037 = "Y037 Use PEP 604 union types instead of {old_syntax} (e.g. {example})."
-Y038 = (
-    'Y038 Use "from collections.abc import Set as AbstractSet" '
-    'instead of "from {module} import AbstractSet" (PEP 585 syntax)'
-)
-Y039 = 'Y039 Use "str" instead of "{module}.Text"'
-Y040 = 'Y040 Do not inherit from "object" explicitly, as it is redundant in Python 3'
-Y041 = (
-    'Y041 Use "{implicit_supertype}" '
-    'instead of "{implicit_subtype} | {implicit_supertype}" '
-    '(see "The numeric tower" in PEP 484)'
-)
-Y042 = "Y042 Type aliases should use the CamelCase naming convention"
-Y043 = 'Y043 Bad name for a type alias (the "T" suffix implies a TypeVar)'
-Y044 = 'Y044 "from __future__ import annotations" has no effect in stub files.'
-Y045 = 'Y045 "{iter_method}" methods should return an {good_cls}, not an {bad_cls}'
-Y046 = 'Y046 Protocol "{protocol_name}" is not used'
-Y047 = 'Y047 Type alias "{alias_name}" is not used'
-Y048 = "Y048 Function body should contain exactly one statement"
-Y049 = 'Y049 TypedDict "{typeddict_name}" is not used'
-Y050 = (
-    'Y050 Use "typing_extensions.Never" instead of "NoReturn" for argument annotations'
-)
-Y051 = 'Y051 "{literal_subtype}" is redundant in a union with "{builtin_supertype}"'
-Y052 = 'Y052 Need type annotation for "{variable}"'
-Y053 = "Y053 String and bytes literals >50 characters long are not permitted"
-Y054 = (
-    "Y054 Numeric literals with a string representation "
-    ">10 characters long are not permitted"
-)
-Y055 = 'Y055 Multiple "type[Foo]" members in a union. {suggestion}'
-Y056 = (
-    'Y056 Calling "{method}" on "__all__" may not be supported by all type checkers '
-    "(use += instead)"
-)
-Y057 = (
-    "Y057 Do not use {module}.ByteString, which has unclear semantics and is deprecated"
-)
-Y058 = (
-    'Y058 Use "{good_cls}" as the return value for simple "{iter_method}" methods, '
-    'e.g. "{example}"'
-)
-Y059 = 'Y059 "Generic[]" should always be the last base class'
-Y060 = (
-    'Y060 Redundant inheritance from "{redundant_base}"; '
-    "class would be inferred as generic anyway"
-)
-Y061 = 'Y061 None inside "Literal[]" expression. Replace with "{suggestion}"'
-Y062 = 'Y062 Duplicate "Literal[]" member "{}"'
-Y063 = "Y063 Use PEP-570 syntax to indicate positional-only arguments"
-Y064 = 'Y064 Use "{suggestion}" instead of "{original}"'
-Y065 = 'Y065 Leave {what} unannotated rather than using "Incomplete"'
-Y066 = (
-    "Y066 When using if/else with sys.version_info, "
-    'put the code for new Python versions first, e.g. "{new_syntax}"'
-)
-Y067 = 'Y067 Use "=None" instead of "Incomplete | None = None"'
-Y090 = (
-    'Y090 "{original}" means '
-    '"a tuple of length 1, in which the sole element is of type {typ!r}". '
-    'Perhaps you meant "{new}"?'
-)
-Y091 = (
-    'Y091 Argument "{arg}" to protocol method "{method}" should probably not be positional-or-keyword. '
-    "Make it positional-only, since usually you don't want to mandate a specific argument name"
-)
-
-DISABLED_BY_DEFAULT = ["Y090", "Y091"]

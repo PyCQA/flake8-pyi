@@ -47,13 +47,13 @@ def test_pyi_file(path: str) -> None:
     #
     # For DeprecationWarnings coming from flake8-pyi itself,
     # print the first occurence of each warning to stderr.
-    # This will fail CI the same as `-Werror:::pyi`,
+    # This will fail CI the same as `-Werror:::flake8_pyi`,
     # but the test failure report that pytest gives is much easier to read
-    # if we use `-Wdefault:::pyi`
+    # if we use `-Wdefault:::flake8_pyi`
     flake8_invocation = [
         sys.executable,
         "-Wignore",
-        "-Wdefault:::pyi",
+        "-Wdefault:::flake8_pyi",
         "-m",
         "flake8",
         "-j0",

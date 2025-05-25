@@ -71,10 +71,7 @@ dev = [
 "Changelog" = "https://github.com/PyCQA/flake8-pyi/blob/main/CHANGELOG.md"
 
 [project.entry-points]
-"flake8.extension" = {Y0 = "pyi:PyiTreeChecker"}
-
-[tool.hatch.build.targets.wheel]
-include = ["pyi.py"]
+"flake8.extension" = {Y0 = "flake8_pyi:PyiTreeChecker"}
 
 [tool.hatch.version]
 source = "vcs"
@@ -94,7 +91,7 @@ skip-magic-trailing-comma = true
 force-exclude = ".*\\.pyi"
 
 [tool.mypy]
-files = ["pyi.py", "tests/test_pyi_files.py"]
+files = ["flake8_pyi", "tests/test_pyi_files.py"]
 show_traceback = true
 pretty = true
 strict = true
