@@ -68,3 +68,6 @@ target/
 
 # IDEs
 .vscode/
+
+# Currently more complexity than it's worth for this repo.
+uv.lock
