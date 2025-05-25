@@ -26,7 +26,7 @@ however, we advise setting up a virtual environment first:
 
     $ python3 -m venv env
     $ source env/bin/activate
-    $ pip install -e --group=dev
+    $ pip install -e . --group=dev
 
 To format your code with `isort` and `black`, run:
 

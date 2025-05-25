@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## 5.5.0
 
 New error codes:
 * Introduce Y067: Don't use `Incomplete | None = None`.
