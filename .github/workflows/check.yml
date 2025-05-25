@@ -37,7 +37,7 @@ jobs:
         with:
           version: "latest"
       - run: |
-          uv run --python=3.13 --extra=dev mypy --python-version=${{ matrix.python-version }}
+          uv run --python=3.13 --group=dev mypy --python-version=${{ matrix.python-version }}
 
   flake8:
     name: flake8
@@ -49,7 +49,7 @@ jobs:
         with:
           version: "latest"
       - run: |
-          uv run --python=3.13 --extra=dev flake8 $(git ls-files | grep 'py$') --color=always
+          uv run --python=3.13 --group=dev flake8 $(git ls-files | grep 'py$') --color=always
 
   tests:
     name: pytest suite
@@ -66,4 +66,4 @@ jobs:
         with:
           version: "latest"
       - run: |
-          uv run --python=${{ matrix.python-version }} --extra=dev pytest -vv
+          uv run --python=${{ matrix.python-version }} --group=dev pytest -vv
