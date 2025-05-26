@@ -416,12 +416,6 @@ def _unparse_func_node(node: ast.FunctionDef | ast.AsyncFunctionDef) -> str:
     return re.sub(r"\s+", " ", ast.unparse(node))
 
 
-def _is_list_of_str_nodes(seq: list[ast.expr | None]) -> TypeGuard[list[ast.Constant]]:
-    return all(
-        isinstance(item, ast.Constant) and type(item.value) is str for item in seq
-    )
-
-
 def _is_bad_TypedDict(node: ast.Call) -> bool:
     """Should the assignment-based TypedDict `node` be rewritten using class syntax?
 
@@ -442,17 +436,12 @@ def _is_bad_TypedDict(node: ast.Call) -> bool:
     if not isinstance(typed_dict_annotations, ast.Dict):
         return False
 
-    typed_dict_fields = typed_dict_annotations.keys
-
-    if not _is_list_of_str_nodes(typed_dict_fields):
-        return False
-
-    fieldnames = [field.value for field in typed_dict_fields]
-
-    return all(
-        fieldname.isidentifier() and not iskeyword(fieldname)
-        for fieldname in fieldnames
-    )
+    for key in typed_dict_annotations.keys:
+        if not isinstance(key, ast.Constant) or type(key.value) is not str:
+            return False
+        if not key.value.isidentifier() or iskeyword(key.value):
+            return False
+    return True
 
 
 def _is_assignment_which_must_have_a_value(
