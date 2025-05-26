@@ -437,9 +437,12 @@ def _is_bad_TypedDict(node: ast.Call) -> bool:
         return False
 
     for key in typed_dict_annotations.keys:
-        if not isinstance(key, ast.Constant) or type(key.value) is not str:
-            return False
-        if not key.value.isidentifier() or iskeyword(key.value):
+        if not (
+            isinstance(key, ast.Constant)
+            and type(key.value) is str
+            and key.value.isidentifier()
+            and not iskeyword(key.value)
+        ):
             return False
     return True
 
