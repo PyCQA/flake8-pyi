@@ -2123,14 +2123,17 @@ class PyiVisitor(ast.NodeVisitor):
             self.visit(node.kwarg)
 
     def _check_pseudo_protocol(self, node: ast.expr | None) -> None:
+        if node is None:
+            return
         if isinstance(node, ast.Subscript):
             self._check_pseudo_protocol(node.value)
             self._check_pseudo_protocol(node.slice)
         if _is_pep_604_union(node):
             self._check_pseudo_protocol(node.left)
             self._check_pseudo_protocol(node.right)
-        if isinstance(node, ast.Name) and node.id in PSEUDO_PROTOCOLS:
-            self.error(node, errors.Y092.format(arg=node.id))
+        for name in PSEUDO_PROTOCOLS:
+            if _is_object(node, name, from_=_TYPING_OR_COLLECTIONS_ABC):
+                self.error(node, errors.Y092.format(arg=name))
 
     def check_arg_default(self, arg: ast.arg, default: ast.expr | None) -> None:
         self.visit(arg)
