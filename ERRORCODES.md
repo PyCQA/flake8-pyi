@@ -97,4 +97,5 @@ recommend only using `--extend-select`, never `--select`.
 | Code | Description | Code category
 |------|-------------|---------------
 | <a id="Y090" href="#Y090">Y090</a> | `tuple[int]` means "a tuple of length 1, in which the sole element is of type `int`". Consider using `tuple[int, ...]` instead, which means "a tuple of arbitrary (possibly 0) length, in which all elements are of type `int`". | Correctness
-| <a id="Y091" href="#Y091">Y091</a> | Protocol methods should not have positional-or-keyword parameters. Usually, a positional-only parameter is better.
+| <a id="Y091" href="#Y091">Y091</a> | Protocol methods should not have positional-or-keyword parameters. Usually, a positional-only parameter is better. | Correctness
+| <a id="Y092" href="#Y092">Y092</a> | Pseudo-protocols `Sequence`, `Mapping`, or `MutableMapping` should not be used as argument types. Using a protocol is preferred. | Correctness

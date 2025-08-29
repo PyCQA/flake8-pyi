@@ -1,10 +1,15 @@
 # Change Log
 
+## Unreleased
+
+New error codes:
+* Y092: Pseudo-protocols should not be used as argument types.
+
 ## 5.5.0
 
 New error codes:
-* Introduce Y067: Don't use `Incomplete | None = None`.
-* Introduce Y091: Protocol method parameters should not be positional-or-keyword.
+* Y067: Don't use `Incomplete | None = None`.
+* Y091: Protocol method parameters should not be positional-or-keyword.
 
 Other changes:
 * Y011/Y015 will now allow all defaults that include an attribute access,

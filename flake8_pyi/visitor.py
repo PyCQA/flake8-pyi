@@ -138,6 +138,8 @@ _BAD_TYPINGEXTENSIONS_Y023_IMPORTS = frozenset(
     }
 )
 
+PSEUDO_PROTOCOLS = {"Sequence", "Mapping", "MutableMapping"}
+
 
 def _ast_node_for(string: str) -> ast.AST:
     """Helper function for doctests."""
@@ -447,6 +449,18 @@ def _is_bad_TypedDict(node: ast.Call) -> bool:
     return True
 
 
+def _contains_pseudo_protocol(node: ast.expr | None) -> str | None:
+    """Return the name of the pseudo-protocol if found, else None."""
+    if isinstance(node, ast.Subscript):
+        return _contains_pseudo_protocol(node.value) or _contains_pseudo_protocol(node.slice)
+    if _is_pep_604_union(node):
+        return _contains_pseudo_protocol(node.left) or _contains_pseudo_protocol(node.right)
+    for name in PSEUDO_PROTOCOLS:
+        if _is_object(node, name, from_=_TYPING_OR_COLLECTIONS_ABC):
+            return name
+    return None
+
+
 def _is_assignment_which_must_have_a_value(
     target_name: str | None, *, in_class: bool
 ) -> bool:
@@ -747,6 +761,13 @@ def _is_valid_default_value_with_annotation(
     return False
 
 
+def _is_pep_604_union(node: ast.AST | None) -> TypeGuard[ast.BinOp]:
+    return (
+        isinstance(node, ast.BinOp)
+        and isinstance(node.op, ast.BitOr)
+    )
+
+
 def _is_valid_pep_604_union_member(node: ast.expr) -> bool:
     return _is_None(node) or isinstance(node, (ast.Name, ast.Attribute, ast.Subscript))
 
@@ -754,8 +775,7 @@ def _is_valid_pep_604_union_member(node: ast.expr) -> bool:
 def _is_valid_pep_604_union(node: ast.expr) -> TypeGuard[ast.BinOp]:
     """Does `node` represent a valid PEP-604 union (e.g. `int | str`)?"""
     return (
-        isinstance(node, ast.BinOp)
-        and isinstance(node.op, ast.BitOr)
+        _is_pep_604_union(node)
         and (
             _is_valid_pep_604_union_member(node.left)
             or _is_valid_pep_604_union(node.left)
@@ -2100,6 +2120,8 @@ class PyiVisitor(ast.NodeVisitor):
             self.error(node, errors.Y050)
         if _is_Incomplete(node.annotation):
             self.error(node, errors.Y065.format(what=f'parameter "{node.arg}"'))
+        if proto := _contains_pseudo_protocol(node.annotation):
+            self.error(node, errors.Y092.format(arg=proto))
         with self.visiting_arg.enabled():
             self.generic_visit(node)
 
