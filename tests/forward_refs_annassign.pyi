@@ -50,7 +50,7 @@ class Child(Parent): ...
 
 class MyClass:
     foo: int
-    bar = foo
+    bar = foo  # F821 undefined name 'foo'
 
 baz: MyClass
-eggs = baz
+eggs = baz  # F821 undefined name 'baz'
