@@ -750,10 +750,7 @@ def _is_valid_default_value_with_annotation(
 
 
 def _is_pep_604_union(node: ast.AST | None) -> TypeGuard[ast.BinOp]:
-    return (
-        isinstance(node, ast.BinOp)
-        and isinstance(node.op, ast.BitOr)
-    )
+    return isinstance(node, ast.BinOp) and isinstance(node.op, ast.BitOr)
 
 
 def _is_valid_pep_604_union_member(node: ast.expr) -> bool:

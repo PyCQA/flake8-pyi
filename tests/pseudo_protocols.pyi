@@ -7,8 +7,13 @@
 # trigger Y022 (import from collections.abc instead from typing).
 
 import collections.abc
-from collections.abc import Iterable, Mapping, MutableMapping, Sequence
-from collections.abc import Mapping as MyMapping
+from collections.abc import (
+    Iterable,
+    Mapping,
+    Mapping as MyMapping,
+    MutableMapping,
+    Sequence,
+)
 
 def test_sequence(seq: Sequence[int]) -> None: ...  # Y092 Don't use pseudo-protocol "Sequence" as parameter type. Use a protocol instead.
 def test_mapping(mapping: Mapping[str, int]) -> None: ...  # Y092 Don't use pseudo-protocol "Mapping" as parameter type. Use a protocol instead.
