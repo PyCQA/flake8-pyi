@@ -1,5 +1,4 @@
 # flags: --no-pyi-aware-file-checker --extend-ignore=Y037
-import sys
 from typing import TypeAlias, Union
 
 ManyStr: TypeAlias = list[EitherStr]  # F821 undefined name 'EitherStr'
