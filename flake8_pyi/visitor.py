@@ -138,7 +138,14 @@ _BAD_TYPINGEXTENSIONS_Y023_IMPORTS = frozenset(
     }
 )
 
-PSEUDO_PROTOCOLS = {"Sequence", "Mapping", "MutableMapping"}
+PSEUDO_PROTOCOLS = {
+    "Sequence",
+    "MutableSequence",
+    "Mapping",
+    "MutableMapping",
+    "Set",
+    "MutableSet"
+}
 
 
 def _ast_node_for(string: str) -> ast.AST:
