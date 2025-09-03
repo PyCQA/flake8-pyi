@@ -144,7 +144,7 @@ PSEUDO_PROTOCOLS = {
     "Mapping",
     "MutableMapping",
     "Set",
-    "MutableSet"
+    "MutableSet",
 }
 
 
