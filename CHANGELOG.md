@@ -1,5 +1,8 @@
 # Change Log
 
+New error codes:
+* Introduce Y068: Don't use `@override` in stub files.
+
 ## 5.5.0
 
 New error codes:
