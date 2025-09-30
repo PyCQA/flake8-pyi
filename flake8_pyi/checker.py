@@ -48,6 +48,5 @@ class PyiTreeChecker:
 
     @staticmethod
     def add_options(parser: OptionManager) -> None:
-        """This is brittle, there's multiple levels of caching of defaults."""
         parser.parser.set_defaults(filename="*.py,*.pyi")
         parser.extend_default_ignore(errors.DISABLED_BY_DEFAULT)
