@@ -2033,10 +2033,7 @@ class PyiVisitor(ast.NodeVisitor):
                 pos_or_kw, errors.Y091.format(arg=pos_or_kw.arg, method=node.name)
             )
 
-    def check_for_override(
-        self,
-        node: ast.FunctionDef | ast.AsyncFunctionDef
-    ) -> None:
+    def check_for_override(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         for deco in node.decorator_list:
             if _is_override(deco):
                 self.error(deco, errors.Y068)
