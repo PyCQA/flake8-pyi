@@ -226,6 +226,7 @@ _is_AsyncGenerator = partial(
 )
 _is_Generic = partial(_is_object, name="Generic", from_=_TYPING_MODULES)
 _is_Unpack = partial(_is_object, name="Unpack", from_=_TYPING_MODULES)
+_is_override = partial(_is_object, name="override", from_=_TYPING_MODULES)
 
 
 def _is_union(node: ast.expr | None) -> TypeIs[ast.BinOp]:
@@ -2032,6 +2033,12 @@ class PyiVisitor(ast.NodeVisitor):
                 pos_or_kw, errors.Y091.format(arg=pos_or_kw.arg, method=node.name)
             )
 
+    def check_for_override(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
+        for deco in node.decorator_list:
+            if _is_override(deco):
+                self.error(deco, errors.Y068)
+                return
+
     @staticmethod
     def _is_positional_pre_570_argname(name: str) -> bool:
         # https://peps.python.org/pep-0484/#positional-only-arguments
@@ -2094,6 +2101,7 @@ class PyiVisitor(ast.NodeVisitor):
             self.check_self_typevars(node, decorator_names)
             if self.enclosing_class_ctx.is_protocol_class:
                 self.check_protocol_param_kinds(node, decorator_names)
+            self.check_for_override(node)
 
     def visit_arg(self, node: ast.arg) -> None:
         if _is_NoReturn(node.annotation):

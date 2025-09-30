@@ -8,6 +8,9 @@
   on stub files.
 * Remove the now unnecessary `--no-pyi-aware-file-checker` option.
 
+New error codes:
+* Introduce Y068: Don't use `@override` in stub files.
+
 ## 5.5.0
 
 New error codes:
