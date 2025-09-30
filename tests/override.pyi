@@ -1,5 +1,6 @@
 import typing
 import typing as t
+import typing_extensions
 from typing import override, override as over
 
 class Foo:
@@ -7,13 +8,16 @@ class Foo:
     def g(self) -> None: ...
     def h(self) -> None: ...
     def j(self) -> None: ...
+    def k(self) -> None: ...
 
 class Bar(Foo):
-    @override
-    def f(self) -> None: ...  # Y068 Do not use "@override" in stub files.
-    @typing.override
-    def g(self) -> None: ...  # Y068 Do not use "@override" in stub files.
-    @t.override
-    def h(self) -> None: ...  # Ideally we'd catch this too, but the infrastructure is not in place.
-    @over
-    def j(self) -> None: ...  # Ideally we'd catch this too, but the infrastructure is not in place.
+    @override  # Y068 Do not use "@override" in stub files.
+    def f(self) -> None: ...
+    @typing.override  # Y068 Do not use "@override" in stub files.
+    def g(self) -> None: ...
+    @t.override  # Ideally we'd catch this too, but the infrastructure is not in place.
+    def h(self) -> None: ...
+    @over  # Ideally we'd catch this too, but the infrastructure is not in place.
+    def j(self) -> None: ...
+    @typing_extensions.override  # Y068 Do not use "@override" in stub files.
+    def k(self) -> None: ...

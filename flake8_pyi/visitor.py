@@ -146,22 +146,6 @@ def _ast_node_for(string: str) -> ast.AST:
     return expr.value
 
 
-def _flatten_name(node: ast.expr) -> str | None:
-    """Return the flattened name of an expression, or None.
-
-    E.g.:
-      * ast.Name(id="Any") -> "Any"
-      * ast.Attribute(value=ast.Name(id="typing"), attr="Any") -> "typing.Any"
-    """
-
-    if isinstance(node, ast.Name):
-        return node.id
-    elif isinstance(node, ast.Attribute):
-        parent = _flatten_name(node.value)
-        return f"{parent}.{node.attr}" if parent else None
-    return None
-
-
 def _is_name(node: ast.AST | None, name: str) -> bool:
     """Return True if `node` is an `ast.Name` node with id `name`.
 
@@ -242,6 +226,7 @@ _is_AsyncGenerator = partial(
 )
 _is_Generic = partial(_is_object, name="Generic", from_=_TYPING_MODULES)
 _is_Unpack = partial(_is_object, name="Unpack", from_=_TYPING_MODULES)
+_is_override = partial(_is_object, name="override", from_=_TYPING_MODULES)
 
 
 def _is_union(node: ast.expr | None) -> TypeIs[ast.BinOp]:
@@ -2050,11 +2035,12 @@ class PyiVisitor(ast.NodeVisitor):
 
     def check_for_override(
         self,
-        node: ast.FunctionDef | ast.AsyncFunctionDef,
-        decorator_names: Container[str],
+        node: ast.FunctionDef | ast.AsyncFunctionDef
     ) -> None:
-        if "override" in decorator_names or "typing.override" in decorator_names:
-            self.error(node, errors.Y068)
+        for deco in node.decorator_list:
+            if _is_override(deco):
+                self.error(deco, errors.Y068)
+                return
 
     @staticmethod
     def _is_positional_pre_570_argname(name: str) -> bool:
@@ -2110,26 +2096,15 @@ class PyiVisitor(ast.NodeVisitor):
 
         self._check_pep570_syntax_used_where_applicable(node)
         if self.enclosing_class_ctx is not None:
-            decorator_names = self._decorator_names(node)
+            decorator_names = {
+                decorator.id
+                for decorator in node.decorator_list
+                if isinstance(decorator, ast.Name)
+            }
             self.check_self_typevars(node, decorator_names)
             if self.enclosing_class_ctx.is_protocol_class:
                 self.check_protocol_param_kinds(node, decorator_names)
-            self.check_for_override(node, decorator_names)
-
-    @staticmethod
-    def _decorator_names(node: ast.FunctionDef | ast.AsyncFunctionDef) -> list[str]:
-        """Return the decorator names applied to this function.
-
-        No normalization will be done.
-
-        E.g. "staticmethod", "override", or "typing.override"
-        """
-        names = []
-        for decorator in node.decorator_list:
-            name = _flatten_name(decorator)
-            if name is not None:
-                names.append(name)
-        return names
+            self.check_for_override(node)
 
     def visit_arg(self, node: ast.arg) -> None:
         if _is_NoReturn(node.annotation):
