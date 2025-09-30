@@ -82,7 +82,7 @@ The following warnings are currently emitted by default:
 | <a id="Y066" href="#Y066">Y066</a> | When using if/else with `sys.version_info`, put the code for new Python versions first. | Style
 | <a id="Y067" href="#Y067">Y067</a> | Don't use `Incomplete | None = None` in
 argument annotations. Instead, just use `=None`. | Style
-| <a id="Y068" href="#Y068">Y068</a> | Don't use `@override` in stub files. | Correctness
+| <a id="Y068" href="#Y068">Y068</a> | Don't use `@override` in stub files. Problems with a function signature deviating from its superclass are inherited from the implementation, and other tools such as stubtest are better placed to recognize deviations between stubs and the implementation. | Understanding stubs
 
 ## Warnings disabled by default
 
