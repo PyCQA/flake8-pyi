@@ -1,7 +1,6 @@
 import typing
 import typing as t
-from typing import override
-from typing import override as over
+from typing import override, override as over
 
 class Foo:
     def f(self) -> None: ...

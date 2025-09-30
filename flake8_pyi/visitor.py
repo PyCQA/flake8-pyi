@@ -145,6 +145,7 @@ def _ast_node_for(string: str) -> ast.AST:
     assert isinstance(expr, ast.Expr)
     return expr.value
 
+
 def _flatten_name(node: ast.expr) -> str | None:
     """Return the flattened name of an expression, or None.
 
@@ -159,6 +160,7 @@ def _flatten_name(node: ast.expr) -> str | None:
         parent = _flatten_name(node.value)
         return f"{parent}.{node.attr}" if parent else None
     return None
+
 
 def _is_name(node: ast.AST | None, name: str) -> bool:
     """Return True if `node` is an `ast.Name` node with id `name`.
@@ -2046,7 +2048,11 @@ class PyiVisitor(ast.NodeVisitor):
                 pos_or_kw, errors.Y091.format(arg=pos_or_kw.arg, method=node.name)
             )
 
-    def check_for_override(self, node: ast.FunctionDef | ast.AsyncFunctionDef, decorator_names: Container[str]) -> None:
+    def check_for_override(
+        self,
+        node: ast.FunctionDef | ast.AsyncFunctionDef,
+        decorator_names: Container[str],
+    ) -> None:
         if "override" in decorator_names or "typing.override" in decorator_names:
             self.error(node, errors.Y068)
 
