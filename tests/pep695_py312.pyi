@@ -1,5 +1,3 @@
-# flags: --extend-ignore=F821
-
 import typing
 from collections.abc import Iterator
 from typing import (
