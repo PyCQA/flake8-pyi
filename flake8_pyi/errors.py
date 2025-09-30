@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from tkinter import Y
 from typing import TYPE_CHECKING, NamedTuple
 
 if TYPE_CHECKING:
