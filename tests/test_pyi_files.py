@@ -59,6 +59,7 @@ def test_pyi_file(path: str) -> None:
         "-j0",
     ]
 
+    print("Running:", " ".join(flake8_invocation + flags + [path]), file=sys.stderr)
     run_results = [
         # Passing a file on command line
         subprocess.run(

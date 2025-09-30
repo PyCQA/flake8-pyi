@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from tkinter import Y
 from typing import TYPE_CHECKING, NamedTuple
 
 if TYPE_CHECKING:
@@ -127,6 +128,8 @@ Y066 = (
     'put the code for new Python versions first, e.g. "{new_syntax}"'
 )
 Y067 = 'Y067 Use "=None" instead of "Incomplete | None = None"'
+Y068 = 'Y068 Do not use "@override" in stub files.'
+
 Y090 = (
     'Y090 "{original}" means '
     '"a tuple of length 1, in which the sole element is of type {typ!r}". '
