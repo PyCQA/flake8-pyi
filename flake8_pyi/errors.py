@@ -138,8 +138,8 @@ Y091 = (
     'Y091 Argument "{arg}" to protocol method "{method}" should probably not be positional-or-keyword. '
     "Make it positional-only, since usually you don't want to mandate a specific argument name"
 )
-Y092 = (
-    'Y092 Don\'t use pseudo-protocol "{arg}" as parameter type. Use a protocol instead.'
+Y093 = (
+    'Y093 Don\'t use pseudo-protocol "{arg}" as parameter type. Use a protocol instead.'
 )
 
-DISABLED_BY_DEFAULT = ["Y090", "Y091", "Y092"]
+DISABLED_BY_DEFAULT = ["Y090", "Y091", "Y093"]

@@ -2148,7 +2148,7 @@ class PyiVisitor(ast.NodeVisitor):
             self._check_pseudo_protocol(node.right)
         for name in PSEUDO_PROTOCOLS:
             if _is_object(node, name, from_=_TYPING_OR_COLLECTIONS_ABC):
-                self.error(node, errors.Y092.format(arg=name))
+                self.error(node, errors.Y093.format(arg=name))
 
     def check_arg_default(self, arg: ast.arg, default: ast.expr | None) -> None:
         self.visit(arg)
