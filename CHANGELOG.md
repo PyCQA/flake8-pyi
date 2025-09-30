@@ -1,5 +1,13 @@
 # Change Log
 
+## Unreleased
+
+* **Breaking change:** Previously, flake8-pyi monkey patched flake8's F821
+  (undefined name) check to avoid false positives in stub files. This monkey
+  patch has been removed. Instead, we now recommend to disable F821 when running flake8
+  on stub files.
+* Remove the now unnecessary `--no-pyi-aware-file-checker` option.
+
 New error codes:
 * Introduce Y068: Don't use `@override` in stub files.
 
