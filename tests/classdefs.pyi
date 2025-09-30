@@ -1,4 +1,4 @@
-# flags: --extend-ignore=Y023
+# flags: --extend-ignore=F821,Y023
 
 import abc
 import builtins

@@ -1,4 +1,4 @@
-# flags: --extend-ignore=Y037
+# flags: --extend-ignore=F821,Y037
 import typing
 from typing import Annotated, ParamSpec, TypeVar, TypeVarTuple, Union
 
