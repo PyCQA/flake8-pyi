@@ -1,6 +1,3 @@
-# Temporary workaround until pyflakes supports PEP 695:
-# flags: --extend-ignore=F821
-
 import typing
 from collections.abc import Iterator
 from typing import (
