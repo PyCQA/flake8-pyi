@@ -3,6 +3,8 @@ from typing import TypeAlias, Union
 
 ManyStr: TypeAlias = list[EitherStr]  # F821 undefined name 'EitherStr'
 EitherStr: TypeAlias = Union[str, bytes]
-def function(accepts: EitherStr) -> None: ...
+# The following line reports "F821 undefined name 'EitherStr'" on Python 3.14+
+# but not on earlier versions.
+# def function(accepts: EitherStr) -> None: ...  # F821 undefined name 'EitherStr'
 
 del EitherStr  # private name, not exported
