@@ -1,17 +1,12 @@
 from __future__ import annotations
 
-import argparse
 import ast
 import logging
 import re
 from dataclasses import dataclass
-from typing import Any, ClassVar, Iterator, Literal
+from typing import ClassVar, Iterator
 
-from flake8 import checker
 from flake8.options.manager import OptionManager
-from flake8.plugins.finder import LoadedPlugin
-from flake8.plugins.pyflakes import FlakesChecker
-from pyflakes.checker import ModuleScope
 
 from . import errors, visitor
 
