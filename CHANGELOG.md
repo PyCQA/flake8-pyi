@@ -4,16 +4,16 @@ flake8-pyi uses Calendar Versioning (CalVer).
 
 ## Unreleased
 
-### New Error Codes
+### Breaking Changes
 
-* Y068: Don't use `@override` in stub files
-
-### Other Changes
-
-* **Breaking change:** Previously, flake8-pyi monkey patched flake8's F821 (undefined name) check to
+* Previously, flake8-pyi monkey patched flake8's F821 (undefined name) check to
   avoid false positives in stub files. This monkey patch has been removed.
   Instead, we now recommend to disable F821 when running flake8 on stub files.
 * Remove the now unnecessary `--no-pyi-aware-file-checker` option.
+
+### New Error Codes
+
+* Y068: Don't use `@override` in stub files
 
 ## 25.5.0
 
@@ -125,6 +125,13 @@ flake8-pyi uses Calendar Versioning (CalVer).
 
 ## 23.11.0
 
+### Breaking Changes
+
+* The undocumented `pyi.__version__` and `pyi.PyiTreeChecker.version`
+  attributes has been removed. Use `flake8 --version` from the command line, or
+  `importlib.metadata.version("flake8_pyi")` at runtime, to determine the
+  version of `flake8-pyi` installed at runtime.
+
 ### New Error Codes
 
 * Y058: Use `Iterator` rather than `Generator` as the return value
@@ -151,13 +158,6 @@ flake8-pyi uses Calendar Versioning (CalVer).
 * Y053: This will no longer be emitted for the argument to `@typing_extensions.deprecated`.
 * Attempting to import `typing_extensions.Text` now causes Y039 to be emitted
   rather than Y023.
-
-### Other Changes
-
-* The undocumented `pyi.__version__` and `pyi.PyiTreeChecker.version`
-  attributes has been removed. Use `flake8 --version` from the command line, or
-  `importlib.metadata.version("flake8_pyi")` at runtime, to determine the
-  version of `flake8-pyi` installed at runtime.
 
 ## 23.10.0
 
@@ -529,16 +529,16 @@ flake8-pyi uses Calendar Versioning (CalVer).
 
 ## 22.3.0
 
-### Bugfixes
-
-* Fix bug where incorrect quoted annotations were not detected within `if` blocks.
-
-### Other Changes
+### Changed Error Codes
 
 * Add special-casing so that string literals are allowed in the context of
   `__match_args__` assignments inside a class definition.
 * Add special-casing so that arbitrary values can be assigned to a variable in
   a stub file if the variable is annotated with `Final`.
+
+### Bugfixes
+
+* Fix bug where incorrect quoted annotations were not detected within `if` blocks.
 
 ## 22.2.0
 
