@@ -2,7 +2,7 @@
 
 flake8-pyi uses Calendar Versioning (CalVer).
 
-## [Unreleased]
+## Unreleased
 
 ### New Error Codes
 
@@ -15,7 +15,7 @@ flake8-pyi uses Calendar Versioning (CalVer).
   Instead, we now recommend to disable F821 when running flake8 on stub files.
 * Remove the now unnecessary `--no-pyi-aware-file-checker` option.
 
-## [25.5.0]
+## 25.5.0
 
 ### New Error Codes
 
@@ -36,7 +36,7 @@ flake8-pyi uses Calendar Versioning (CalVer).
 * The plugin now exists as a `flake8_pyi` package rather than a single `pyi.py` file.
 * Declare support for Python 3.14
 
-## [24.9.0]
+## 24.9.0
 
 ### Bugfixes
 
@@ -49,7 +49,7 @@ flake8-pyi uses Calendar Versioning (CalVer).
   As a result, it not longer depends on the third-party
   `ast_decompiler` package.
 
-## [24.6.0]
+## 24.6.0
 
 ### Bugfixes
 
@@ -62,21 +62,21 @@ flake8-pyi uses Calendar Versioning (CalVer).
 
 * Declare support for Python 3.13
 
-## [24.4.1]
+## 24.4.1
 
 ### New Error Codes
 
 * Y066 – When using if/else with `sys.version_info`,
   put the code for new Python versions first
 
-## [24.4.0]
+## 24.4.0
 
 ### Bugfixes
 
 * Y026 – Fix false positive: allow simple assignment to `None` in class scopes
   if the class is known to be an enum class.
 
-## [24.3.1]
+## 24.3.1
 
 ### New Error Codes
 
@@ -88,7 +88,7 @@ flake8-pyi uses Calendar Versioning (CalVer).
 
 * Y090 – Fix false positive for `tuple[Unpack[Ts]]`.
 
-## [24.3.0]
+## 24.3.0
 
 ### New Error Codes
 
@@ -97,7 +97,7 @@ flake8-pyi uses Calendar Versioning (CalVer).
   [the older Python 3.7-compatible syntax](https://peps.python.org/pep-0484/#positional-only-arguments)
   described in PEP 484.
 
-## [24.1.0]
+## 24.1.0
 
 ### New Error Codes
 
@@ -123,7 +123,7 @@ flake8-pyi uses Calendar Versioning (CalVer).
 
 * Support flake8>=7.0.0.
 
-## [23.11.0]
+## 23.11.0
 
 ### New Error Codes
 
@@ -159,7 +159,7 @@ flake8-pyi uses Calendar Versioning (CalVer).
   `importlib.metadata.version("flake8_pyi")` at runtime, to determine the
   version of `flake8-pyi` installed at runtime.
 
-## [23.10.0]
+## 23.10.0
 
 ### New Error Codes
 
@@ -176,7 +176,7 @@ flake8-pyi uses Calendar Versioning (CalVer).
 
 * Y011 – This check now ignores `sentinel` and `_typeshed.sentinel` in default values.
 
-## [23.6.0]
+## 23.6.0
 
 ### New Error Codes
 
@@ -217,7 +217,7 @@ flake8-pyi uses Calendar Versioning (CalVer).
     stub file is sufficient for `x` to be considered "bound", and that `"x"` can
     therefore be included in `__all__`.
 
-## [23.5.0]
+## 23.5.0
 
 ### New Error Codes
 
@@ -252,7 +252,7 @@ flake8-pyi uses Calendar Versioning (CalVer).
 
   (Contributed by [tomasr8](https://github.com/tomasr8).)
 
-## [23.4.1]
+## 23.4.1
 
 ### New Error Codes
 
@@ -260,14 +260,14 @@ flake8-pyi uses Calendar Versioning (CalVer).
   Similarly, `Union[type[X], type[Y]]` can be simplified to `type[Union[X, Y]]`.
   (Contributed by [tomasr8](https://github.com/tomasr8)).
 
-## [23.4.0]
+## 23.4.0
 
 ### Other Changes
 
 * Y019, Y034 – Update error messages for these checks to recommend using
   `typing_extensions.Self` rather than `_typeshed.Self`.
 
-## [23.3.1]
+## 23.3.1
 
 ### New Error Codes
 
@@ -286,7 +286,7 @@ flake8-pyi uses Calendar Versioning (CalVer).
 * Some things that used to result in Y011, Y014 or Y015 being emitted
   now result in Y053 or Y054 being emitted.
 
-## [23.3.0]
+## 23.3.0
 
 
 ### Changed Error Codes
@@ -297,7 +297,7 @@ flake8-pyi uses Calendar Versioning (CalVer).
   or `x = np.inf` (`import numpy as np`), should be rewritten to `x = math.inf`.
   (Contributed by [XuehaiPan](https://github.com/XuehaiPan).)
 
-## [23.1.2]
+## 23.1.2
 
 ### Changed Error Codes
 
@@ -305,7 +305,7 @@ flake8-pyi uses Calendar Versioning (CalVer).
   in default values from 7 to 10, allowing hexadecimal representation of
   32-bit integers. (Contributed by [Avasam](https://github.com/Avasam).)
 
-## [23.1.1]
+## 23.1.1
 
 ### New Error Codes
 
@@ -332,7 +332,7 @@ flake8-pyi uses Calendar Versioning (CalVer).
 * Allow `ast.Attribute` nodes as default values for a small number of special
   cases, such as `sys.maxsize` and `sys.executable`.
 
-## [23.1.0]
+## 23.1.0
 
 ### Removed Error Codes
 
@@ -365,7 +365,7 @@ flake8-pyi uses Calendar Versioning (CalVer).
 * Hatchling is now used as the build backend. This should have minimal, if any,
   user-facing impact.
 
-## [22.11.0]
+## 22.11.0
 
 ### Changed Error Codes
 
@@ -387,7 +387,7 @@ flake8-pyi uses Calendar Versioning (CalVer).
 
 * Support running with flake8 v6.
 
-## [22.10.0]
+## 22.10.0
 
 ### Bugfixes
 
@@ -408,7 +408,7 @@ flake8-pyi uses Calendar Versioning (CalVer).
   plugin with flake8<5 before Python 3.7 has reached end-of-life. As such, the
   `FutureWarning` is no longer emitted.
 
-## [22.8.2]
+## 22.8.2
 
 ### New Error Codes
 
@@ -423,11 +423,11 @@ flake8-pyi uses Calendar Versioning (CalVer).
 
 * Support `mypy_extensions.TypedDict`.
 
-## [22.8.1]
+## 22.8.1
 
 * Add support for flake8 >= 5.0.0.
 
-## [22.8.0]
+## 22.8.0
 
 ### New Error Codes
 
@@ -443,7 +443,7 @@ flake8-pyi uses Calendar Versioning (CalVer).
 
 * Pin required flake8 version to <5.0.0 (flake8-pyi is not currently compatible with flake8 5.0.0).
 
-## [22.7.0]
+## 22.7.0
 
 ### New Error Codes
 
@@ -471,14 +471,14 @@ flake8-pyi uses Calendar Versioning (CalVer).
 * Support `typing_extensions.overload` and `typing_extensions.NamedTuple`.
 * Support Python 3.11.
 
-## [22.5.1]
+## 22.5.1
 
 ### Changed Error Codes
 
 * Y020 – Relax check slightly, enabling the idiom `__all__ += ["foo", "bar"]` to be used
   in a stub file.
 
-## [22.5.0]
+## 22.5.0
 
 ### New Error Codes
 
@@ -492,7 +492,7 @@ flake8-pyi uses Calendar Versioning (CalVer).
 * Y036 – Teach the check that `builtins.object` (as well as the unqualified `object`) is
   acceptable as an annotation for an `__(a)exit__` method argument.
 
-## [22.4.1]
+## 22.4.1
 
 ### New Error Codes
 
@@ -509,7 +509,7 @@ flake8-pyi uses Calendar Versioning (CalVer).
 
 * Improve inaccurate error messages for Y036.
 
-## [22.4.0]
+## 22.4.0
 
 ### New Error Codes
 
@@ -527,7 +527,7 @@ flake8-pyi uses Calendar Versioning (CalVer).
 * Improve Y026 check (regarding `typing.TypeAlias`) to reduce false-positive errors
   emitted when the plugin encountered variable aliases in a stub file.
 
-## [22.3.0]
+## 22.3.0
 
 ### Bugfixes
 
@@ -540,7 +540,7 @@ flake8-pyi uses Calendar Versioning (CalVer).
 * Add special-casing so that arbitrary values can be assigned to a variable in
   a stub file if the variable is annotated with `Final`.
 
-## [22.2.0]
+## 22.2.0
 
 ### New Error Codes
 
@@ -561,7 +561,7 @@ flake8-pyi uses Calendar Versioning (CalVer).
   a `typing.Union` subscript.
 * Improve unclear error messages for Y022, Y023 and Y027 error codes.
 
-## [22.1.0]
+## 22.1.0
 
 ### New Error Codes
 
@@ -603,13 +603,13 @@ flake8-pyi uses Calendar Versioning (CalVer).
 * Support Python 3.10.
 * Discontinue support for Python 3.6.
 
-## [20.10.0]
+## 20.10.0
 
 ### Other Changes
 
 * Support Python 3.9.
 
-## [20.5.0]
+## 20.5.0
 
 ### New Error Codes
 
@@ -621,13 +621,13 @@ flake8-pyi uses Calendar Versioning (CalVer).
 
 * Support flake8 3.8.0.
 
-## [19.3.0]
+## 19.3.0
 
 ### Other Changes
 
 * Update pyflakes dependency.
 
-## [19.2.0]
+## 19.2.0
 
 ### New Error Codes
 
@@ -640,42 +640,42 @@ flake8-pyi uses Calendar Versioning (CalVer).
 * Support Python 3.7.
 * Use `--stdin-display-name` as the filename when reading from stdin.
 
-## [18.3.1]
+## 18.3.1
 
 ### New Error Codes
 
 * Y011 – Allow only simple default values
 
-## [18.3.0]
+## 18.3.0
 
 Release herp derp, don't use.
 
-## [17.3.0]
+## 17.3.0
 
 ### New Error Codes
 
 * Y001 – Y010
 * Y090 (disabled by default)
 
-## [17.1.0]
+## 17.1.0
 
 ### Other Changes
 
 * Handle `del` statements in stub files.
 
-## [16.12.2]
+## 16.12.2
 
 ### Other Changes
 
 * Handle annotated assignments in 3.6+ with forward reference support.
 
-## [16.12.1]
+## 16.12.1
 
 ### Other Changes
 
 * Handle forward references during subclassing on module level.
 * Handle forward references during type aliasing assignments on module level.
 
-## [16.12.0]
+## 16.12.0
 
 First published version
