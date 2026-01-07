@@ -35,7 +35,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
       - run: |
-          uv run --python=3.13 --group=dev mypy --python-version=${{ matrix.python-version }}
+          uv run --python=3.14 --group=dev mypy --python-version=${{ matrix.python-version }}
 
   flake8:
     name: flake8
@@ -45,7 +45,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
       - run: |
-          uv run --python=3.13 --group=dev flake8 $(git ls-files | grep 'py$') --color=always
+          uv run --python=3.14 --group=dev flake8 $(git ls-files | grep 'py$') --color=always
 
   tests:
     name: pytest suite
