@@ -18,7 +18,7 @@ maintainers = [
 description = "A plugin for flake8 to enable linting .pyi stub files."
 license = "MIT"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 keywords = [
     "flake8",
     "pyi",
@@ -37,7 +37,6 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -53,10 +52,10 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "black==25.11.0",            # Must match .pre-commit-config.yaml
+    "black==25.12.0",            # Must match .pre-commit-config.yaml
     "flake8-bugbear==24.12.12",
     "flake8-noqa==1.4.0",
-    "isort==6.1.0",             # Must match .pre-commit-config.yaml
+    "isort==7.0.0",             # Must match .pre-commit-config.yaml
     "mypy==1.15.0",
     "pre-commit-hooks==5.0.0",  # Must match .pre-commit-config.yaml
     "pytest==8.3.5",
@@ -86,7 +85,7 @@ skip = ["tests/imports.pyi", "tests/pep604_union_types.pyi"]
 skip_gitignore = true
 
 [tool.black]
-target-version = ['py39']
+target-version = ['py310']
 skip-magic-trailing-comma = true
 force-exclude = ".*\\.pyi"
 

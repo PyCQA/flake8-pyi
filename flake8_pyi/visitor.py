@@ -2114,8 +2114,7 @@ class PyiVisitor(ast.NodeVisitor):
     def visit_arguments(self, node: ast.arguments) -> None:
         args = node.posonlyargs + node.args
         defaults = [None] * (len(args) - len(node.defaults)) + node.defaults
-        assert len(args) == len(defaults)
-        for arg, default in zip(args, defaults):
+        for arg, default in zip(args, defaults, strict=True):
             self.check_arg_default(arg, default)
         if node.vararg is not None:
             self.visit(node.vararg)
