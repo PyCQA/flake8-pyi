@@ -138,6 +138,15 @@ _BAD_TYPINGEXTENSIONS_Y023_IMPORTS = frozenset(
     }
 )
 
+PSEUDO_PROTOCOLS = {
+    "Sequence",
+    "MutableSequence",
+    "Mapping",
+    "MutableMapping",
+    "Set",
+    "MutableSet",
+}
+
 
 def _ast_node_for(string: str) -> ast.AST:
     """Helper function for doctests."""
@@ -748,6 +757,10 @@ def _is_valid_default_value_with_annotation(
     return False
 
 
+def _is_pep_604_union(node: ast.AST | None) -> TypeGuard[ast.BinOp]:
+    return isinstance(node, ast.BinOp) and isinstance(node.op, ast.BitOr)
+
+
 def _is_valid_pep_604_union_member(node: ast.expr) -> bool:
     return _is_None(node) or isinstance(node, (ast.Name, ast.Attribute, ast.Subscript))
 
@@ -755,8 +768,7 @@ def _is_valid_pep_604_union_member(node: ast.expr) -> bool:
 def _is_valid_pep_604_union(node: ast.expr) -> TypeGuard[ast.BinOp]:
     """Does `node` represent a valid PEP-604 union (e.g. `int | str`)?"""
     return (
-        isinstance(node, ast.BinOp)
-        and isinstance(node.op, ast.BitOr)
+        _is_pep_604_union(node)
         and (
             _is_valid_pep_604_union_member(node.left)
             or _is_valid_pep_604_union(node.left)
@@ -2108,6 +2120,7 @@ class PyiVisitor(ast.NodeVisitor):
             self.error(node, errors.Y050)
         if _is_Incomplete(node.annotation):
             self.error(node, errors.Y065.format(what=f'parameter "{node.arg}"'))
+        self._check_pseudo_protocol(node.annotation)
         with self.visiting_arg.enabled():
             self.generic_visit(node)
 
@@ -2122,6 +2135,19 @@ class PyiVisitor(ast.NodeVisitor):
             self.check_arg_default(arg, default)
         if node.kwarg is not None:
             self.visit(node.kwarg)
+
+    def _check_pseudo_protocol(self, node: ast.expr | None) -> None:
+        if node is None:
+            return
+        if isinstance(node, ast.Subscript):
+            self._check_pseudo_protocol(node.value)
+            self._check_pseudo_protocol(node.slice)
+        if _is_pep_604_union(node):
+            self._check_pseudo_protocol(node.left)
+            self._check_pseudo_protocol(node.right)
+        for name in PSEUDO_PROTOCOLS:
+            if _is_object(node, name, from_=_TYPING_OR_COLLECTIONS_ABC):
+                self.error(node, errors.Y093.format(arg=name))
 
     def check_arg_default(self, arg: ast.arg, default: ast.expr | None) -> None:
         self.visit(arg)

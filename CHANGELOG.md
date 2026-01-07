@@ -14,6 +14,7 @@ flake8-pyi uses Calendar Versioning (CalVer).
 ### New Error Codes
 
 * Y068: Don't use `@override` in stub files
+* Y092: Pseudo-protocols should not be used as argument types.
 
 ### Other changes
 
