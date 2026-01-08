@@ -3,8 +3,9 @@ from __future__ import annotations
 import ast
 import logging
 import re
+from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import ClassVar, Iterator
+from typing import ClassVar
 
 from flake8.options.manager import OptionManager
 
