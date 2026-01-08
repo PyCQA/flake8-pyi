@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from functools import cached_property, partial
 from itertools import chain, groupby, zip_longest
 from keyword import iskeyword
-from typing import TYPE_CHECKING, Literal, NamedTuple, Protocol
+from typing import TYPE_CHECKING, Literal, NamedTuple, Protocol, TypeAlias, TypeGuard
 
 from . import checker, errors
 from .errors import Error
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     # We don't have typing_extensions as a runtime dependency,
     # but all our annotations are stringized due to __future__ annotations,
     # and mypy thinks typing_extensions is part of the stdlib.
-    from typing_extensions import TypeAlias, TypeGuard, TypeIs
+    from typing_extensions import TypeIs
 
 if sys.version_info >= (3, 12):
     _TypeAliasNodeType: TypeAlias = ast.TypeAlias | ast.AnnAssign
