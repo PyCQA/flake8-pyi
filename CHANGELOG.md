@@ -10,6 +10,7 @@ flake8-pyi uses Calendar Versioning (CalVer).
   avoid false positives in stub files. This monkey patch has been removed.
   Instead, we now recommend to disable F821 when running flake8 on stub files.
 * Remove the now unnecessary `--no-pyi-aware-file-checker` option.
+* Y034 no longer triggers in protocol class definitions.
 
 ### New Error Codes
 

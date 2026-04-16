@@ -366,6 +366,10 @@ def _has_bad_hardcoded_returns(
     if class_ctx.is_metaclass:
         return False
 
+    # Return false if in a protocol (class inheriting from typing.Protocol); see #539
+    if class_ctx.is_protocol_class:
+        return False
+
     # Much too complex for our purposes to worry
     # about overloaded functions or abstractmethods
     if any(
