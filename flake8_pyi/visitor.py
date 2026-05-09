@@ -847,6 +847,24 @@ class NestingCounter:
         return bool(self.nesting)
 
 
+def _definition_name(node: ast.stmt) -> str | None:
+    match node:
+        case (
+            ast.FunctionDef(name=name)
+            | ast.AsyncFunctionDef(name=name)
+            | ast.ClassDef(name=name)
+        ):
+            return name
+        case ast.AnnAssign(target=ast.Name(id=name)):
+            return name
+        case ast.Assign(targets=[ast.Name(id=name)]):
+            return name
+        case _:
+            if sys.version_info >= (3, 12) and isinstance(node, ast.TypeAlias):
+                return node.name.id
+    return None
+
+
 class PyiVisitor(ast.NodeVisitor):
     filename: str
     errors: list[Error]
@@ -875,6 +893,7 @@ class PyiVisitor(ast.NodeVisitor):
     in_function: NestingCounter
     visiting_arg: NestingCounter
     Y061_suppressed: NestingCounter
+    duplicate_branch_check_suppressed: NestingCounter
 
     # This is only relevant for visiting classes
     enclosing_class_ctx: EnclosingClassContext | None = None
@@ -893,6 +912,7 @@ class PyiVisitor(ast.NodeVisitor):
         self.in_function = NestingCounter()
         self.visiting_arg = NestingCounter()
         self.Y061_suppressed = NestingCounter()
+        self.duplicate_branch_check_suppressed = NestingCounter()
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(filename={self.filename!r})"
@@ -1429,6 +1449,8 @@ class PyiVisitor(ast.NodeVisitor):
 
     def visit_If(self, node: ast.If) -> None:
         self._check_for_Y066_violations(node)
+        if not self.duplicate_branch_check_suppressed.active:
+            self._check_for_duplicate_branch_definitions(node)
 
         test = node.test
         # No types can appear in if conditions, so avoid confusing additional errors.
@@ -1439,8 +1461,72 @@ class PyiVisitor(ast.NodeVisitor):
                 self._check_if_expression(expression)
         else:
             self._check_if_expression(test)
-        for line in chain(node.body, node.orelse):
+        for line in node.body:
             self.visit(line)
+        if (
+            len(node.orelse) == 1
+            and isinstance(node.orelse[0], ast.If)
+            and node.orelse[0].col_offset == node.col_offset
+        ):
+            with self.duplicate_branch_check_suppressed.enabled():
+                self.visit(node.orelse[0])
+        else:
+            for line in node.orelse:
+                self.visit(line)
+
+    def _check_for_duplicate_branch_definitions(self, node: ast.If) -> None:
+        if not self._is_sys_branch_test(node.test):
+            return
+
+        seen_defs: set[tuple[str, str]] = set()
+        reported_defs: set[tuple[str, str]] = set()
+        for branch in self._iter_if_chain_bodies(node):
+            branch_defs: set[tuple[str, str]] = set()
+            for statement in branch:
+                definition_name = _definition_name(statement)
+                if definition_name is None:
+                    continue
+                definition_dump = ast.dump(statement, include_attributes=False)
+                definition_key = (definition_name, definition_dump)
+                if definition_key in seen_defs and definition_key not in reported_defs:
+                    self.error(statement, errors.Y069.format(name=definition_name))
+                    reported_defs.add(definition_key)
+                else:
+                    branch_defs.add(definition_key)
+            seen_defs.update(branch_defs)
+
+    def _iter_if_chain_bodies(self, node: ast.If) -> Iterator[list[ast.stmt]]:
+        current = node
+        while True:
+            yield current.body
+            match current.orelse:
+                case [ast.If() as next_if] if (
+                    next_if.col_offset == current.col_offset
+                    and self._is_sys_branch_test(next_if.test)
+                ):
+                    current = next_if
+                case orelse:
+                    if orelse:
+                        yield orelse
+                    return
+
+    def _is_sys_branch_test(self, node: ast.expr) -> bool:
+        match node:
+            case ast.BoolOp(values=values):
+                return all(self._is_sys_branch_test(value) for value in values)
+            case ast.Compare(comparators=[_], left=left):
+                match left:
+                    case ast.Attribute(value=ast.Name("sys"), attr="platform"):
+                        return True
+                    case ast.Attribute(value=ast.Name("sys"), attr="version_info"):
+                        return True
+                    case ast.Subscript(
+                        value=ast.Attribute(value=ast.Name("sys"), attr="version_info")
+                    ):
+                        return True
+            case _:
+                pass
+        return False
 
     def _check_if_expression(self, node: ast.expr) -> None:
         if not isinstance(node, ast.Compare):

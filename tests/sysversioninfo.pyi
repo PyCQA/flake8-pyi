@@ -1,4 +1,5 @@
 import sys
+from typing import overload
 
 if sys.version_info[0] == 2: ...
 if sys.version_info[0] == True: ...  # Y003 Unrecognized sys.version_info check  # E712 comparison to True should be 'if cond is True:' or 'if cond:'
@@ -55,3 +56,54 @@ elif sys.version_info < (3, 10):  # Y066 When using if/else with sys.version_inf
     def foo4(x, *, bar=True, baz=False): ...
 else:
     def foo4(x, *, bar=True, baz=False, qux=1): ...
+
+if sys.version_info >= (3, 15):
+    different: str
+    same: float
+else:
+    different: int
+    same: float  # Y069 Definition "same" is identical in multiple sys.version_info/sys.platform branches
+
+if sys.version_info >= (3, 15):
+    def same_function(x: str) -> None: ...
+elif sys.version_info >= (3, 14):
+    def same_function(x: int) -> None: ...
+else:
+    def same_function(x: str) -> None: ...  # Y069 Definition "same_function" is identical in multiple sys.version_info/sys.platform branches
+
+if sys.version_info >= (3, 15):
+    class SameClass:
+        attr: int
+elif sys.version_info >= (3, 14):
+    class SameClass:  # Y069 Definition "SameClass" is identical in multiple sys.version_info/sys.platform branches
+        attr: int
+
+if sys.version_info >= (3, 15):
+    same_assignment = ...
+else:
+    same_assignment = ...  # Y069 Definition "same_assignment" is identical in multiple sys.version_info/sys.platform branches
+
+if sys.version_info >= (3, 15):
+    outer: int
+else:
+    if sys.platform == 'win32':
+        nested_same: str
+    else:
+        nested_same: str  # Y069 Definition "nested_same" is identical in multiple sys.version_info/sys.platform branches
+
+if sys.version_info >= (3, 15):
+    @overload
+    def overloaded_same(x: int) -> int: ...
+    @overload
+    def overloaded_same(x: str) -> str: ...
+else:
+    @overload
+    def overloaded_same(x: int) -> int: ...  # Y069 Definition "overloaded_same" is identical in multiple sys.version_info/sys.platform branches
+    @overload
+    def overloaded_same(x: bytes) -> bytes: ...
+
+if sys.version_info >= (3, 15):
+    @overload
+    def overloaded_different(x: int) -> int: ...
+else:
+    def overloaded_different(x: int) -> int: ...

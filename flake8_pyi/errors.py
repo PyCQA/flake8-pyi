@@ -128,6 +128,10 @@ Y066 = (
 )
 Y067 = 'Y067 Use "=None" instead of "Incomplete | None = None"'
 Y068 = 'Y068 Do not use "@override" in stub files.'
+Y069 = (
+    'Y069 Definition "{name}" is identical in multiple sys.version_info/sys.platform '
+    "branches"
+)
 
 Y090 = (
     'Y090 "{original}" means '
