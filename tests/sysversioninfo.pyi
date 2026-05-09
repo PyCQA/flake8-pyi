@@ -69,7 +69,7 @@ if sys.version_info >= (3, 15):
 elif sys.version_info >= (3, 14):
     def same_function(x: int) -> None: ...
 else:
-    def same_function(x: str) -> None: ...  # Y069 Definition "same_function" is identical in multiple sys.version_info/sys.platform branches
+    def same_function(x: str) -> None: ...
 
 if sys.version_info >= (3, 15):
     class SameClass:

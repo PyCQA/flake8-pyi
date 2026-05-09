@@ -1478,22 +1478,33 @@ class PyiVisitor(ast.NodeVisitor):
         if not self._is_sys_branch_test(node.test):
             return
 
-        seen_defs: set[tuple[str, str]] = set()
-        reported_defs: set[tuple[str, str]] = set()
-        for branch in self._iter_if_chain_bodies(node):
-            branch_defs: set[tuple[str, str]] = set()
+        branches = list(self._iter_if_chain_bodies(node))
+        suppress_nonconsecutive = self._is_sys_version_branch_chain(node)
+
+        seen_defs: dict[str, int] = {}
+        reported_defs: set[str] = set()
+        for branch_index, branch in enumerate(branches):
+            branch_defs: set[str] = set()
             for statement in branch:
                 definition_name = _definition_name(statement)
                 if definition_name is None:
                     continue
                 definition_dump = ast.dump(statement, include_attributes=False)
-                definition_key = (definition_name, definition_dump)
-                if definition_key in seen_defs and definition_key not in reported_defs:
+                previous_branch_index = seen_defs.get(definition_dump)
+                if (
+                    previous_branch_index is not None
+                    and definition_dump not in reported_defs
+                    and (
+                        not suppress_nonconsecutive
+                        or branch_index == previous_branch_index + 1
+                    )
+                ):
                     self.error(statement, errors.Y069.format(name=definition_name))
-                    reported_defs.add(definition_key)
+                    reported_defs.add(definition_dump)
                 else:
-                    branch_defs.add(definition_key)
-            seen_defs.update(branch_defs)
+                    branch_defs.add(definition_dump)
+            for definition_dump in branch_defs:
+                seen_defs[definition_dump] = branch_index
 
     def _iter_if_chain_bodies(self, node: ast.If) -> Iterator[list[ast.stmt]]:
         current = node
@@ -1510,14 +1521,19 @@ class PyiVisitor(ast.NodeVisitor):
                         yield orelse
                     return
 
-    def _is_sys_branch_test(self, node: ast.expr) -> bool:
+    def _is_sys_branch_test(
+        self, node: ast.expr, *, version_only: bool = False
+    ) -> bool:
         match node:
             case ast.BoolOp(values=values):
-                return all(self._is_sys_branch_test(value) for value in values)
+                return all(
+                    self._is_sys_branch_test(value, version_only=version_only)
+                    for value in values
+                )
             case ast.Compare(comparators=[_], left=left):
                 match left:
                     case ast.Attribute(value=ast.Name("sys"), attr="platform"):
-                        return True
+                        return not version_only
                     case ast.Attribute(value=ast.Name("sys"), attr="version_info"):
                         return True
                     case ast.Subscript(
@@ -1527,6 +1543,17 @@ class PyiVisitor(ast.NodeVisitor):
             case _:
                 pass
         return False
+
+    def _is_sys_version_branch_chain(self, node: ast.If) -> bool:
+        current = node
+        while True:
+            if not self._is_sys_branch_test(current.test, version_only=True):
+                return False
+            match current.orelse:
+                case [ast.If() as next_if] if next_if.col_offset == current.col_offset:
+                    current = next_if
+                case _:
+                    return True
 
     def _check_if_expression(self, node: ast.expr) -> None:
         if not isinstance(node, ast.Compare):
