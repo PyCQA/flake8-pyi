@@ -4,6 +4,10 @@ flake8-pyi uses Calendar Versioning (CalVer).
 
 ## Unreleased
 
+### Other changes
+
+* Support Python 3.15.
+
 ## 26.5.0
 
 ### Breaking Changes
