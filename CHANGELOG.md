@@ -4,6 +4,8 @@ flake8-pyi uses Calendar Versioning (CalVer).
 
 ## Unreleased
 
+## 26.5.0
+
 ### Breaking Changes
 
 * Previously, flake8-pyi monkey patched flake8's F821 (undefined name) check to
