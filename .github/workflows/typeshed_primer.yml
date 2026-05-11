@@ -23,21 +23,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout flake8-pyi on target branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ github.base_ref }}
           path: old_plugin
       - name: Checkout flake8-pyi on PR branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: new_plugin
       - name: Checkout typeshed
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: python/typeshed
           path: typeshed
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.14"
       - name: Install uv
@@ -61,7 +61,7 @@ jobs:
           echo ${{ github.event.pull_request.number }} | tee pr_number.txt
           diff old_errors.txt new_errors.txt | tee errors_diff.txt
       - name: Upload diff and PR number
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: typeshed_primer_errors
           path: |
