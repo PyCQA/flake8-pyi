@@ -2,6 +2,8 @@
 
 flake8-pyi uses Calendar Versioning (CalVer).
 
+## Unreleased
+
 ## 26.5.0
 
 ### Breaking Changes
