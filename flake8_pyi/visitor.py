@@ -325,10 +325,10 @@ def _analyse_exit_method_arg(node: ast.BinOp) -> ExitArgAnalysis:
 
     >>> _analyse_exit_method_arg(_ast_node_for('int | str'))
     ExitArgAnalysis(is_union_with_None=False, non_None_part=None)
-    >>> _analyse_exit_method_arg(_ast_node_for('int | None'))
-    ExitArgAnalysis(is_union_with_None=True, non_None_part=Name(id='int', ctx=Load()))
-    >>> _analyse_exit_method_arg(_ast_node_for('None | str'))
-    ExitArgAnalysis(is_union_with_None=True, non_None_part=Name(id='str', ctx=Load()))
+    >>> _analyse_exit_method_arg(_ast_node_for('int | None'))  # doctest: +ELLIPSIS
+    ExitArgAnalysis(is_union_with_None=True, non_None_part=Name(id='int'...))
+    >>> _analyse_exit_method_arg(_ast_node_for('None | str'))  # doctest: +ELLIPSIS
+    ExitArgAnalysis(is_union_with_None=True, non_None_part=Name(id='str'...))
     """
     assert isinstance(node.op, ast.BitOr)
     if _is_None(node.left):
@@ -479,7 +479,8 @@ def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
     >>> source = 'Union[int, memoryview, memoryview, Literal["foo"], Literal[1], type[float], type[str]]'
     >>> union = _ast_node_for(source)
     >>> analysis = _analyse_union(union.slice.elts)
-    >>> len(analysis.members_by_dump["Name(id='memoryview', ctx=Load())"])
+    >>> dump = "Name(id='memoryview')" if sys.version_info >= (3, 15) else "Name(id='memoryview', ctx=Load())"
+    >>> len(analysis.members_by_dump[dump])
     2
     >>> analysis.dupes_in_union
     True
