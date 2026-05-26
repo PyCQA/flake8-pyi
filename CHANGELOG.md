@@ -4,17 +4,28 @@ flake8-pyi uses Calendar Versioning (CalVer).
 
 ## Unreleased
 
+### Other changes
+
+* Support Python 3.15.
+
+## 26.5.0
+
 ### Breaking Changes
 
 * Previously, flake8-pyi monkey patched flake8's F821 (undefined name) check to
   avoid false positives in stub files. This monkey patch has been removed.
   Instead, we now recommend to disable F821 when running flake8 on stub files.
 * Remove the now unnecessary `--no-pyi-aware-file-checker` option.
+* Y034 no longer triggers in protocol class definitions.
 
 ### New Error Codes
 
 * Y068: Don't use `@override` in stub files
 * Y092: Pseudo-protocols should not be used as argument types.
+
+### Other changes
+
+* Drop support for Python 3.9
 
 ## 25.5.0
 

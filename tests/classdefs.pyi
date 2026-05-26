@@ -89,6 +89,9 @@ class InvalidButPluginDoesNotCrash:
     def __enter__() -> InvalidButPluginDoesNotCrash: ...
     async def __aenter__() -> InvalidButPluginDoesNotCrash: ...
 
+class ProtocolsAreExemptedFromY034(typing.Protocol):
+    def __iadd__(self, other: Self, /) -> object: ...
+
 class BadIterator1(Iterator[int]):
     def __iter__(self) -> Iterator[int]: ...  # Y034 "__iter__" methods in classes like "BadIterator1" usually return "self" at runtime. Consider using "typing_extensions.Self" in "BadIterator1.__iter__", e.g. "def __iter__(self) -> Self: ..."
 
