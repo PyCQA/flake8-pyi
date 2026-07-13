@@ -48,7 +48,7 @@ Y025 = (
     'Y025 Use "from collections.abc import Set as AbstractSet" '
     'to avoid confusion with "builtins.set"'
 )
-Y026 = 'Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "{suggestion}"'
+Y026 = 'Y026 Use typing.TypeAlias for type aliases, e.g. "{suggestion}"'
 Y028 = "Y028 Use class-based syntax for NamedTuples"
 Y029 = "Y029 Defining __repr__ or __str__ in a stub is almost always redundant"
 Y030 = "Y030 Multiple Literal members in a union. {suggestion}"

@@ -28,7 +28,7 @@ field82: float = -98.43
 field83 = -42j  # Y052 Need type annotation for "field83"
 field84 = 5 + 42j  # Y052 Need type annotation for "field84"
 field85 = -5 - 42j  # Y052 Need type annotation for "field85"
-field9 = None  # Y026 Use typing_extensions.TypeAlias for type aliases, e.g. "field9: TypeAlias = None"
+field9 = None  # Y026 Use typing.TypeAlias for type aliases, e.g. "field9: TypeAlias = None"
 Field95: TypeAlias = None
 Field96: TypeAlias = int | None
 Field97: TypeAlias = None | typing.SupportsInt | builtins.str | float | bool
