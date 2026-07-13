@@ -7,6 +7,7 @@ flake8-pyi uses Calendar Versioning (CalVer).
 ### Other changes
 
 * Support Python 3.15.
+* Recommend to use `typing.TypeAlias` instead of `typing_extensions.TypeAlias`.
 
 ## 26.5.0
 

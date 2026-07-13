@@ -1,5 +1,6 @@
+from typing import TypeAlias
+
 from _typeshed import Incomplete
-from typing_extensions import TypeAlias
 
 IncompleteAlias: TypeAlias = Incomplete  # ok
 
