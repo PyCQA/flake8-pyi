@@ -5,7 +5,6 @@ from typing import (
     Any,
     Literal,
     NamedTuple,
-    NoReturn,
     Protocol,
     Self,
     TypedDict,
@@ -30,7 +29,6 @@ class GenericPEP695Class[T]:
     pass  # Y012 Class body must not contain "pass"
     def __exit__(self, *args: Any) -> None: ...  # Y036 Badly defined __exit__ method: Star-args in an __exit__ method should be annotated with "object", not "Any"
     async def __aexit__(self) -> None: ...  # Y036 Badly defined __aexit__ method: If there are no star-args, there should be at least 3 non-keyword-only args in an __aexit__ method (excluding "self")
-    def never_call_me(self, arg: NoReturn) -> None: ...  # Y050 Use "typing_extensions.Never" instead of "NoReturn" for argument annotations
 
 class GenericPEP695InheritingFromObject[T](object):  # Y040 Do not inherit from "object" explicitly, as it is redundant in Python 3
     x: T
