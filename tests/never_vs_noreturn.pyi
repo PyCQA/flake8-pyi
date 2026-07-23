@@ -1,9 +1,13 @@
 import typing
-from typing import NoReturn  # Y050 Use "typing_extensions.Never" instead of "typing.NoReturn"
+from typing import (
+    NoReturn,  # Y050 Use "typing_extensions.Never" instead of "typing.NoReturn"
+)
 
 import typing_extensions
-from typing_extensions import Never
-from typing_extensions import NoReturn as NR  # Y050 Use "typing_extensions.Never" instead of "typing_extensions.NoReturn"
+from typing_extensions import (  # Y050 Use "typing_extensions.Never" instead of "typing_extensions.NoReturn"
+    Never,
+    NoReturn as NR,
+)
 
 # NoReturn is now flagged at import time, so it should never be flagged elsewhere.
 
