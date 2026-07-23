@@ -4,15 +4,10 @@ flake8-pyi uses Calendar Versioning (CalVer).
 
 ## Unreleased
 
-### Breaking Changes
-
-* Y050: Now flags imports of `typing.NoReturn` and `typing_extensions.NoReturn`
-  as it is now unconditionally deprecated.
-
 ### Other changes
 
 * Support Python 3.15.
-* Y026: Recommend to use `typing.TypeAlias` instead of `typing_extensions.TypeAlias`.
+* Recommend to use `typing.TypeAlias` instead of `typing_extensions.TypeAlias`.
 
 ## 26.5.0
 
