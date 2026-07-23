@@ -63,15 +63,15 @@ from typing import (
     TypedDict,
     AnyStr,
     NewType,
-    NoReturn,
     final,
     overload,
 )
 from typing_extensions import (
+    Annotated,
     Concatenate,
+    Never,
     ParamSpec,
     TypeGuard,
-    Annotated,
 )
 
 # BAD IMPORTS (Y022 code)
@@ -153,6 +153,8 @@ from typing import AbstractSet  # Y038 Use "from collections.abc import Set as A
 from typing_extensions import AbstractSet  # Y038 Use "from collections.abc import Set as AbstractSet" instead of "from typing_extensions import AbstractSet" (PEP 585 syntax)
 from typing import Text  # Y039 Use "str" instead of "typing.Text"
 from typing_extensions import Text  # Y039 Use "str" instead of "typing_extensions.Text"
+from typing import NoReturn  # Y050 Use "typing_extensions.Never" instead of "typing.NoReturn"
+from typing_extensions import NoReturn  # Y050 Use "typing_extensions.Never" instead of "typing_extensions.NoReturn"
 from typing import ByteString  # Y057 Do not use typing.ByteString, which has unclear semantics and is deprecated
 from collections.abc import ByteString  # Y057 Do not use collections.abc.ByteString, which has unclear semantics and is deprecated
 
