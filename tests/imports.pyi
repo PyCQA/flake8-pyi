@@ -46,6 +46,7 @@ from typing import (
     Final,
     Generic,
     Protocol,
+    TypeAlias,
     TypeVar,
     SupportsAbs,
     SupportsBytes,
@@ -69,7 +70,6 @@ from typing import (
 from typing_extensions import (
     Concatenate,
     ParamSpec,
-    TypeAlias,
     TypeGuard,
     Annotated,
 )
