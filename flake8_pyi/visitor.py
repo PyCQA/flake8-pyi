@@ -217,8 +217,6 @@ _is_Iterable = partial(_is_object, name="Iterable", from_=_TYPING_OR_COLLECTIONS
 _is_AsyncIterable = partial(
     _is_object, name="AsyncIterable", from_=_TYPING_OR_COLLECTIONS_ABC
 )
-_is_Protocol = partial(_is_object, name="Protocol", from_=_TYPING_MODULES)
-_is_NoReturn = partial(_is_object, name="NoReturn", from_=_TYPING_MODULES)
 _is_Final = partial(_is_object, name="Final", from_=_TYPING_MODULES)
 _is_Generator = partial(_is_object, name="Generator", from_=_TYPING_OR_COLLECTIONS_ABC)
 _is_AsyncGenerator = partial(
@@ -811,6 +809,10 @@ def _check_import_or_attribute(
         # Y039 errors
         if object_name == "Text":
             return errors.Y039.format(module=module_name)
+
+        # Y069 errors
+        if object_name == "NoReturn":
+            return errors.Y069.format(module=module_name)
 
     # Y023 errors
     if module_name == "typing_extensions":
@@ -2065,8 +2067,6 @@ class PyiVisitor(ast.NodeVisitor):
             self.check_for_override(node)
 
     def visit_arg(self, node: ast.arg) -> None:
-        if _is_NoReturn(node.annotation):
-            self.error(node, errors.Y050)
         if _is_Incomplete(node.annotation):
             self.error(node, errors.Y065.format(what=f'parameter "{node.arg}"'))
         with self.visiting_arg.enabled():
