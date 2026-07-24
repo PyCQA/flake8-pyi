@@ -4,10 +4,15 @@ flake8-pyi uses Calendar Versioning (CalVer).
 
 ## Unreleased
 
-### Breaking Changes
+### New Error Codes
 
-* Y050: Now flags imports of `typing.NoReturn` and `typing_extensions.NoReturn`
-  as it is now unconditionally deprecated.
+* Y069: Flags imports of `typing.NoReturn` and `typing_extensions.NoReturn`
+  as they are now unconditionally deprecated.
+
+### Removed Error Codes
+
+* Y050: Old error code that flagged `typing.NoReturn` and
+  `typing_extensions.NoReturn` in argument positions only.
 
 ### Other changes
 

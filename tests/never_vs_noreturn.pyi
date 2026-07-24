@@ -1,19 +1,19 @@
 # isort: skip_file
 import typing
 
-from typing import NoReturn  # Y050 Use "typing_extensions.Never" instead of "typing.NoReturn"
+from typing import NoReturn  # Y069 Use "typing_extensions.Never" instead of "typing.NoReturn"
 
 import typing_extensions
 from typing_extensions import Never
-from typing_extensions import NoReturn as NR  # Y050 Use "typing_extensions.Never" instead of "typing_extensions.NoReturn"
+from typing_extensions import NoReturn as NR  # Y069 Use "typing_extensions.Never" instead of "typing_extensions.NoReturn"
 
 # NoReturn is now flagged at import time, so it should never be flagged elsewhere.
 
 x: NR
 
 def badfunc0(arg: NoReturn) -> None: ...
-def badfunc1(*args: typing.NoReturn) -> None: ...  # Y050 Use "typing_extensions.Never" instead of "typing.NoReturn"
-def badfunc2(**kwargs: typing_extensions.NoReturn) -> None: ...  # Y050 Use "typing_extensions.Never" instead of "typing_extensions.NoReturn"
+def badfunc1(*args: typing.NoReturn) -> None: ...  # Y069 Use "typing_extensions.Never" instead of "typing.NoReturn"
+def badfunc2(**kwargs: typing_extensions.NoReturn) -> None: ...  # Y069 Use "typing_extensions.Never" instead of "typing_extensions.NoReturn"
 def badfunc3(*, arg: NoReturn) -> None: ...
 def badfunc4() -> NoReturn: ...
 

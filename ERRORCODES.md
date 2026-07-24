@@ -63,7 +63,6 @@ The following warnings are currently emitted by default:
 | <a id="Y047" href="#Y047">Y047</a> | A private `TypeAlias` should be used at least once in the file in which it is defined. | Redundant code
 | <a id="Y048" href="#Y048">Y048</a> | Function bodies should contain exactly one statement. This is because stub files are never executed at runtime, so any more than one statement would be redundant. (Note that if a function body includes a docstring, the docstring counts as a "statement".) | Understanding stubs
 | <a id="Y049" href="#Y049">Y049</a> | A private `TypedDict` should be used at least once in the file in which it is defined. | Redundant code
-| <a id="Y050" href="#Y050">Y050</a> | Prefer `typing_extensions.Never` over `typing.NoReturn`. | Style
 | <a id="Y051" href="#Y051">Y051</a> | Y051 detects redundant unions between `Literal` types and builtin supertypes. For example, `Literal[5]` is redundant in the union `int \| Literal[5]`, and `Literal[True]` is redundant in the union `Literal[True] \| bool`. | Redundant code
 | <a id="Y052" href="#Y052">Y052</a> | Y052 disallows assignments to constant values where the assignment does not have a type annotation. For example, `x = 0` in the global namespace is ambiguous in a stub, as there are four different types that could be inferred for the variable `x`: `int`, `Final[int]`, `Literal[0]`, or `Final[Literal[0]]`. Enum members are excluded from this check, as are various special assignments such as `__all__` and `__match_args__`. | Correctness
 | <a id="Y053" href="#Y053">Y053</a> | Only string and bytes literals <=50 characters long are permitted. (There are some exceptions, such as `Literal` subscripts, metadata strings inside `Annotated` subscripts, and strings passed to `@deprecated`.) | Style
@@ -82,6 +81,7 @@ The following warnings are currently emitted by default:
 | <a id="Y066" href="#Y066">Y066</a> | When using if/else with `sys.version_info`, put the code for new Python versions first. | Style
 | <a id="Y067" href="#Y067">Y067</a> | Don't use `Incomplete \| None = None` in argument annotations. Instead, just use `=None`. | Style
 | <a id="Y068" href="#Y068">Y068</a> | Don't use `@override` in stub files. Problems with a function signature deviating from its superclass are inherited from the implementation, and other tools such as stubtest are better placed to recognize deviations between stubs and the implementation. | Understanding stubs
+| <a id="Y069" href="#Y069">Y069</a> | Prefer `typing_extensions.Never` over `typing.NoReturn`. | Style
 
 ## Warnings disabled by default
 

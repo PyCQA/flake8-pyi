@@ -810,9 +810,9 @@ def _check_import_or_attribute(
         if object_name == "Text":
             return errors.Y039.format(module=module_name)
 
-        # Y050 errors
+        # Y069 errors
         if object_name == "NoReturn":
-            return errors.Y050.format(module=module_name)
+            return errors.Y069.format(module=module_name)
 
     # Y023 errors
     if module_name == "typing_extensions":
