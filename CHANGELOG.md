@@ -4,6 +4,11 @@ flake8-pyi uses Calendar Versioning (CalVer).
 
 ## Unreleased
 
+### Changed Error Codes
+
+* Y062: Duplicate values inside nested `Literal` slices are now detected.
+  For example, `Literal[1, Literal[2, 1]]`.
+
 ### Other changes
 
 * Support Python 3.15.

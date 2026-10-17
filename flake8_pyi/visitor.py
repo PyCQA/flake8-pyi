@@ -546,6 +546,21 @@ class TypingLiteralAnalysis(NamedTuple):
     contains_only_none: bool
 
 
+def _literal_leaf_members(member: ast.expr) -> list[ast.expr]:
+    """Return values inside `member`, unwrapping nested Literals.
+
+    PEP 586 treats ``Literal[1, Literal[2, 1]]`` as the same values as
+    ``Literal[1, 2, 1]``.
+    """
+    if not (isinstance(member, ast.Subscript) and _is_Literal(member.value)):
+        return [member]
+    inner = member.slice.elts if isinstance(member.slice, ast.Tuple) else [member.slice]
+    leaves: list[ast.expr] = []
+    for item in inner:
+        leaves.extend(_literal_leaf_members(item))
+    return leaves
+
+
 def _analyse_typing_Literal(node: ast.Subscript) -> TypingLiteralAnalysis:
     """Return a tuple providing analysis of a `typing.Literal` slice."""
 
@@ -556,7 +571,8 @@ def _analyse_typing_Literal(node: ast.Subscript) -> TypingLiteralAnalysis:
     members = node.slice.elts if isinstance(node.slice, ast.Tuple) else [node.slice]
 
     for member in members:
-        members_by_dump[ast.dump(member)].append(member)
+        for leaf in _literal_leaf_members(member):
+            members_by_dump[ast.dump(leaf)].append(leaf)
         if _is_None(member):
             none_members.append(member)
         else:
@@ -876,6 +892,7 @@ class PyiVisitor(ast.NodeVisitor):
     in_function: NestingCounter
     visiting_arg: NestingCounter
     Y061_suppressed: NestingCounter
+    Y062_suppressed: NestingCounter
 
     # This is only relevant for visiting classes
     enclosing_class_ctx: EnclosingClassContext | None = None
@@ -894,6 +911,7 @@ class PyiVisitor(ast.NodeVisitor):
         self.in_function = NestingCounter()
         self.visiting_arg = NestingCounter()
         self.Y061_suppressed = NestingCounter()
+        self.Y062_suppressed = NestingCounter()
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(filename={self.filename!r})"
@@ -1385,12 +1403,13 @@ class PyiVisitor(ast.NodeVisitor):
         analysis = _analyse_typing_Literal(node)
 
         Y062_encountered = False
-        for member_list in analysis.members_by_dump.values():
-            if len(member_list) > 1 and not _is_None(member_list[0]):
-                Y062_encountered = True
-                self.error(
-                    member_list[1], errors.Y062.format(ast.unparse(member_list[1]))
-                )
+        if not self.Y062_suppressed.active:
+            for member_list in analysis.members_by_dump.values():
+                if len(member_list) > 1 and not _is_None(member_list[0]):
+                    Y062_encountered = True
+                    self.error(
+                        member_list[1], errors.Y062.format(ast.unparse(member_list[1]))
+                    )
 
         if not Y062_encountered and not self.Y061_suppressed.active:
             if analysis.contains_only_none:
@@ -1407,7 +1426,15 @@ class PyiVisitor(ast.NodeVisitor):
                 )
 
         with self.long_strings_allowed.enabled():
-            self.visit(node.slice)
+            elements = (
+                node.slice.elts if isinstance(node.slice, ast.Tuple) else [node.slice]
+            )
+            for element in elements:
+                if isinstance(element, ast.Subscript) and _is_Literal(element.value):
+                    with self.Y062_suppressed.enabled():
+                        self.visit(element)
+                else:
+                    self.visit(element)
 
     def _visit_slice_tuple(self, node: ast.Tuple, parent: str | None) -> None:
         if parent == "Union":
