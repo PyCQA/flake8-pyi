@@ -1,3 +1,4 @@
+import typing
 from typing import Final, Literal
 
 Literal[None]  # Y061 None inside "Literal[]" expression. Replace with "None"
@@ -21,6 +22,15 @@ Literal[1, None, "foo", None]  # Y061 None inside "Literal[]" expression. Replac
 # and there are no None members in the Literal[] slice,
 # only emit Y062:
 Literal[None, True, None, True]  # Y062 Duplicate "Literal[]" member "True"
+
+# Nested Literal values are the same values as a flat slice.
+Literal[1, Literal[2, 1]]  # Y062 Duplicate "Literal[]" member "1"
+Literal[1, Literal[2, 3]]
+Literal[Literal[1], Literal[1]]  # Y062 Duplicate "Literal[]" member "1"
+Literal[1, Literal[1, 1]]  # Y062 Duplicate "Literal[]" member "1"
+Literal["a", Literal["b", "a"]]  # Y062 Duplicate "Literal[]" member "'a'"
+Literal[0, typing.Literal[0]]  # Y062 Duplicate "Literal[]" member "0"
+Literal[True, Literal[False, True], False]  # Y062 Duplicate "Literal[]" member "True" # Y062 Duplicate "Literal[]" member "False"
 
 x: Final[Literal[True]]  # Y064 Use "x: Final = True" instead of "x: Final[Literal[True]]"
 # If Y061 and Y064 both apply, only emit Y064
