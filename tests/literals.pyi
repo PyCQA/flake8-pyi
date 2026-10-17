@@ -1,5 +1,5 @@
 import typing
-from typing import Final, Literal
+from typing import Annotated, Final, Literal
 
 Literal[None]  # Y061 None inside "Literal[]" expression. Replace with "None"
 Literal[True, None]  # Y061 None inside "Literal[]" expression. Replace with "Literal[True] | None"
@@ -30,6 +30,7 @@ Literal[Literal[1], Literal[1]]  # Y062 Duplicate "Literal[]" member "1"
 Literal[1, Literal[1, 1]]  # Y062 Duplicate "Literal[]" member "1"
 Literal["a", Literal["b", "a"]]  # Y062 Duplicate "Literal[]" member "'a'"
 Literal[0, typing.Literal[0]]  # Y062 Duplicate "Literal[]" member "0"
+Literal[Annotated[Literal[1, 1], "m"]]  # Y062 Duplicate "Literal[]" member "1"
 Literal[True, Literal[False, True], False]  # Y062 Duplicate "Literal[]" member "True" # Y062 Duplicate "Literal[]" member "False"
 
 x: Final[Literal[True]]  # Y064 Use "x: Final = True" instead of "x: Final[Literal[True]]"
