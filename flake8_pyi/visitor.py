@@ -1435,15 +1435,17 @@ class PyiVisitor(ast.NodeVisitor):
         # No types can appear in if conditions, so avoid confusing additional errors.
         with self.string_literals_allowed.enabled():
             self.visit(test)
-        if isinstance(test, ast.BoolOp):
-            for expression in test.values:
-                self._check_if_expression(expression)
-        else:
-            self._check_if_expression(test)
+        self._check_if_expression(test)
         for line in chain(node.body, node.orelse):
             self.visit(line)
 
     def _check_if_expression(self, node: ast.expr) -> None:
+        if isinstance(node, ast.BoolOp):
+            # Type checkers understand (nested) `and`/`or` combinations of
+            # supported comparisons, e.g. `if A and (B or C)`.
+            for expression in node.values:
+                self._check_if_expression(expression)
+            return
         if not isinstance(node, ast.Compare):
             self.error(node, errors.Y002)
             return
