@@ -4,6 +4,12 @@ flake8-pyi uses Calendar Versioning (CalVer).
 
 ## Unreleased
 
+### Bugfixes
+
+* Y002 no longer flags nested `and`/`or` combinations of `sys.version_info` and
+  `sys.platform` checks, e.g.
+  `if sys.version_info >= (3, 15) and (sys.platform == "win32" or sys.platform == "linux")`.
+
 ### Other changes
 
 * Support Python 3.15.
