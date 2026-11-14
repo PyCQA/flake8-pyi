@@ -19,6 +19,8 @@ flake8-pyi uses Calendar Versioning (CalVer).
 * Y002 no longer flags nested `and`/`or` combinations of `sys.version_info` and
   `sys.platform` checks, e.g.
   `if sys.version_info >= (3, 15) and (sys.platform == "win32" or sys.platform == "linux")`.
+* Y051 now also flags negative integer literals that are redundant in a union
+  with `int`, e.g. `int | Literal[-1]`.
 
 ### Other changes
 

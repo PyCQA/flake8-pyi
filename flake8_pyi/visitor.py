@@ -1258,9 +1258,14 @@ class PyiVisitor(ast.NodeVisitor):
         """Search for redundant unions such as `str | Literal["foo"]`, etc."""
         seen_builtins: set[type[object]] = set()
         for literal in analysis.combined_literal_members:
-            if not isinstance(literal, ast.Constant):
-                continue
-            typ = type(literal.value)
+            match literal:
+                case ast.Constant(value):
+                    typ = type(value)
+                # Negative integers such as `-1` are parsed as unary operations
+                case ast.UnaryOp(op=ast.USub(), operand=ast.Constant(value=int())):
+                    typ = int
+                case _:
+                    continue
             typename = typ.__name__
             if (
                 typ in {str, bytes, int, bool}
