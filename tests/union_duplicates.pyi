@@ -82,6 +82,11 @@ def three(arg: Literal["foo", 5] | builtins.int | Literal[9, "bar"]) -> None: ..
 class Four:
     var: builtins.bool | Literal[True]  # Y051 "Literal[True]" is redundant in a union with "bool"
 
+def five(arg: int | Literal[-1]) -> None: ...  # Y051 "Literal[-1]" is redundant in a union with "int"
+Six: TypeAlias = Union[Literal[-5], builtins.int]  # Y051 "Literal[-5]" is redundant in a union with "int"
+Seven: TypeAlias = int | Literal[-1, 5]  # Y051 "Literal[-1]" is redundant in a union with "int"
+Eight: TypeAlias = str | Literal[-1]
+
 DupesHereSoNoY051: TypeAlias = int | int | Literal[42]  # Y016 Duplicate union member "int"
 NightmareAlias1 = int | float | Literal[4, b"bar"] | Literal["foo"]  # Y026 Use typing.TypeAlias for type aliases, e.g. "NightmareAlias1: TypeAlias = int | float | Literal[4, b'bar'] | Literal['foo']"  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal[4, b'bar', 'foo']".  # Y051 "Literal[4]" is redundant in a union with "int"
 nightmare_alias2: TypeAlias = int | float | Literal[True, 4] | Literal["foo"]  # Y042 Type aliases should use the CamelCase naming convention  # Y030 Multiple Literal members in a union. Combine them into one, e.g. "Literal[True, 4, 'foo']".  # Y051 "Literal[4]" is redundant in a union with "int"
