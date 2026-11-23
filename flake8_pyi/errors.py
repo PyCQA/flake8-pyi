@@ -77,11 +77,6 @@ Y038 = (
 )
 Y039 = 'Y039 Use "str" instead of "{module}.Text"'
 Y040 = 'Y040 Do not inherit from "object" explicitly, as it is redundant in Python 3'
-Y041 = (
-    'Y041 Use "{implicit_supertype}" '
-    'instead of "{implicit_subtype} | {implicit_supertype}" '
-    '(see "The numeric tower" in PEP 484)'
-)
 Y042 = "Y042 Type aliases should use the CamelCase naming convention"
 Y043 = 'Y043 Bad name for a type alias (the "T" suffix implies a TypeVar)'
 Y044 = 'Y044 "from __future__ import annotations" has no effect in stub files.'
