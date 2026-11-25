@@ -13,6 +13,7 @@ flake8-pyi uses Calendar Versioning (CalVer).
 
 * Y050: Old error code that flagged `typing.NoReturn` and
   `typing_extensions.NoReturn` in argument positions only.
+* Y041: Removed Y041. The rule no longer reports numeric unions as redundant.
 
 ### Bugfixes
 

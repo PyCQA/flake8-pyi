@@ -1251,8 +1251,6 @@ class PyiVisitor(ast.NodeVisitor):
                 self._error_for_multiple_type_subscripts_in_union(
                     first_union_member, analysis, is_pep_604_union
                 )
-            if self.visiting_arg.active:
-                self._check_for_redundant_numeric_unions(first_union_member, analysis)
 
     def _check_for_Y051_violations(self, analysis: UnionAnalysis) -> None:
         """Search for redundant unions such as `str | Literal["foo"]`, etc."""
@@ -1280,27 +1278,6 @@ class PyiVisitor(ast.NodeVisitor):
                         builtin_supertype=typename,
                     ),
                 )
-
-    def _check_for_redundant_numeric_unions(
-        self, first_union_member: ast.expr, analysis: UnionAnalysis
-    ) -> None:
-        builtins_in_union = analysis.builtins_classes_in_union
-        new_errors: list[tuple[str, str]] = []
-        add_error = new_errors.append
-        if "complex" in builtins_in_union:
-            if "float" in builtins_in_union:
-                add_error(("float", "complex"))
-            if "int" in builtins_in_union:
-                add_error(("int", "complex"))
-        elif "float" in builtins_in_union and "int" in builtins_in_union:
-            add_error(("int", "float"))
-        for subtype, supertype in new_errors:
-            self.error(
-                first_union_member,
-                errors.Y041.format(
-                    implicit_subtype=subtype, implicit_supertype=supertype
-                ),
-            )
 
     def _error_for_multiple_literals_in_union(
         self, first_union_member: ast.expr, analysis: UnionAnalysis

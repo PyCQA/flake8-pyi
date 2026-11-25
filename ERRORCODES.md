@@ -54,7 +54,6 @@ The following warnings are currently emitted by default:
 | <a id="Y038" href="#Y038">Y038</a> | Use `from collections.abc import Set as AbstractSet` instead of `from typing import AbstractSet` or `from typing_extensions import AbstractSet`. | Style
 | <a id="Y039" href="#Y039">Y039</a> | Use `str` instead of `typing.Text` or `typing_extensions.Text`. | Style
 | <a id="Y040" href="#Y040">Y040</a> | Never explicitly inherit from `object`, as all classes implicitly inherit from `object` in Python 3. | Style
-| <a id="Y041" href="#Y041">Y041</a> | Y041 detects redundant numeric unions in the context of parameter annotations. For example, PEP 484 specifies that type checkers should allow `int` objects to be passed to a function, even if the function states that it accepts a `float`. As such, `int` is redundant in the union `int \| float` in the context of a parameter annotation. In the same way, `int` is sometimes redundant in the union `int \| complex`, and `float` is sometimes redundant in the union `float \| complex`. | Style
 | <a id="Y042" href="#Y042">Y042</a> | Type alias names should use CamelCase rather than snake_case. | Style
 | <a id="Y043" href="#Y043">Y043</a> | Do not use names ending in "T" for private type aliases. (The "T" suffix implies that an object is a `TypeVar`.) | Style
 | <a id="Y044" href="#Y044">Y044</a> | `from __future__ import annotations` has no effect in stub files, since type checkers automatically treat stubs as having those semantics. (See also: Y020.) | Understanding stubs
