@@ -144,14 +144,6 @@ def _has_bad_hardcoded_returns(
     return False
 
 
-COMMON_METACLASSES = {
-    "type": "builtins",
-    "ABCMeta": "abc",
-    "EnumMeta": "enum",
-    "EnumType": "enum",
-}
-
-
 @dataclass(frozen=True)
 class EnclosingClassContext:
     node: ast.ClassDef

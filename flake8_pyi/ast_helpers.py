@@ -1,11 +1,9 @@
-"""Generic helpers for working with :mod:`ast` nodes."""
-
 from __future__ import annotations
 
 import ast
 import re
 from collections.abc import Container, Iterable
-from functools import partial
+from functools import partial  # noqa: F401  # Used in doctests only.
 from itertools import groupby
 from typing import TYPE_CHECKING, NamedTuple, TypeGuard
 
@@ -14,7 +12,7 @@ from .constants import (
     BAD_TYPINGEXTENSIONS_Y023_IMPORTS,
     BAD_Y022_IMPORTS,
     TYPING_MODULES,
-    TYPING_OR_COLLECTIONS_ABC,
+    TYPING_OR_COLLECTIONS_ABC,  # noqa: F401  # Used in doctests only.
 )
 
 if TYPE_CHECKING:

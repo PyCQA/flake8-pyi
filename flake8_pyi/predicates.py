@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import ast
-import sys
+import sys  # noqa: F401  # Used in doctests only.
 from collections import defaultdict
 from collections.abc import Sequence
 from functools import partial
@@ -10,7 +10,7 @@ from keyword import iskeyword
 from typing import NamedTuple
 
 from .ast_helpers import (
-    ast_node_for,
+    ast_node_for,  # noqa: F401  # Used in doctests only.
     get_name_of_class_if_from_modules,
     is_None,
     is_object,
