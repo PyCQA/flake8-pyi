@@ -6,23 +6,67 @@ import re
 import sys
 import types
 from collections import Counter, defaultdict
-from collections.abc import Container, Iterable, Iterator, Sequence, Set as AbstractSet
+from collections.abc import Container, Iterator, Sequence, Set as AbstractSet
 from contextlib import contextmanager
 from copy import deepcopy
 from dataclasses import dataclass
-from functools import cached_property, partial
-from itertools import chain, groupby, zip_longest
-from keyword import iskeyword
-from typing import TYPE_CHECKING, Literal, NamedTuple, Protocol, TypeAlias, TypeGuard
+from functools import cached_property
+from itertools import chain, zip_longest
+from typing import Literal, NamedTuple, Protocol, TypeAlias
 
 from . import checker, errors
+from .ast_helpers import (
+    all_equal,
+    analyse_exit_method_arg,
+    check_import_or_attribute,
+    get_name_of_class_if_from_modules,
+    is_name,
+    is_None,
+    is_object,
+    is_type_or_Type,
+    is_valid_default_value_without_annotation,
+    is_valid_pep_604_union,
+    unparse_func_node,
+)
+from .constants import (
+    COMMON_METACLASSES,
+    INPLACE_BINOP_METHODS,
+    TYPING_MODULES,
+    TYPING_OR_COLLECTIONS_ABC,
+)
 from .errors import Error
-
-if TYPE_CHECKING:
-    # We don't have typing_extensions as a runtime dependency,
-    # but all our annotations are stringized due to __future__ annotations,
-    # and mypy thinks typing_extensions is part of the stdlib.
-    from typing_extensions import TypeIs
+from .predicates import (
+    UnionAnalysis,
+    analyse_typing_Literal,
+    analyse_union,
+    is_abstractmethod,
+    is_Any,
+    is_assignment_which_must_have_a_value,
+    is_AsyncGenerator,
+    is_AsyncIterable,
+    is_bad_TypedDict,
+    is_BaseException,
+    is_builtins_object,
+    is_deprecated,
+    is_final,
+    is_Final,
+    is_Generator,
+    is_Generic,
+    is_Incomplete,
+    is_IncompleteOrNone,
+    is_Iterable,
+    is_Literal,
+    is_NamedTuple,
+    is_object_or_Unused,
+    is_overload,
+    is_override,
+    is_Self,
+    is_TracebackType,
+    is_TypeAlias,
+    is_TypedDict,
+    is_Unpack,
+    is_valid_default_value_with_annotation,
+)
 
 if sys.version_info >= (3, 12):
     _TypeAliasNodeType: TypeAlias = ast.TypeAlias | ast.AnnAssign
@@ -38,321 +82,6 @@ class TypeVarInfo(NamedTuple):
 class NodeWithLocation(Protocol):
     lineno: int
     col_offset: int
-
-
-def all_equal(iterable: Iterable[object]) -> bool:
-    """Returns True if all the elements are equal to each other.
-
-    Adapted from the CPython itertools documentation.
-    """
-    g = groupby(iterable)
-    next(g, True)
-    return not next(g, False)
-
-
-_MAPPING_SLICE = "KeyType, ValueType"
-
-# Y022: Use stdlib imports instead of aliases from typing/typing_extensions
-_BAD_Y022_IMPORTS: dict[str, tuple[str, str | None]] = {
-    # Aliases for collections
-    "Counter": ("collections.Counter", "KeyType"),
-    "Deque": ("collections.deque", "T"),
-    "DefaultDict": ("collections.defaultdict", _MAPPING_SLICE),
-    "ChainMap": ("collections.ChainMap", _MAPPING_SLICE),
-    "OrderedDict": ("collections.OrderedDict", _MAPPING_SLICE),
-    # Aliases for builtins
-    "Dict": ("dict", _MAPPING_SLICE),
-    "FrozenSet": ("frozenset", "T"),
-    "List": ("list", "T"),
-    "Set": ("set", "T"),
-    "Tuple": ("tuple", "Foo, Bar"),
-    "Type": ("type", "MyClass"),
-    # Aliases for contextlib
-    "ContextManager": ("contextlib.AbstractContextManager", "T"),
-    "AsyncContextManager": ("contextlib.AbstractAsyncContextManager", "T"),
-    # Aliases for re
-    "Match": ("re.Match", "T"),
-    "Pattern": ("re.Pattern", "T"),
-    # Aliases for collections.abc
-    # AbstractSet and ByteString are deliberately omitted
-    # (special-cased elsewhere).
-    # If the second element of the tuple is `None`,
-    # it signals that the object shouldn't be parameterized
-    "Collection": ("collections.abc.Collection", "T"),
-    "ItemsView": ("collections.abc.ItemsView", _MAPPING_SLICE),
-    "KeysView": ("collections.abc.KeysView", "KeyType"),
-    "Mapping": ("collections.abc.Mapping", _MAPPING_SLICE),
-    "MappingView": ("collections.abc.MappingView", None),
-    "MutableMapping": ("collections.abc.MutableMapping", _MAPPING_SLICE),
-    "MutableSequence": ("collections.abc.MutableSequence", "T"),
-    "MutableSet": ("collections.abc.MutableSet", "T"),
-    "Sequence": ("collections.abc.Sequence", "T"),
-    "ValuesView": ("collections.abc.ValuesView", "ValueType"),
-    "Iterable": ("collections.abc.Iterable", "T"),
-    "Iterator": ("collections.abc.Iterator", "T"),
-    "Generator": ("collections.abc.Generator", "YieldType, SendType, ReturnType"),
-    "Hashable": ("collections.abc.Hashable", None),
-    "Reversible": ("collections.abc.Reversible", "T"),
-    "Sized": ("collections.abc.Sized", None),
-    "Coroutine": ("collections.abc.Coroutine", "YieldType, SendType, ReturnType"),
-    "AsyncGenerator": ("collections.abc.AsyncGenerator", "YieldType, SendType"),
-    "AsyncIterator": ("collections.abc.AsyncIterator", "T"),
-    "AsyncIterable": ("collections.abc.AsyncIterable", "T"),
-    "Awaitable": ("collections.abc.Awaitable", "T"),
-    "Callable": ("collections.abc.Callable", None),
-    "Container": ("collections.abc.Container", "T"),
-}
-
-# Y023: Import things from typing instead of typing_extensions
-# if they're available from the typing module on 3.8+
-_BAD_TYPINGEXTENSIONS_Y023_IMPORTS = frozenset(
-    {
-        "Any",
-        "AnyStr",
-        "BinaryIO",
-        "Final",
-        "ForwardRef",
-        "Generic",
-        "IO",
-        "Literal",
-        "Protocol",
-        "TextIO",
-        "runtime_checkable",
-        "NewType",
-        "SupportsAbs",
-        "SupportsComplex",
-        "SupportsFloat",
-        "SupportsIndex",
-        "SupportsInt",
-        "SupportsRound",
-        "TypedDict",
-        "final",
-        "overload",
-        "NoReturn",
-        # ClassVar deliberately omitted,
-        # as it's the only one in this group that should be parameterised.
-        # It is special-cased elsewhere.
-        #
-        # Text/Optional/Union are also deliberately omitted,
-        # as well as the various stdlib aliases in typing(_extensions),
-        # as you shouldn't be importing them from anywhere! (Y039)
-    }
-)
-
-
-def _ast_node_for(string: str) -> ast.AST:
-    """Helper function for doctests."""
-    expr = ast.parse(string).body[0]
-    assert isinstance(expr, ast.Expr)
-    return expr.value
-
-
-def _is_name(node: ast.AST | None, name: str) -> bool:
-    """Return True if `node` is an `ast.Name` node with id `name`.
-
-    >>> node = ast.Name(id="Any")
-    >>> _is_name(node, "Any")
-    True
-    """
-    return isinstance(node, ast.Name) and node.id == name
-
-
-_TYPING_MODULES = frozenset({"typing", "typing_extensions"})
-_TYPING_OR_COLLECTIONS_ABC = _TYPING_MODULES | {"collections.abc"}
-
-
-def _is_object(node: ast.AST | None, name: str, *, from_: Container[str]) -> bool:
-    """Determine whether `node` is an ast representation of `name`.
-
-    Return True if `node` is either:
-    1). Of shape `ast.Name(id=<name>)`, or;
-    2). Of shape `ast.Attribute(value=ast.Name(id=<parent>), attr=<name>)`,
-        where <parent> is a string that can be found within the `from_` collection of
-        strings.
-
-    >>> _is_AsyncIterator = partial(_is_object, name="AsyncIterator", from_=_TYPING_OR_COLLECTIONS_ABC)
-    >>> _is_AsyncIterator(_ast_node_for("AsyncIterator"))
-    True
-    >>> _is_AsyncIterator(_ast_node_for("typing.AsyncIterator"))
-    True
-    >>> _is_AsyncIterator(_ast_node_for("typing_extensions.AsyncIterator"))
-    True
-    >>> _is_AsyncIterator(_ast_node_for("collections.abc.AsyncIterator"))
-    True
-    """
-    match node:
-        case ast.Name(id):
-            return id == name
-        case ast.Attribute(value=ast.Name(id), attr=attr):
-            return attr == name and id in from_
-        case ast.Attribute(
-            value=ast.Attribute(value=ast.Name(id), attr=inner_attr), attr=attr
-        ):
-            return attr == name and f"{id}.{inner_attr}" in from_
-        case _:
-            return False
-
-
-_is_BaseException = partial(_is_object, name="BaseException", from_={"builtins"})
-_is_TypeAlias = partial(_is_object, name="TypeAlias", from_=_TYPING_MODULES)
-_is_NamedTuple = partial(_is_object, name="NamedTuple", from_=_TYPING_MODULES)
-_is_deprecated = partial(
-    _is_object, name="deprecated", from_={"typing_extensions", "warnings"}
-)
-_is_TypedDict = partial(
-    _is_object, name="TypedDict", from_=_TYPING_MODULES | {"mypy_extensions"}
-)
-_is_Literal = partial(_is_object, name="Literal", from_=_TYPING_MODULES)
-_is_abstractmethod = partial(_is_object, name="abstractmethod", from_={"abc"})
-_is_Any = partial(_is_object, name="Any", from_=_TYPING_MODULES)
-_is_overload = partial(_is_object, name="overload", from_=_TYPING_MODULES)
-_is_final = partial(_is_object, name="final", from_=_TYPING_MODULES)
-_is_Self = partial(_is_object, name="Self", from_=({"_typeshed"} | _TYPING_MODULES))
-_is_TracebackType = partial(_is_object, name="TracebackType", from_={"types"})
-_is_builtins_object = partial(_is_object, name="object", from_={"builtins"})
-_is_builtins_type = partial(_is_object, name="type", from_={"builtins"})
-_is_Unused = partial(_is_object, name="Unused", from_={"_typeshed"})
-_is_Incomplete = partial(_is_object, name="Incomplete", from_={"_typeshed"})
-_is_Iterable = partial(_is_object, name="Iterable", from_=_TYPING_OR_COLLECTIONS_ABC)
-_is_AsyncIterable = partial(
-    _is_object, name="AsyncIterable", from_=_TYPING_OR_COLLECTIONS_ABC
-)
-_is_Final = partial(_is_object, name="Final", from_=_TYPING_MODULES)
-_is_Generator = partial(_is_object, name="Generator", from_=_TYPING_OR_COLLECTIONS_ABC)
-_is_AsyncGenerator = partial(
-    _is_object, name="AsyncGenerator", from_=_TYPING_OR_COLLECTIONS_ABC
-)
-_is_Generic = partial(_is_object, name="Generic", from_=_TYPING_MODULES)
-_is_Unpack = partial(_is_object, name="Unpack", from_=_TYPING_MODULES)
-_is_override = partial(_is_object, name="override", from_=_TYPING_MODULES)
-
-
-def _is_union(node: ast.expr | None) -> TypeIs[ast.BinOp]:
-    return isinstance(node, ast.BinOp) and isinstance(node.op, ast.BitOr)
-
-
-def _is_object_or_Unused(node: ast.expr | None) -> bool:
-    return _is_builtins_object(node) or _is_Unused(node)
-
-
-def _is_IncompleteOrNone(node: ast.expr | None) -> bool:
-    return _is_union(node) and _is_Incomplete(node.left) and _is_None(node.right)
-
-
-def _get_name_of_class_if_from_modules(
-    classnode: ast.expr, *, modules: Container[str]
-) -> str | None:
-    """
-    If `classnode` is an `ast.Name`, return `classnode.id`.
-
-    If it's an `ast.Attribute`,check that the part before the dot
-    is a module in `modules`.
-    If it is, return the part after the dot; if it isn't, return `None`.
-
-    If `classnode` is anything else, return `None`.
-
-    >>> _get_name_of_class_if_from_modules(_ast_node_for('int'), modules={'builtins'})
-    'int'
-    >>> int_node = _ast_node_for('builtins.int')
-    >>> _get_name_of_class_if_from_modules(int_node, modules={'builtins'})
-    'int'
-    >>> _get_name_of_class_if_from_modules(int_node, modules={'typing'}) is None
-    True
-    """
-    match classnode:
-        case ast.Name(id):
-            return id
-        case ast.Attribute(value=ast.Name(id=module_name), attr=attr):
-            if module_name in modules:
-                return attr
-        case ast.Attribute(
-            value=ast.Attribute(value=ast.Name(id=module_name), attr=inner_attr),
-            attr=attr,
-        ):
-            if f"{module_name}.{inner_attr}" in modules:
-                return attr
-
-    return None
-
-
-def _is_type_or_Type(node: ast.expr) -> bool:
-    """
-    >>> _is_type_or_Type(_ast_node_for('type'))
-    True
-    >>> _is_type_or_Type(_ast_node_for('Type'))
-    True
-    >>> _is_type_or_Type(_ast_node_for('builtins.type'))
-    True
-    >>> _is_type_or_Type(_ast_node_for('typing_extensions.Type'))
-    True
-    >>> _is_type_or_Type(_ast_node_for('typing.Type'))
-    True
-    """
-    cls_name = _get_name_of_class_if_from_modules(
-        node, modules=_TYPING_MODULES | {"builtins"}
-    )
-    return cls_name in {"type", "Type"}
-
-
-def _is_None(node: ast.expr | None) -> bool:
-    return isinstance(node, ast.Constant) and node.value is None
-
-
-class ExitArgAnalysis(NamedTuple):
-    is_union_with_None: bool
-    non_None_part: ast.expr | None
-
-    def __repr__(self) -> str:
-        if self.non_None_part is None:
-            non_None_part_repr = "None"
-        else:
-            non_None_part_repr = ast.dump(self.non_None_part)
-
-        return (
-            f"ExitArgAnalysis("
-            f"is_union_with_None={self.is_union_with_None}, "
-            f"non_None_part={non_None_part_repr}"
-            f")"
-        )
-
-
-def _analyse_exit_method_arg(node: ast.BinOp) -> ExitArgAnalysis:
-    """Return a two-item tuple analysing the annotation of an exit-method arg.
-
-    The `node` represents a union type written as `X | Y`.
-
-    >>> _analyse_exit_method_arg(_ast_node_for('int | str'))
-    ExitArgAnalysis(is_union_with_None=False, non_None_part=None)
-    >>> _analyse_exit_method_arg(_ast_node_for('int | None'))  # doctest: +ELLIPSIS
-    ExitArgAnalysis(is_union_with_None=True, non_None_part=Name(id='int'...))
-    >>> _analyse_exit_method_arg(_ast_node_for('None | str'))  # doctest: +ELLIPSIS
-    ExitArgAnalysis(is_union_with_None=True, non_None_part=Name(id='str'...))
-    """
-    assert isinstance(node.op, ast.BitOr)
-    if _is_None(node.left):
-        return ExitArgAnalysis(is_union_with_None=True, non_None_part=node.right)
-    if _is_None(node.right):
-        return ExitArgAnalysis(is_union_with_None=True, non_None_part=node.left)
-    return ExitArgAnalysis(is_union_with_None=False, non_None_part=None)
-
-
-_INPLACE_BINOP_METHODS = frozenset(
-    {
-        "__iadd__",
-        "__isub__",
-        "__imul__",
-        "__imatmul__",
-        "__itruediv__",
-        "__ifloordiv__",
-        "__imod__",
-        "__ipow__",
-        "__ilshift__",
-        "__irshift__",
-        "__iand__",
-        "__ixor__",
-        "__ior__",
-    }
-)
 
 
 def _has_bad_hardcoded_returns(
@@ -371,7 +100,7 @@ def _has_bad_hardcoded_returns(
     # Much too complex for our purposes to worry
     # about overloaded functions or abstractmethods
     if any(
-        _is_overload(deco) or _is_abstractmethod(deco) for deco in method.decorator_list
+        is_overload(deco) or is_abstractmethod(deco) for deco in method.decorator_list
     ):
         return False
 
@@ -384,191 +113,38 @@ def _has_bad_hardcoded_returns(
     if isinstance(method, ast.AsyncFunctionDef):
         return (
             method_name == "__aenter__"
-            and _is_name(returns, class_ctx.cls_name)
+            and is_name(returns, class_ctx.cls_name)
             and not class_ctx.is_decorated_with_final
         )
 
-    if method_name in _INPLACE_BINOP_METHODS:
-        return returns is not None and not _is_Self(returns)
+    if method_name in INPLACE_BINOP_METHODS:
+        return returns is not None and not is_Self(returns)
 
-    if _is_name(returns, class_ctx.cls_name):
+    if is_name(returns, class_ctx.cls_name):
         return (
             method_name in {"__enter__", "__new__"}
             and not class_ctx.is_decorated_with_final
         )
 
     if isinstance(returns, ast.Subscript):
-        return_obj_name = _get_name_of_class_if_from_modules(
-            returns.value, modules=_TYPING_OR_COLLECTIONS_ABC
+        return_obj_name = get_name_of_class_if_from_modules(
+            returns.value, modules=TYPING_OR_COLLECTIONS_ABC
         )
         if method_name == "__iter__":
             bad_returns = {"Iterable", "Iterator"}
             return return_obj_name in bad_returns and class_ctx.contains_in_bases(
-                "Iterator", from_=_TYPING_OR_COLLECTIONS_ABC
+                "Iterator", from_=TYPING_OR_COLLECTIONS_ABC
             )
         elif method_name == "__aiter__":
             bad_returns = {"AsyncIterable", "AsyncIterator"}
             return return_obj_name in bad_returns and class_ctx.contains_in_bases(
-                "AsyncIterator", from_=_TYPING_OR_COLLECTIONS_ABC
+                "AsyncIterator", from_=TYPING_OR_COLLECTIONS_ABC
             )
 
     return False
 
 
-def _unparse_func_node(node: ast.FunctionDef | ast.AsyncFunctionDef) -> str:
-    """Unparse a function node, and reformat it to fit on one line."""
-    return re.sub(r"\s+", " ", ast.unparse(node))
-
-
-def _is_bad_TypedDict(node: ast.Call) -> bool:
-    """Should the assignment-based TypedDict `node` be rewritten using class syntax?
-
-    Return `False` if the TypedDict appears as though it may be invalidly defined;
-    type-checkers will raise an error in that eventuality.
-    """
-
-    args = node.args
-    if len(args) != 2:
-        return False
-
-    typed_dict_annotations = args[1]
-
-    # The runtime supports many ways of creating a TypedDict,
-    # e.g. `T = TypeDict('T', [['foo', int], ['bar', str]])`,
-    # but PEP 589 states that type-checkers are only expected
-    # to accept a dictionary literal for the second argument.
-    if not isinstance(typed_dict_annotations, ast.Dict):
-        return False
-
-    for key in typed_dict_annotations.keys:
-        if not (
-            isinstance(key, ast.Constant)
-            and type(key.value) is str
-            and key.value.isidentifier()
-            and not iskeyword(key.value)
-        ):
-            return False
-    return True
-
-
-def _is_assignment_which_must_have_a_value(
-    target_name: str | None, *, in_class: bool
-) -> bool:
-    return (target_name in {"__match_args__", "__slots__"} and in_class) or (
-        target_name == "__all__" and not in_class
-    )
-
-
-class UnionAnalysis(NamedTuple):
-    members_by_dump: defaultdict[str, list[ast.expr]]
-    dupes_in_union: bool
-    builtins_classes_in_union: set[str]
-    multiple_literals_in_union: bool
-    non_literals_in_union: bool
-    combined_literal_members: list[ast.expr]
-    # type subscript == type[Foo]
-    multiple_type_subscripts_in_union: bool
-    combined_type_subscripts: list[ast.expr]
-
-
-def _analyse_union(members: Sequence[ast.expr]) -> UnionAnalysis:
-    """Return a tuple providing analysis of a given sequence of union members.
-
-    >>> source = 'Union[int, memoryview, memoryview, Literal["foo"], Literal[1], type[float], type[str]]'
-    >>> union = _ast_node_for(source)
-    >>> analysis = _analyse_union(union.slice.elts)
-    >>> dump = "Name(id='memoryview')" if sys.version_info >= (3, 15) else "Name(id='memoryview', ctx=Load())"
-    >>> len(analysis.members_by_dump[dump])
-    2
-    >>> analysis.dupes_in_union
-    True
-    >>> "int" in analysis.builtins_classes_in_union
-    True
-    >>> "float" in analysis.builtins_classes_in_union
-    False
-    >>> analysis.multiple_literals_in_union
-    True
-    >>> analysis.non_literals_in_union
-    True
-    >>> ast.unparse(ast.Tuple(analysis.combined_literal_members))
-    "('foo', 1)"
-    >>> analysis.multiple_type_subscripts_in_union
-    True
-    >>> ast.unparse(ast.Tuple(analysis.combined_type_subscripts))
-    '(float, str)'
-    """
-
-    non_literals_in_union = False
-    members_by_dump: defaultdict[str, list[ast.expr]] = defaultdict(list)
-    builtins_classes_in_union: set[str] = set()
-    literals_in_union = []
-    combined_literal_members: list[ast.expr] = []
-    type_subscripts_in_union: list[ast.expr] = []
-
-    for member in members:
-        members_by_dump[ast.dump(member)].append(member)
-        name_if_builtins_cls = _get_name_of_class_if_from_modules(
-            member, modules={"builtins"}
-        )
-        if name_if_builtins_cls is not None:
-            builtins_classes_in_union.add(name_if_builtins_cls)
-        if isinstance(member, ast.Subscript) and _is_Literal(member.value):
-            literals_in_union.append(member.slice)
-        else:
-            non_literals_in_union = True
-        if isinstance(member, ast.Subscript) and _is_builtins_type(member.value):
-            type_subscripts_in_union.append(member.slice)
-
-    for literal in literals_in_union:
-        if isinstance(literal, ast.Tuple):
-            combined_literal_members.extend(literal.elts)
-        else:
-            combined_literal_members.append(literal)
-
-    return UnionAnalysis(
-        members_by_dump=members_by_dump,
-        dupes_in_union=any(len(lst) > 1 for lst in members_by_dump.values()),
-        builtins_classes_in_union=builtins_classes_in_union,
-        multiple_literals_in_union=len(literals_in_union) >= 2,
-        non_literals_in_union=non_literals_in_union,
-        combined_literal_members=combined_literal_members,
-        multiple_type_subscripts_in_union=len(type_subscripts_in_union) >= 2,
-        combined_type_subscripts=type_subscripts_in_union,
-    )
-
-
-class TypingLiteralAnalysis(NamedTuple):
-    members_by_dump: defaultdict[str, list[ast.expr]]
-    members_without_none: list[ast.expr]
-    none_members: list[ast.expr]
-    contains_only_none: bool
-
-
-def _analyse_typing_Literal(node: ast.Subscript) -> TypingLiteralAnalysis:
-    """Return a tuple providing analysis of a `typing.Literal` slice."""
-
-    members_by_dump: defaultdict[str, list[ast.expr]] = defaultdict(list)
-    members_without_none: list[ast.expr] = []
-    none_members: list[ast.expr] = []
-
-    members = node.slice.elts if isinstance(node.slice, ast.Tuple) else [node.slice]
-
-    for member in members:
-        members_by_dump[ast.dump(member)].append(member)
-        if _is_None(member):
-            none_members.append(member)
-        else:
-            members_without_none.append(member)
-
-    return TypingLiteralAnalysis(
-        members_by_dump=members_by_dump,
-        members_without_none=members_without_none,
-        none_members=none_members,
-        contains_only_none=bool(none_members and not members_without_none),
-    )
-
-
-_COMMON_METACLASSES = {
+COMMON_METACLASSES = {
     "type": "builtins",
     "ABCMeta": "abc",
     "EnumMeta": "enum",
@@ -591,12 +167,12 @@ class EnclosingClassContext:
 
     @cached_property
     def is_protocol_class(self) -> bool:
-        return self.contains_in_bases("Protocol", from_=_TYPING_MODULES)
+        return self.contains_in_bases("Protocol", from_=TYPING_MODULES)
 
     @cached_property
     def is_typeddict_class(self) -> bool:
         return self.contains_in_bases(
-            "TypedDict", from_=(_TYPING_MODULES | {"mypy_extensions"})
+            "TypedDict", from_=(TYPING_MODULES | {"mypy_extensions"})
         )
 
     @cached_property
@@ -607,12 +183,12 @@ class EnclosingClassContext:
     def is_metaclass(self) -> bool:
         return any(
             self.contains_in_bases(metacls, from_={module})
-            for metacls, module in _COMMON_METACLASSES.items()
+            for metacls, module in COMMON_METACLASSES.items()
         )
 
     @cached_property
     def is_decorated_with_final(self) -> bool:
-        return any(_is_final(decorator) for decorator in self.node.decorator_list)
+        return any(is_final(decorator) for decorator in self.node.decorator_list)
 
 
 class ClassBase(NamedTuple):
@@ -658,176 +234,6 @@ def _analyze_classdef(node: ast.ClassDef) -> EnclosingClassContext:
         bases_map[base.obj].add(base.module)
 
     return EnclosingClassContext(node=node, cls_name=node.name, bases_map=bases_map)
-
-
-_NEGATABLE_MATH_ATTRIBUTES_IN_DEFAULTS = frozenset(
-    {"math.inf", "math.e", "math.pi", "math.tau"}
-)
-
-_ALLOWED_SIMPLE_NAMES_IN_DEFAULTS = frozenset({"sentinel"})
-
-
-def _is_valid_default_value_with_annotation(
-    node: ast.expr, *, allow_containers: bool = True
-) -> bool:
-    """Is `node` valid as a default value for a function or method parameter in a stub?
-
-    Note that this function is *also* used to determine
-    the validity of default values for ast.AnnAssign nodes.
-    (E.g. `foo: int = 5` is OK, but `foo: TypeVar = TypeVar("foo")` is not.)
-    """
-    match node:
-        case ast.List(elts) | ast.Tuple(elts) | ast.Set(elts):
-            return (
-                allow_containers
-                and len(elts) <= 10
-                and all(
-                    _is_valid_default_value_with_annotation(elt, allow_containers=False)
-                    for elt in elts
-                )
-            )
-
-        case ast.Dict(keys, values):
-            return (
-                allow_containers
-                and len(keys) <= 10
-                and all(
-                    (
-                        subnode is not None
-                        and _is_valid_default_value_with_annotation(
-                            subnode, allow_containers=False
-                        )
-                    )
-                    for subnode in chain(keys, values)
-                )
-            )
-
-        # `...`, bools, None, str, bytes,
-        # positive ints, positive floats, positive complex numbers with no real part
-        case ast.Constant():
-            return True
-
-        # Negative ints, negative floats, negative complex numbers with no real part
-        case ast.UnaryOp(op=ast.USub(), operand=ast.Constant(value=value)):
-            return type(value) in {int, float, complex}
-
-        # some constants from the math module
-        case ast.UnaryOp(
-            op=ast.USub(), operand=ast.Attribute(value=ast.Name(id), attr=attr)
-        ):
-            return f"{id}.{attr}" in _NEGATABLE_MATH_ATTRIBUTES_IN_DEFAULTS
-
-        # Complex numbers with a real part and an imaginary part...
-        case ast.BinOp(
-            left=left, op=ast.Add() | ast.Sub(), right=ast.Constant(value=complex())
-        ):
-            match left:
-                case ast.Constant(value):
-                    return type(value) in {int, float}
-                case ast.UnaryOp(op=ast.USub(), operand=ast.Constant(value)):
-                    return type(value) in {int, float}
-                case _:
-                    return False
-
-        # Attribute access like math.inf or enums
-        case ast.Attribute():
-            return True
-
-        # Special cases
-        case ast.Name(id):
-            return id in _ALLOWED_SIMPLE_NAMES_IN_DEFAULTS
-
-        case _:
-            return False
-
-
-def _is_valid_pep_604_union_member(node: ast.expr) -> bool:
-    return _is_None(node) or isinstance(node, (ast.Name, ast.Attribute, ast.Subscript))
-
-
-def _is_valid_pep_604_union(node: ast.expr) -> TypeGuard[ast.BinOp]:
-    """Does `node` represent a valid PEP-604 union (e.g. `int | str`)?"""
-    return (
-        isinstance(node, ast.BinOp)
-        and isinstance(node.op, ast.BitOr)
-        and (
-            _is_valid_pep_604_union_member(node.left)
-            or _is_valid_pep_604_union(node.left)
-        )
-        and _is_valid_pep_604_union_member(node.right)
-    )
-
-
-def _is_valid_default_value_without_annotation(node: ast.expr) -> bool:
-    """Is `node` a valid default for an assignment without an annotation?"""
-    match node:
-        case ast.Call() | ast.Name() | ast.Attribute() | ast.Subscript():
-            return True
-        case ast.Constant(value):
-            return value in {None, ...}
-        case _:
-            return _is_valid_pep_604_union(node)
-
-
-def _check_import_or_attribute(
-    node: ast.Attribute | ast.ImportFrom, module_name: str, object_name: str
-) -> str | None:
-    """If `node` represents a bad import, return the approriate error message.
-
-    Else, return None.
-    """
-    fullname = f"{module_name}.{object_name}"
-
-    # Y057 errors
-    if fullname in {"typing.ByteString", "collections.abc.ByteString"}:
-        return errors.Y057.format(module=module_name)
-
-    # Y024 errors
-    if fullname == "collections.namedtuple":
-        return errors.Y024
-
-    if module_name in _TYPING_MODULES:
-        # Y022 errors
-        if object_name in _BAD_Y022_IMPORTS:
-            good_cls_name, slice_contents = _BAD_Y022_IMPORTS[object_name]
-            params = "" if slice_contents is None else f"[{slice_contents}]"
-            return errors.Y022.format(
-                good_syntax=f'"{good_cls_name}{params}"',
-                bad_syntax=f'"{fullname}{params}"',
-            )
-
-        # Y037 errors
-        if object_name == "Optional":
-            return errors.Y037.format(
-                old_syntax=fullname, example='"int | None" instead of "Optional[int]"'
-            )
-        if object_name == "Union":
-            return errors.Y037.format(
-                old_syntax=fullname, example='"int | str" instead of "Union[int, str]"'
-            )
-
-        # Y039 errors
-        if object_name == "Text":
-            return errors.Y039.format(module=module_name)
-
-        # Y069 errors
-        if object_name == "NoReturn":
-            return errors.Y069.format(module=module_name)
-
-    # Y023 errors
-    if module_name == "typing_extensions":
-        if object_name in _BAD_TYPINGEXTENSIONS_Y023_IMPORTS:
-            return errors.Y023.format(
-                good_syntax=f'"typing.{object_name}"',
-                bad_syntax=f'"typing_extensions.{object_name}"',
-            )
-        if object_name == "ClassVar":
-            return errors.Y023.format(
-                good_syntax='"typing.ClassVar[T]"',
-                bad_syntax='"typing_extensions.ClassVar[T]"',
-            )
-
-    return None
 
 
 @dataclass
@@ -909,7 +315,7 @@ class PyiVisitor(ast.NodeVisitor):
 
     def visit_Attribute(self, node: ast.Attribute) -> None:
         self.generic_visit(node)
-        if error_msg := _check_import_or_attribute(
+        if error_msg := check_import_or_attribute(
             node=node, module_name=ast.unparse(node.value), object_name=node.attr
         ):
             self.error(node, error_msg)
@@ -936,10 +342,10 @@ class PyiVisitor(ast.NodeVisitor):
             self.error(node, errors.Y025)
 
         for object_name in imported_names:
-            if error_msg := _check_import_or_attribute(node, module_name, object_name):
+            if error_msg := check_import_or_attribute(node, module_name, object_name):
                 self.error(node, error_msg)
 
-        if module_name in _TYPING_MODULES and "AbstractSet" in imported_names:
+        if module_name in TYPING_MODULES and "AbstractSet" in imported_names:
             self.error(node, errors.Y038.format(module=module_name))
 
     def _check_for_typevarlike_assignments(
@@ -951,7 +357,7 @@ class PyiVisitor(ast.NodeVisitor):
         If they are private, they should be used at least once
         in the file in which they are defined.
         """
-        cls_name = _get_name_of_class_if_from_modules(function, modules=_TYPING_MODULES)
+        cls_name = get_name_of_class_if_from_modules(function, modules=TYPING_MODULES)
 
         if cls_name in {"TypeVar", "ParamSpec", "TypeVarTuple"}:
             if object_name.startswith("_"):
@@ -963,9 +369,9 @@ class PyiVisitor(ast.NodeVisitor):
     def _check_default_value_without_type_annotation(
         self, node: ast.Assign, assignment: ast.expr, target_name: str
     ) -> None:
-        if _is_valid_default_value_without_annotation(assignment):
+        if is_valid_default_value_without_annotation(assignment):
             return
-        if _is_valid_default_value_with_annotation(assignment):
+        if is_valid_default_value_with_annotation(assignment):
             # Annoying special-casing to exclude enums from Y052
             if not self.visiting_enum_class:
                 self.error(node, errors.Y052.format(variable=target_name))
@@ -987,7 +393,7 @@ class PyiVisitor(ast.NodeVisitor):
         else:
             self.error(node, errors.Y017)
             target = target_name = None
-        is_special_assignment = _is_assignment_which_must_have_a_value(
+        is_special_assignment = is_assignment_which_must_have_a_value(
             target_name, in_class=self.enclosing_class_ctx is not None
         )
         assignment = node.value
@@ -1004,7 +410,7 @@ class PyiVisitor(ast.NodeVisitor):
         assert isinstance(target, ast.Name)
         if isinstance(assignment, ast.Call):
             function = assignment.func
-            if _is_TypedDict(function):
+            if is_TypedDict(function):
                 if target_name.startswith("_"):
                     self.assignment_based_typeddicts[target_name].append(node)
             else:
@@ -1023,7 +429,7 @@ class PyiVisitor(ast.NodeVisitor):
         """Allow `__all__ += ['foo', 'bar']` in a stub file."""
         target, value = node.target, node.value
         self.visit(target)
-        if _is_name(target, "__all__") and isinstance(node.op, ast.Add):
+        if is_name(target, "__all__") and isinstance(node.op, ast.Add):
             with self.string_literals_allowed.enabled():
                 self.visit(value)
         else:
@@ -1051,9 +457,9 @@ class PyiVisitor(ast.NodeVisitor):
         """
         if (
             isinstance(assignment, ast.Subscript)
-            or _is_valid_pep_604_union(assignment)
-            or _is_Any(assignment)
-            or (_is_None(assignment) and not self.visiting_enum_class)
+            or is_valid_pep_604_union(assignment)
+            or is_Any(assignment)
+            or (is_None(assignment) and not self.visiting_enum_class)
         ):
             new_node = ast.AnnAssign(
                 target=target,
@@ -1071,13 +477,13 @@ class PyiVisitor(ast.NodeVisitor):
         function = node.func
         self.visit(function)
 
-        if _is_NamedTuple(function):
+        if is_NamedTuple(function):
             return self.error(node, errors.Y028)
-        elif _is_TypedDict(function):
-            if _is_bad_TypedDict(node):
+        elif is_TypedDict(function):
+            if is_bad_TypedDict(node):
                 self.error(node, errors.Y031)
             return
-        elif _is_deprecated(function):
+        elif is_deprecated(function):
             with (
                 self.string_literals_allowed.enabled(),
                 self.long_strings_allowed.enabled(),
@@ -1148,11 +554,11 @@ class PyiVisitor(ast.NodeVisitor):
 
         is_special_assignment = isinstance(
             node_target, ast.Name
-        ) and _is_assignment_which_must_have_a_value(
+        ) and is_assignment_which_must_have_a_value(
             node_target.id, in_class=self.enclosing_class_ctx is not None
         )
 
-        is_typealias = _is_TypeAlias(node_annotation) and isinstance(
+        is_typealias = is_TypeAlias(node_annotation) and isinstance(
             node_target, ast.Name
         )
 
@@ -1186,12 +592,12 @@ class PyiVisitor(ast.NodeVisitor):
             # Type checkers will emit errors for those.
             return
 
-        if _is_Final(node_annotation) and isinstance(
+        if is_Final(node_annotation) and isinstance(
             node_value, (ast.Attribute, ast.Name)
         ):
             return
 
-        if node_value and not _is_valid_default_value_with_annotation(node_value):
+        if node_value and not is_valid_default_value_with_annotation(node_value):
             self.error(node, errors.Y015)
 
     if sys.version_info >= (3, 12):
@@ -1210,9 +616,9 @@ class PyiVisitor(ast.NodeVisitor):
         slice_ = annotation.slice
 
         if (
-            _is_Final(value)
+            is_Final(value)
             and isinstance(slice_, ast.Subscript)
-            and _is_Literal(slice_.value)
+            and is_Literal(slice_.value)
             and isinstance(slice_.slice, ast.Constant)
         ):
             final = ast.Name(id="Final", ctx=ast.Load())
@@ -1235,7 +641,7 @@ class PyiVisitor(ast.NodeVisitor):
         self, members: Sequence[ast.expr], is_pep_604_union: bool
     ) -> None:
         first_union_member = members[0]
-        analysis = _analyse_union(members)
+        analysis = analyse_union(members)
 
         for member_list in analysis.members_by_dump.values():
             if len(member_list) >= 2:
@@ -1347,8 +753,8 @@ class PyiVisitor(ast.NodeVisitor):
 
     def visit_Subscript(self, node: ast.Subscript) -> None:
         subscripted_object = node.value
-        subscripted_object_name = _get_name_of_class_if_from_modules(
-            subscripted_object, modules=_TYPING_MODULES | {"builtins"}
+        subscripted_object_name = get_name_of_class_if_from_modules(
+            subscripted_object, modules=TYPING_MODULES | {"builtins"}
         )
         self.visit(subscripted_object)
         if subscripted_object_name == "Literal":
@@ -1361,16 +767,16 @@ class PyiVisitor(ast.NodeVisitor):
         else:
             self.visit(node.slice)
             if subscripted_object_name in {"tuple", "Tuple"} and not (
-                isinstance(node.slice, ast.Subscript) and _is_Unpack(node.slice.value)
+                isinstance(node.slice, ast.Subscript) and is_Unpack(node.slice.value)
             ):
                 self._Y090_error(node)
 
     def _visit_typing_Literal(self, node: ast.Subscript) -> None:
-        analysis = _analyse_typing_Literal(node)
+        analysis = analyse_typing_Literal(node)
 
         Y062_encountered = False
         for member_list in analysis.members_by_dump.values():
-            if len(member_list) > 1 and not _is_None(member_list[0]):
+            if len(member_list) > 1 and not is_None(member_list[0]):
                 Y062_encountered = True
                 self.error(
                     member_list[1], errors.Y062.format(ast.unparse(member_list[1]))
@@ -1452,7 +858,7 @@ class PyiVisitor(ast.NodeVisitor):
         def is_version_info(attr: ast.expr) -> bool:
             return (
                 isinstance(attr, ast.Attribute)
-                and _is_name(attr.value, "sys")
+                and is_name(attr.value, "sys")
                 and attr.attr == "version_info"
             )
 
@@ -1557,12 +963,12 @@ class PyiVisitor(ast.NodeVisitor):
         num_bases = len(bases)
 
         for i, base_node in enumerate(bases, start=1):
-            if not Y040_encountered and _is_builtins_object(base_node):
+            if not Y040_encountered and is_builtins_object(base_node):
                 self.error(base_node, errors.Y040)
                 Y040_encountered = True
             if isinstance(base_node, ast.Subscript):
                 subscript_bases.append(base_node)
-                if _is_Generic(base_node.value):
+                if is_Generic(base_node.value):
                     Generic_basenode = base_node
                     if i < num_bases and not Y059_encountered:
                         Y059_encountered = True
@@ -1629,7 +1035,7 @@ class PyiVisitor(ast.NodeVisitor):
                 varargs_annotation = varargs.annotation
                 if not (
                     varargs_annotation is None
-                    or _is_object_or_Unused(varargs_annotation)
+                    or is_object_or_Unused(varargs_annotation)
                 ):
                     error_for_bad_exit_method(
                         f"Star-args in an {method_name} method "
@@ -1676,17 +1082,17 @@ class PyiVisitor(ast.NodeVisitor):
 
         if num_args >= 2:
             arg1_annotation = non_kw_only_args[1].annotation
-            if arg1_annotation is None or _is_object_or_Unused(arg1_annotation):
+            if arg1_annotation is None or is_object_or_Unused(arg1_annotation):
                 pass
-            elif _is_valid_pep_604_union(arg1_annotation):
-                is_union_with_None, non_None_part = _analyse_exit_method_arg(
+            elif is_valid_pep_604_union(arg1_annotation):
+                is_union_with_None, non_None_part = analyse_exit_method_arg(
                     arg1_annotation
                 )
                 if not (
                     is_union_with_None
                     and isinstance(non_None_part, ast.Subscript)
-                    and _is_type_or_Type(non_None_part.value)
-                    and _is_BaseException(non_None_part.slice)
+                    and is_type_or_Type(non_None_part.value)
+                    and is_BaseException(non_None_part.slice)
                 ):
                     error_for_bad_annotation(arg1_annotation, arg_number=1)
             else:
@@ -1694,26 +1100,26 @@ class PyiVisitor(ast.NodeVisitor):
 
         if num_args >= 3:
             arg2_annotation = non_kw_only_args[2].annotation
-            if arg2_annotation is None or _is_object_or_Unused(arg2_annotation):
+            if arg2_annotation is None or is_object_or_Unused(arg2_annotation):
                 pass
-            elif _is_valid_pep_604_union(arg2_annotation):
-                is_union_with_None, non_None_part = _analyse_exit_method_arg(
+            elif is_valid_pep_604_union(arg2_annotation):
+                is_union_with_None, non_None_part = analyse_exit_method_arg(
                     arg2_annotation
                 )
-                if not (is_union_with_None and _is_BaseException(non_None_part)):
+                if not (is_union_with_None and is_BaseException(non_None_part)):
                     error_for_bad_annotation(arg2_annotation, arg_number=2)
             else:
                 error_for_bad_annotation(arg2_annotation, arg_number=2)
 
         if num_args >= 4:
             arg3_annotation = non_kw_only_args[3].annotation
-            if arg3_annotation is None or _is_object_or_Unused(arg3_annotation):
+            if arg3_annotation is None or is_object_or_Unused(arg3_annotation):
                 pass
-            elif _is_valid_pep_604_union(arg3_annotation):
-                is_union_with_None, non_None_part = _analyse_exit_method_arg(
+            elif is_valid_pep_604_union(arg3_annotation):
+                is_union_with_None, non_None_part = analyse_exit_method_arg(
                     arg3_annotation
                 )
-                if not (is_union_with_None and _is_TracebackType(non_None_part)):
+                if not (is_union_with_None and is_TracebackType(non_None_part)):
                     error_for_bad_annotation(arg3_annotation, arg_number=3)
             else:
                 error_for_bad_annotation(arg3_annotation, arg_number=3)
@@ -1732,7 +1138,7 @@ class PyiVisitor(ast.NodeVisitor):
         error_message = errors.Y034.format(
             methods=referrer,
             method_name=f"{cls_name}.{method_name}",
-            suggested_syntax=_unparse_func_node(copied_node),
+            suggested_syntax=unparse_func_node(copied_node),
         )
         self.error(node, error_message)
 
@@ -1750,8 +1156,8 @@ class PyiVisitor(ast.NodeVisitor):
     def _check_iter_returns(
         self, node: ast.FunctionDef, returns: ast.expr | None
     ) -> None:
-        if _is_Iterable(returns) or (
-            isinstance(returns, ast.Subscript) and _is_Iterable(returns.value)
+        if is_Iterable(returns) or (
+            isinstance(returns, ast.Subscript) and is_Iterable(returns.value)
         ):
             msg = errors.Y045.format(
                 iter_method="__iter__", good_cls="Iterator", bad_cls="Iterable"
@@ -1760,18 +1166,18 @@ class PyiVisitor(ast.NodeVisitor):
             return
         non_kw_only_args = node.args.posonlyargs + node.args.args
         if len(non_kw_only_args) == 1 and not node.args.kwonlyargs:
-            if _is_Generator(returns):
+            if is_Generator(returns):
                 self._Y058_error(node, non_kw_only_args, "Iterator")
             elif (
                 isinstance(returns, ast.Subscript)
-                and _is_Generator(returns.value)
+                and is_Generator(returns.value)
                 and isinstance(returns.slice, ast.Tuple)
             ):
                 elts = returns.slice.elts
                 if (
                     len(elts) == 3
-                    and (_is_Any(elts[1]) or _is_None(elts[1]))
-                    and (_is_Any(elts[2]) or _is_None(elts[2]))
+                    and (is_Any(elts[1]) or is_None(elts[1]))
+                    and (is_Any(elts[2]) or is_None(elts[2]))
                 ):
                     example_returns = f"Iterator[{ast.unparse(returns.slice.elts[0])}]"
                     self._Y058_error(node, non_kw_only_args, example_returns)
@@ -1779,8 +1185,8 @@ class PyiVisitor(ast.NodeVisitor):
     def _check_aiter_returns(
         self, node: ast.FunctionDef, returns: ast.expr | None
     ) -> None:
-        if _is_AsyncIterable(returns) or (
-            isinstance(returns, ast.Subscript) and _is_AsyncIterable(returns.value)
+        if is_AsyncIterable(returns) or (
+            isinstance(returns, ast.Subscript) and is_AsyncIterable(returns.value)
         ):
             msg = errors.Y045.format(
                 iter_method="__aiter__",
@@ -1791,15 +1197,15 @@ class PyiVisitor(ast.NodeVisitor):
             return
         non_kw_only_args = node.args.posonlyargs + node.args.args
         if len(non_kw_only_args) == 1 and not node.args.kwonlyargs:
-            if _is_AsyncGenerator(returns):
+            if is_AsyncGenerator(returns):
                 self._Y058_error(node, non_kw_only_args, "AsyncIterator")
             elif (
                 isinstance(returns, ast.Subscript)
-                and _is_AsyncGenerator(returns.value)
+                and is_AsyncGenerator(returns.value)
                 and isinstance(returns.slice, ast.Tuple)
             ):
                 elts = returns.slice.elts
-                if len(elts) == 2 and (_is_Any(elts[1]) or _is_None(elts[1])):
+                if len(elts) == 2 and (is_Any(elts[1]) or is_None(elts[1])):
                     example_returns = (
                         f"AsyncIterator[{ast.unparse(returns.slice.elts[0])}]"
                     )
@@ -1836,13 +1242,13 @@ class PyiVisitor(ast.NodeVisitor):
         if method_name in {"__repr__", "__str__"}:
             if (
                 len(non_kw_only_args) == 1
-                and _is_object(returns, "str", from_={"builtins"})
-                and not any(_is_abstractmethod(deco) for deco in node.decorator_list)
+                and is_object(returns, "str", from_={"builtins"})
+                and not any(is_abstractmethod(deco) for deco in node.decorator_list)
             ):
                 self.error(node, errors.Y029)
 
         elif method_name in {"__eq__", "__ne__"}:
-            if len(non_kw_only_args) == 2 and _is_Any(non_kw_only_args[1].annotation):
+            if len(non_kw_only_args) == 2 and is_Any(non_kw_only_args[1].annotation):
                 self.error(node, errors.Y032.format(method_name=method_name))
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
@@ -1872,14 +1278,14 @@ class PyiVisitor(ast.NodeVisitor):
             ]
         non_kw_only_args = cleaned_method.args.posonlyargs + cleaned_method.args.args
         non_kw_only_args[0].annotation = None
-        new_syntax = _unparse_func_node(cleaned_method)
+        new_syntax = unparse_func_node(cleaned_method)
         new_syntax = re.sub(rf"\b{typevar_name}\b", "Self", new_syntax)
         self.error(
             node, errors.Y019.format(typevar_name=typevar_name, new_syntax=new_syntax)
         )
 
     @staticmethod
-    def _is_likely_private_typevar(
+    def is_likely_private_typevar(
         method: ast.FunctionDef | ast.AsyncFunctionDef, tvar_name: str
     ) -> bool:
         if tvar_name.startswith("_"):
@@ -1906,7 +1312,7 @@ class PyiVisitor(ast.NodeVisitor):
 
         arg1_annotation_name = first_arg_annotation.id
 
-        if self._is_likely_private_typevar(method, arg1_annotation_name):
+        if self.is_likely_private_typevar(method, arg1_annotation_name):
             self._Y019_error(method, arg1_annotation_name)
 
     def _check_class_method_for_bad_typevars(
@@ -1927,10 +1333,10 @@ class PyiVisitor(ast.NodeVisitor):
         # Don't error if the first argument is annotated
         # with `builtins.type[T]` or `typing.Type[T]`
         # These are edge cases, and it's hard to give good error messages for them.
-        if not _is_name(first_arg_annotation.value, "type"):
+        if not is_name(first_arg_annotation.value, "type"):
             return
 
-        if cls_typevar == return_annotation.id and self._is_likely_private_typevar(
+        if cls_typevar == return_annotation.id and self.is_likely_private_typevar(
             method, cls_typevar
         ):
             self._Y019_error(method, cls_typevar)
@@ -1986,12 +1392,12 @@ class PyiVisitor(ast.NodeVisitor):
 
     def check_for_override(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
         for deco in node.decorator_list:
-            if _is_override(deco):
+            if is_override(deco):
                 self.error(deco, errors.Y068)
                 return
 
     @staticmethod
-    def _is_positional_pre_570_argname(name: str) -> bool:
+    def is_positional_pre_570_argname(name: str) -> bool:
         # https://peps.python.org/pep-0484/#positional-only-arguments
         return name.startswith("__") and len(name) >= 3 and not name.endswith("__")
 
@@ -2009,11 +1415,11 @@ class PyiVisitor(ast.NodeVisitor):
             isinstance(decorator, ast.Name) and decorator.id == "staticmethod"
             for decorator in node.decorator_list
         ):
-            uses_old_syntax = self._is_positional_pre_570_argname(first_param.arg)
+            uses_old_syntax = self.is_positional_pre_570_argname(first_param.arg)
         else:
-            uses_old_syntax = self._is_positional_pre_570_argname(first_param.arg) or (
+            uses_old_syntax = self.is_positional_pre_570_argname(first_param.arg) or (
                 len(pos_or_kw_args) >= 2
-                and self._is_positional_pre_570_argname(pos_or_kw_args[1].arg)
+                and self.is_positional_pre_570_argname(pos_or_kw_args[1].arg)
             )
         if uses_old_syntax:
             self.error(node, errors.Y063)
@@ -2022,7 +1428,7 @@ class PyiVisitor(ast.NodeVisitor):
         with self.in_function.enabled():
             self.generic_visit(node)
 
-        if node.name != "__getattr__" and node.returns and _is_Incomplete(node.returns):
+        if node.name != "__getattr__" and node.returns and is_Incomplete(node.returns):
             self.error(node.returns, errors.Y065.format(what="return type"))
 
         match node.body:
@@ -2051,7 +1457,7 @@ class PyiVisitor(ast.NodeVisitor):
             self.check_for_override(node)
 
     def visit_arg(self, node: ast.arg) -> None:
-        if _is_Incomplete(node.annotation):
+        if is_Incomplete(node.annotation):
             self.error(node, errors.Y065.format(what=f'parameter "{node.arg}"'))
         with self.visiting_arg.enabled():
             self.generic_visit(node)
@@ -2073,11 +1479,11 @@ class PyiVisitor(ast.NodeVisitor):
         if default is not None:
             with self.string_literals_allowed.enabled():
                 self.visit(default)
-        if default is not None and not _is_valid_default_value_with_annotation(default):
+        if default is not None and not is_valid_default_value_with_annotation(default):
             self.error(
                 default, (errors.Y014 if arg.annotation is None else errors.Y011)
             )
-        if _is_IncompleteOrNone(arg.annotation) and _is_None(default):
+        if is_IncompleteOrNone(arg.annotation) and is_None(default):
             self.error(arg, errors.Y067)
 
     def error(self, node: NodeWithLocation, message: str) -> None:
