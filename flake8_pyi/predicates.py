@@ -9,8 +9,8 @@ from itertools import chain
 from keyword import iskeyword
 from typing import NamedTuple
 
-from .ast_helpers import (
-    ast_node_for,  # noqa: F401  # Used in doctests only.
+from .ast_helpers import (  # noqa: F401  # Used in doctests only.
+    ast_node_for,
     get_name_of_class_if_from_modules,
     is_None,
     is_object,

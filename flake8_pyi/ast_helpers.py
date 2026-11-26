@@ -8,11 +8,11 @@ from itertools import groupby
 from typing import TYPE_CHECKING, NamedTuple, TypeGuard
 
 from . import errors
-from .constants import (
+from .constants import (  # noqa: F401  # Used in doctests only.
     BAD_TYPINGEXTENSIONS_Y023_IMPORTS,
     BAD_Y022_IMPORTS,
     TYPING_MODULES,
-    TYPING_OR_COLLECTIONS_ABC,  # noqa: F401  # Used in doctests only.
+    TYPING_OR_COLLECTIONS_ABC,
 )
 
 if TYPE_CHECKING:
